@@ -50,19 +50,35 @@ export class ClaudeRunner {
 
   private async *spawnAndStream(prompt: string, options: ClaudeRunnerOptions): AsyncGenerator<StreamEvent> {
     const args = this.buildArgs(options);
+    args.push(prompt);
+
+    console.log('[claude-runner] Spawning:', args.join(' ').substring(0, 200));
+    console.log('[claude-runner] CWD:', options.cwd || process.cwd());
 
     this.proc = Bun.spawn(args, {
-      stdin: 'pipe',
+      stdin: 'ignore',
       stdout: 'pipe',
       stderr: 'pipe',
+      cwd: options.cwd || process.cwd(),
+      env: { ...process.env, PATH: process.env.PATH },
     });
 
-    const stdin = this.proc.stdin!;
-    if (typeof stdin === 'number') {
-      throw new Error('Expected writable stdin from Bun.spawn');
+    // Capture stderr in background for debugging
+    const stderrStream = this.proc.stderr;
+    if (stderrStream && typeof stderrStream !== 'number') {
+      (async () => {
+        const reader = (stderrStream as ReadableStream<Uint8Array>).getReader();
+        const decoder = new TextDecoder();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const text = decoder.decode(value, { stream: true });
+            if (text.trim()) console.error('[claude-runner] stderr:', text.trim());
+          }
+        } catch { /* ignore */ } finally { reader.releaseLock(); }
+      })();
     }
-    (stdin as { write(data: Uint8Array): number }).write(new TextEncoder().encode(prompt));
-    (stdin as { end(): void }).end();
 
     const stdout = this.proc.stdout;
     if (!stdout || typeof stdout === 'number') {
@@ -156,15 +172,14 @@ export class ClaudeRunner {
   }
 
   private buildArgs(options: ClaudeRunnerOptions): string[] {
-    const args = ['claude', '-p', '--verbose', '--output-format', 'stream-json'];
+    const claudePath = process.env.CLAUDE_CLI_PATH || '/root/.local/bin/claude';
+    const args = [claudePath, '-p', '--verbose', '--output-format', 'stream-json'];
 
     if (options.sessionId) {
       args.push('--resume', options.sessionId);
     }
 
-    if (options.cwd) {
-      args.push('--cwd', options.cwd);
-    }
+    // cwd is handled via Bun.spawn({ cwd }), not as CLI arg
 
     if (options.model) {
       args.push('--model', options.model);

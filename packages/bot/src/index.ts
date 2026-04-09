@@ -32,19 +32,40 @@ async function main(): Promise<void> {
   bot.use(createAuthMiddleware(config));
 
   // Register command handlers
-  const commands = registerCommands(config);
+  const { upCommands, ...commands } = registerCommands(config);
   bot.command('start', commands.start);
   bot.command('new', commands.newSession);
   bot.command('stop', commands.stop);
   bot.command('status', commands.status);
   bot.command('help', commands.help);
   bot.command('project', commands.project);
+  bot.command('up', commands.up);
+  bot.command('topic_create', commands.topicCreate);
+  bot.command('topic_rename', commands.topicRename);
+  bot.command('topic_link', commands.topicLink);
+  bot.command('sessions', commands.sessions);
+  bot.command('sessions_resume', commands.sessionsResume);
+  bot.command('sessions_close', commands.sessionsClose);
+  bot.command('sessions_rename', commands.sessionsRename);
+
+  // Register UP shortcut commands — each sends the /up:* text to Claude
+  const textHandler = createTextHandler(config);
+  for (const [cmd, upCmd] of Object.entries(upCommands)) {
+    bot.command(cmd, async (ctx) => {
+      const extra = ctx.match ? ` ${ctx.match}` : '';
+      // Inject the UP command as the message text so the text handler processes it
+      if (ctx.message) {
+        (ctx.message as any).text = `${upCmd}${extra}`;
+      }
+      await textHandler(ctx);
+    });
+  }
 
   // Register callback query handler
   bot.on('callback_query:data', createCallbackHandler(config));
 
   // Register text message handler (must be after commands)
-  bot.on('message:text', createTextHandler(config));
+  bot.on('message:text', textHandler);
 
   // Register voice/audio handler
   bot.on('message:voice', createVoiceHandler(config));
@@ -71,6 +92,32 @@ async function main(): Promise<void> {
       console.error('[forgeclaw] Unknown error:', e);
     }
   });
+
+  // Register bot commands menu
+  await bot.api.setMyCommands([
+    { command: 'start', description: 'Iniciar sessão no tópico atual' },
+    { command: 'new', description: 'Nova sessão (limpa contexto)' },
+    { command: 'stop', description: 'Interromper tarefa em andamento' },
+    { command: 'status', description: 'Estado da sessão atual' },
+    { command: 'project', description: 'Listar/trocar projeto' },
+    { command: 'topic_create', description: 'Criar tópico para um projeto' },
+    { command: 'topic_rename', description: 'Renomear tópico: /topic_rename nome' },
+    { command: 'topic_link', description: 'Vincular este tópico a um projeto' },
+    { command: 'sessions', description: 'Listar todas as sessões ativas' },
+    { command: 'sessions_resume', description: 'Retomar uma sessão existente' },
+    { command: 'sessions_close', description: 'Fechar uma sessão' },
+    { command: 'sessions_rename', description: 'Renomear sessão: /sessions_rename nome' },
+    { command: 'up', description: 'Grid de comandos UP' },
+    { command: 'up_progresso', description: 'UP: status do projeto' },
+    { command: 'up_planejar', description: 'UP: planejar fase' },
+    { command: 'up_executar', description: 'UP: executar fase' },
+    { command: 'up_verificar', description: 'UP: verificar trabalho' },
+    { command: 'up_rapido', description: 'UP: tarefa rápida' },
+    { command: 'up_depurar', description: 'UP: modo depuração' },
+    { command: 'up_retomar', description: 'UP: retomar sessão anterior' },
+    { command: 'up_pausar', description: 'UP: pausar trabalho' },
+    { command: 'help', description: 'Referência de comandos' },
+  ]);
 
   // Start bot with concurrent runner
   console.log('[forgeclaw] Starting bot with concurrent runner...');

@@ -162,6 +162,16 @@ class StateStore {
     return row ? mapTopicRow(row) : null;
   }
 
+  updateTopicName(id: number, name: string): void {
+    this.db.run('UPDATE topics SET name = ? WHERE id = ?', [name, id]);
+  }
+
+  deleteTopic(id: number): void {
+    this.db.run('DELETE FROM messages WHERE topic_id = ?', [id]);
+    this.db.run('DELETE FROM sessions WHERE topic_id = ?', [id]);
+    this.db.run('DELETE FROM topics WHERE id = ?', [id]);
+  }
+
   listTopics(): TopicInfo[] {
     const rows = this.db.query(
       'SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at FROM topics ORDER BY created_at DESC'

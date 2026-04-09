@@ -156,23 +156,21 @@ async function processMessage(
             const contextBar = buildContextBar(contextPercent);
             const finalMessage = truncateForTelegram(`${finalHtml}\n\n<i>${contextBar}</i>`);
 
-            // Build keyboard: detected actions first, standard [UP][Parar][Novo] last
+            // Build keyboard only if Claude output contains UP commands or numbered options
             const fullResponseText = accumulatedText || ((event.data.result as string) ?? '');
             const actions = upDetector.extractAllActions(fullResponseText);
-            const keyboard = new InlineKeyboard();
+            let keyboard: InlineKeyboard | undefined;
 
-            // Add detected UP command buttons (3 per row)
-            if (actions.upCommands.length > 0) {
+            if (actions.upCommands.length > 0 || actions.numberedOptions.length > 0) {
+              keyboard = new InlineKeyboard();
+
               for (let i = 0; i < actions.upCommands.length; i++) {
                 const cmd = actions.upCommands[i];
                 keyboard.text(cmd.label, `up:${cmd.command}`);
                 if ((i + 1) % 3 === 0) keyboard.row();
               }
-              if (actions.upCommands.length % 3 !== 0) keyboard.row();
-            }
+              if (actions.upCommands.length > 0 && actions.upCommands.length % 3 !== 0) keyboard.row();
 
-            // Add detected numbered option buttons (1 per row)
-            if (actions.numberedOptions.length > 0) {
               for (let i = 0; i < actions.numberedOptions.length; i++) {
                 const opt = actions.numberedOptions[i];
                 const optLabel = opt.text.length > 28 ? opt.text.slice(0, 25) + '...' : opt.text;
@@ -180,9 +178,6 @@ async function processMessage(
                 keyboard.row();
               }
             }
-
-            // Standard action row always at the bottom
-            keyboard.text('UP', 'action:up').text('Parar', 'action:stop').text('Novo', 'action:new');
 
             await safeEditText(
               ctx,
