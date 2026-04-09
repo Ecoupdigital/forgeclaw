@@ -1,6 +1,7 @@
 export interface ForgeClawConfig {
   botToken: string;
   allowedUsers: number[];
+  allowedGroups?: number[];
   workingDir: string;
   vaultPath?: string;
   voiceProvider?: 'openai' | 'google' | 'none';
@@ -65,6 +66,7 @@ export interface ClaudeRunnerOptions {
   cwd?: string;
   sessionId?: string;
   systemPrompt?: string;
+  appendSystemPrompt?: string;
   allowedTools?: string[];
   model?: string;
 }

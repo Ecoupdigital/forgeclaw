@@ -195,6 +195,15 @@ export class ClaudeRunner {
       args.push('--system-prompt', options.systemPrompt);
     }
 
+    if (options.appendSystemPrompt) {
+      // If the value looks like a file path, use --append-system-prompt-file
+      if (options.appendSystemPrompt.startsWith('/') || options.appendSystemPrompt.startsWith('~')) {
+        args.push('--append-system-prompt-file', options.appendSystemPrompt);
+      } else {
+        args.push('--append-system-prompt', options.appendSystemPrompt);
+      }
+    }
+
     args.push('--dangerously-skip-permissions');
 
     return args;

@@ -1,12 +1,21 @@
 import type { Context } from 'grammy';
-import { ClaudeRunner, sessionManager, stateStore, upDetector } from '@forgeclaw/core';
+import { InputFile, InlineKeyboard } from 'grammy';
+import { ClaudeRunner, sessionManager, stateStore, upDetector, fileHandler, ContextBuilder, harnessLoader, memoryManager } from '@forgeclaw/core';
 import type { StreamEvent, ForgeClawConfig } from '@forgeclaw/core';
-import { InlineKeyboard } from 'grammy';
+import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { convertToHtml, buildContextBar, buildActionKeyboard, truncateForTelegram } from '../utils/formatting';
 import { messageQueue } from '../utils/queue';
 
 /** Minimum interval between message edits (ms) to respect Telegram rate limits. */
 const EDIT_THROTTLE_MS = 500;
+
+/** Keywords that trigger extended thinking mode. */
+const THINKING_KEYWORDS = ['pense', 'raciocine', 'think', 'analise profundamente', 'pense bem', 'reflita'];
+
+/** Path to the harness CLAUDE.md for append-system-prompt. */
+const HARNESS_CLAUDE_MD = join(homedir(), '.forgeclaw', 'harness', 'CLAUDE.md');
 
 /** Active runners keyed by session key, for abort support. */
 const activeRunners = new Map<string, ClaudeRunner>();
@@ -85,6 +94,13 @@ async function processMessage(
       createdAt: Date.now(),
     });
 
+    // GAP 1: Build enriched prompt with context (harness, memory, vault, state)
+    const contextBuilder = new ContextBuilder(config, harnessLoader);
+    const enrichedPrompt = await contextBuilder.build(text, chatId, topicId ?? 0);
+
+    // GAP 5: Detect thinking keywords
+    const shouldThink = THINKING_KEYWORDS.some(k => text.toLowerCase().includes(k));
+
     // Create runner and stream
     const runner = new ClaudeRunner();
     activeRunners.set(sessionKey, runner);
@@ -94,13 +110,17 @@ async function processMessage(
     let currentStatus = 'Processing...';
 
     try {
-      const runOptions = {
+      const runOptions: Record<string, unknown> = {
         sessionId: session.claudeSessionId ?? undefined,
         cwd: session.projectDir ?? config.workingDir,
         model: config.claudeModel,
+        // GAP 2: Append harness CLAUDE.md as system prompt if it exists
+        ...(existsSync(HARNESS_CLAUDE_MD) ? { appendSystemPrompt: HARNESS_CLAUDE_MD } : {}),
+        // GAP 5: If thinking keywords detected, instruct extended thinking via system prompt
+        ...(shouldThink ? { systemPrompt: 'Use extended thinking. Think deeply and step-by-step before responding. Show your reasoning process.' } : {}),
       };
 
-      for await (const event of runner.run(text, runOptions)) {
+      for await (const event of runner.run(enrichedPrompt, runOptions as any)) {
         switch (event.type) {
           case 'thinking': {
             currentStatus = '\uD83E\uDDE0 Thinking...';
@@ -195,6 +215,29 @@ async function processMessage(
               content: accumulatedText || ((event.data.result as string) ?? ''),
               createdAt: Date.now(),
             });
+
+            // GAP 9: Memory auto-extract — save brief entry in daily log
+            if (accumulatedText && accumulatedText.length > 100) {
+              const projectName = session.projectDir?.split('/').pop() ?? 'geral';
+              memoryManager.addEntry(
+                `[${projectName}] User: ${text.substring(0, 80)}... -> Claude respondeu (${accumulatedText.length} chars)`,
+              ).catch((err) => {
+                console.error('[text-handler] Failed to save memory entry:', err);
+              });
+            }
+
+            // Detect and send outbound files mentioned in Claude's output
+            const outboundFiles = await fileHandler.detectOutboundFiles(fullResponseText);
+            for (const filePath of outboundFiles) {
+              try {
+                await ctx.api.sendDocument(chatId, new InputFile(filePath), {
+                  caption: filePath.split('/').pop(),
+                  ...(topicId ? { message_thread_id: topicId } : {}),
+                });
+              } catch (err) {
+                console.error('[text-handler] Failed to send outbound file:', err);
+              }
+            }
 
             break;
           }
