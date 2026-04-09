@@ -1,0 +1,18 @@
+[Unit]
+Description=ForgeClaw - Personal AI Command Center
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/projects/ForgeClaw
+ExecStart=/root/.bun/bin/bun run packages/bot/src/index.ts
+Restart=always
+RestartSec=5
+Environment=HOME=/root
+Environment=PATH=/root/.local/bin:/root/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+StandardOutput=append:/root/.forgeclaw/logs/bot.log
+StandardError=append:/root/.forgeclaw/logs/bot.log
+
+[Install]
+WantedBy=multi-user.target
