@@ -221,7 +221,9 @@ export class ClaudeRunner {
       }
     }
 
-    args.push('--permission-mode', 'bypassPermissions');
+    // No permission flag needed — Claude Code settings.json manages permissions
+    // Both --dangerously-skip-permissions and --permission-mode bypassPermissions
+    // are blocked when running as root
 
     return args;
   }
