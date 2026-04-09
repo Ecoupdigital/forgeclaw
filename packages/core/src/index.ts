@@ -6,3 +6,6 @@ export * from './claude-runner';
 export * from './session-manager';
 export * from './harness-loader';
 export * from './context-builder';
+export * from './up-detector';
+export * from './memory-manager';
+export * from './vault-navigator';
