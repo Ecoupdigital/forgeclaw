@@ -4,3 +4,5 @@ export * from './state-store';
 export * from './event-bus';
 export * from './claude-runner';
 export * from './session-manager';
+export * from './harness-loader';
+export * from './context-builder';
