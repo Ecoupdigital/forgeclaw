@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { ClaudeRunner } from './claude-runner';
+import { getConfig } from './config';
 import { stateStore } from './state-store';
 import { eventBus } from './event-bus';
 import type { CronJob, CronLog } from './types';
@@ -286,10 +287,14 @@ class CronEngine {
       try {
         const runner = new ClaudeRunner();
         const collected: string[] = [];
+        const config = await getConfig();
 
-        for await (const event of runner.run(job.prompt, {})) {
+        for await (const event of runner.run(job.prompt, { cwd: config.workingDir })) {
           if (event.type === 'text' && typeof event.data.text === 'string') {
             collected.push(event.data.text);
+          }
+          if (event.type === 'done' && typeof event.data.result === 'string') {
+            collected.push(event.data.result);
           }
         }
 

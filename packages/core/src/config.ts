@@ -33,6 +33,7 @@ function validateConfig(raw: unknown): ForgeClawConfig {
   return {
     botToken: obj.botToken,
     allowedUsers: obj.allowedUsers as number[],
+    allowedGroups: Array.isArray(obj.allowedGroups) ? obj.allowedGroups as number[] : undefined,
     workingDir: (typeof obj.workingDir === 'string' ? obj.workingDir : join(homedir(), 'forgeclaw-projects')),
     vaultPath: typeof obj.vaultPath === 'string' ? obj.vaultPath : undefined,
     voiceProvider: isVoiceProvider(obj.voiceProvider) ? obj.voiceProvider : undefined,

@@ -7,13 +7,27 @@ import type { ForgeClawConfig } from '@forgeclaw/core';
 export function createAuthMiddleware(config: ForgeClawConfig) {
   return async (ctx: Context, next: NextFunction): Promise<void> => {
     const userId = ctx.from?.id;
+    const chatType = ctx.chat?.type;
+    const chatId = ctx.chat?.id;
 
-    if (!userId || !config.allowedUsers.includes(userId)) {
-      console.warn(`[auth] Unauthorized access attempt from user ${userId ?? 'unknown'}`);
-      await ctx.reply('Unauthorized');
-      return;
+    // Allow if user is in whitelist
+    if (userId && config.allowedUsers.includes(userId)) {
+      return next();
     }
 
-    await next();
+    // Allow if message is in an allowed group
+    if (chatId && (chatType === 'group' || chatType === 'supergroup')) {
+      const allowedGroups = config.allowedGroups ?? [];
+      if (allowedGroups.includes(chatId)) {
+        return next();
+      }
+    }
+
+    console.warn(`[auth] Unauthorized: user ${userId ?? 'unknown'} in chat ${chatId}`);
+    // Don't reply "Unauthorized" in groups — just ignore silently
+    if (chatType === 'private') {
+      await ctx.reply('Unauthorized');
+    }
+    return;
   };
 }
