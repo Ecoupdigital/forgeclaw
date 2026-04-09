@@ -8,12 +8,14 @@ interface ChatInputProps {
   onSend: (message: string) => void;
   disabled?: boolean;
   loading?: boolean;
+  onAbort?: () => void;
 }
 
 export function ChatInput({
   onSend,
   disabled = false,
   loading = false,
+  onAbort,
 }: ChatInputProps) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -50,27 +52,38 @@ export function ChatInput({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
+          placeholder={disabled ? "WebSocket disconnected..." : "Type a message..."}
           disabled={disabled || loading}
           className="min-h-[40px] max-h-32 resize-none rounded-md border-violet-dim bg-night-panel text-sm text-text-body placeholder:text-text-secondary focus-visible:ring-violet"
           rows={1}
           aria-label="Message input"
         />
-        <Button
-          type="submit"
-          disabled={!value.trim() || disabled || loading}
-          className="h-10 shrink-0 bg-violet text-white hover:bg-violet/90 disabled:opacity-40"
-          aria-label="Send message"
-        >
-          {loading ? (
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              Sending
-            </span>
-          ) : (
-            "Send"
-          )}
-        </Button>
+        {loading && onAbort ? (
+          <Button
+            type="button"
+            onClick={onAbort}
+            className="h-10 shrink-0 bg-red-600 text-white hover:bg-red-700"
+            aria-label="Stop generation"
+          >
+            Stop
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            disabled={!value.trim() || disabled || loading}
+            className="h-10 shrink-0 bg-violet text-white hover:bg-violet/90 disabled:opacity-40"
+            aria-label="Send message"
+          >
+            {loading ? (
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                Sending
+              </span>
+            ) : (
+              "Send"
+            )}
+          </Button>
+        )}
       </form>
     </div>
   );

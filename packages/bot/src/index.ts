@@ -2,7 +2,7 @@ import { Bot, GrammyError, HttpError } from 'grammy';
 import { run } from '@grammyjs/runner';
 import { autoRetry } from '@grammyjs/auto-retry';
 import { sequentialize } from '@grammyjs/runner';
-import { getConfig, cronEngine, eventBus, stateStore } from '@forgeclaw/core';
+import { getConfig, cronEngine, eventBus, stateStore, startWSServer } from '@forgeclaw/core';
 import { createAuthMiddleware } from './middleware/auth';
 import { getSessionKey } from './middleware/sequentialize';
 import { createTextHandler } from './handlers/text';
@@ -160,6 +160,10 @@ async function main(): Promise<void> {
       console.error(`[forgeclaw] Failed to send cron result for job ${jobId}:`, err);
     }
   });
+
+  // Start WebSocket server for dashboard real-time chat
+  startWSServer();
+  console.log('[forgeclaw] WebSocket server started on port 4041');
 
   console.log('[forgeclaw] ForgeClaw bot started');
 

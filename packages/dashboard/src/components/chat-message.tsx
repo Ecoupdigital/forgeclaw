@@ -5,6 +5,8 @@ import type { Message } from "@/lib/types";
 
 interface ChatMessageProps {
   message: Message;
+  streaming?: boolean;
+  tools?: string[];
 }
 
 const TOOL_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
@@ -76,9 +78,14 @@ function renderContent(content: string) {
   });
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message, streaming = false, tools: streamTools }: ChatMessageProps) {
   const isUser = message.role === "user";
-  const tools = !isUser ? detectTools(message.content) : [];
+  // Use streaming tools if provided, otherwise detect from content
+  const tools = streamTools && streamTools.length > 0
+    ? streamTools
+    : !isUser
+    ? detectTools(message.content)
+    : [];
 
   return (
     <div
@@ -120,9 +127,18 @@ export function ChatMessage({ message }: ChatMessageProps) {
               ))}
             </div>
           )}
+          {streaming && (
+            <span className="text-[10px] text-emerald-400 font-mono animate-pulse">
+              streaming
+            </span>
+          )}
         </div>
         <div className="text-sm leading-relaxed text-text-body whitespace-pre-wrap">
           {renderContent(message.content)}
+          {/* Blinking cursor for streaming messages */}
+          {streaming && (
+            <span className="inline-block w-2 h-4 ml-0.5 bg-emerald-400 animate-pulse rounded-sm" />
+          )}
         </div>
       </div>
     </div>

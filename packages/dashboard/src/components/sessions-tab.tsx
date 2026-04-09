@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SessionSidebar } from "./session-sidebar";
@@ -8,12 +8,15 @@ import { ContextBar } from "./context-bar";
 import { ChatMessage } from "./chat-message";
 import { ChatInput } from "./chat-input";
 import { KanbanBoard } from "./kanban-board";
+import { useWebSocket, useChatSession } from "@/lib/ws-client";
+import type { StreamingMessage } from "@/lib/ws-client";
 import {
   mockTopics,
   mockSessions,
   mockMessages,
   mockPlans,
 } from "@/lib/mock-data";
+import type { Message } from "@/lib/types";
 
 type ViewMode = "chat" | "kanban";
 
@@ -22,7 +25,10 @@ export function SessionsTab() {
     mockTopics[0]?.id ?? null
   );
   const [viewMode, setViewMode] = useState<ViewMode>("chat");
-  const [sending, setSending] = useState(false);
+  const [localMessages, setLocalMessages] = useState<Message[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const ws = useWebSocket();
 
   const selectedTopic = useMemo(
     () => mockTopics.find((t) => t.id === selectedTopicId) ?? null,
@@ -35,7 +41,16 @@ export function SessionsTab() {
     [selectedTopicId]
   );
 
-  const messages = useMemo(
+  // Build sessionKey from topic
+  const sessionKey = useMemo(() => {
+    if (!selectedTopic) return null;
+    return `${selectedTopic.chatId}:${selectedTopic.id}`;
+  }, [selectedTopic]);
+
+  const chat = useChatSession(sessionKey, ws);
+
+  // Load stored messages from mock data initially
+  const storedMessages = useMemo(
     () =>
       selectedTopicId
         ? mockMessages
@@ -45,11 +60,51 @@ export function SessionsTab() {
     [selectedTopicId]
   );
 
+  // Reset local messages when topic changes
+  useEffect(() => {
+    setLocalMessages([]);
+    chat.clearStreaming();
+  }, [selectedTopicId]);
+
+  // When streaming message completes, add it to local messages
+  useEffect(() => {
+    if (chat.streamingMessage?.done && chat.streamingMessage.content) {
+      const msg: Message = {
+        id: Date.now(),
+        topicId: selectedTopicId ?? 0,
+        role: "assistant",
+        content: chat.streamingMessage.content,
+        createdAt: chat.streamingMessage.createdAt,
+      };
+      setLocalMessages((prev) => [...prev, msg]);
+      chat.clearStreaming();
+    }
+  }, [chat.streamingMessage?.done]);
+
+  // All messages = stored + local
+  const allMessages = useMemo(
+    () => [...storedMessages, ...localMessages],
+    [storedMessages, localMessages]
+  );
+
+  // Auto-scroll on new messages / streaming
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [allMessages.length, chat.streamingMessage?.content]);
+
   const handleSend = (message: string) => {
-    setSending(true);
-    // Simulate sending
-    setTimeout(() => setSending(false), 1500);
-    console.log("Sending:", message);
+    // Add user message locally
+    const userMsg: Message = {
+      id: Date.now(),
+      topicId: selectedTopicId ?? 0,
+      role: "user",
+      content: message,
+      createdAt: Date.now(),
+    };
+    setLocalMessages((prev) => [...prev, userMsg]);
+
+    // Send via WebSocket
+    chat.send(message);
   };
 
   return (
@@ -64,17 +119,32 @@ export function SessionsTab() {
       <div className="flex flex-1 flex-col overflow-hidden">
         {selectedTopic ? (
           <>
-            {/* Topic header with view toggle */}
+            {/* Topic header with view toggle + WS status */}
             <div className="flex items-center justify-between border-b border-violet-dim bg-deep-space px-4">
-              <ContextBar
-                topicName={selectedTopic.name ?? `Topic #${selectedTopic.id}`}
-                contextUsage={selectedSession?.contextUsage ?? 0}
-                sessionDuration={
-                  selectedSession
-                    ? Date.now() - selectedSession.createdAt
-                    : null
-                }
-              />
+              <div className="flex items-center gap-3">
+                <ContextBar
+                  topicName={selectedTopic.name ?? `Topic #${selectedTopic.id}`}
+                  contextUsage={selectedSession?.contextUsage ?? 0}
+                  sessionDuration={
+                    selectedSession
+                      ? Date.now() - selectedSession.createdAt
+                      : null
+                  }
+                />
+                {/* Connection indicator */}
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className={`h-2 w-2 rounded-full ${
+                      chat.connected
+                        ? "bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.5)]"
+                        : "bg-red-400 shadow-[0_0_4px_rgba(248,113,113,0.5)]"
+                    }`}
+                  />
+                  <span className="text-[10px] text-text-secondary font-mono">
+                    {chat.connected ? "WS" : "OFF"}
+                  </span>
+                </div>
+              </div>
               <div className="flex items-center gap-1 pr-2">
                 <Button
                   variant={viewMode === "chat" ? "default" : "ghost"}
@@ -107,7 +177,7 @@ export function SessionsTab() {
               <>
                 <ScrollArea className="flex-1">
                   <div className="flex flex-col">
-                    {messages.length === 0 && (
+                    {allMessages.length === 0 && !chat.streamingMessage && (
                       <div className="flex flex-col items-center justify-center py-16 text-center">
                         <div className="mb-3 text-3xl text-text-secondary/30">
                           /
@@ -120,15 +190,31 @@ export function SessionsTab() {
                         </p>
                       </div>
                     )}
-                    {messages.map((msg) => (
+                    {allMessages.map((msg) => (
                       <ChatMessage key={msg.id} message={msg} />
                     ))}
+                    {/* Streaming message (in-progress) */}
+                    {chat.streamingMessage && !chat.streamingMessage.done && (
+                      <ChatMessage
+                        message={{
+                          id: -1,
+                          topicId: selectedTopicId ?? 0,
+                          role: "assistant",
+                          content: chat.streamingMessage.content || (chat.streamingMessage.thinking ? "Thinking..." : ""),
+                          createdAt: chat.streamingMessage.createdAt,
+                        }}
+                        streaming={true}
+                        tools={chat.streamingMessage.tools}
+                      />
+                    )}
+                    <div ref={scrollRef} />
                   </div>
                 </ScrollArea>
                 <ChatInput
                   onSend={handleSend}
-                  loading={sending}
-                  disabled={!selectedSession}
+                  loading={chat.streaming}
+                  disabled={!chat.connected}
+                  onAbort={chat.abort}
                 />
               </>
             ) : (

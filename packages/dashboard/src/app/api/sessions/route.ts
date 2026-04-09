@@ -36,30 +36,16 @@ export async function GET() {
   });
 }
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { topicId, message } = body as {
-      topicId: number;
-      message: string;
-    };
-
-    // For now, POST just acknowledges. Full ClaudeRunner integration
-    // requires the bot runtime (bun process) which is separate.
-    return Response.json({
-      success: true,
-      topicId,
-      message,
-      timestamp: Date.now(),
-      note: "Message recorded. ClaudeRunner execution requires the bot process.",
-    });
-  } catch (err) {
-    return Response.json(
-      {
-        success: false,
-        error: err instanceof Error ? err.message : "Unknown error",
+export async function POST() {
+  return Response.json(
+    {
+      error: "Use WebSocket on port 4041 for chat",
+      wsUrl: "ws://localhost:4041",
+      protocol: {
+        send: '{ type: "send", sessionKey: "<chatId>:<topicId>", message: "<text>" }',
+        subscribe: '{ type: "subscribe", sessionKey: "<chatId>:<topicId>" }',
       },
-      { status: 400 }
-    );
-  }
+    },
+    { status: 410 }
+  );
 }
