@@ -245,7 +245,7 @@ export function SessionsTab() {
 
             {viewMode === "chat" ? (
               <>
-                <ScrollArea className="flex-1">
+                <div className="flex-1 overflow-y-auto">
                   <div className="flex flex-col">
                     {allMessages.length === 0 && !chat.streamingMessage && (
                       <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -278,7 +278,7 @@ export function SessionsTab() {
                     )}
                     <div ref={scrollRef} />
                   </div>
-                </ScrollArea>
+                </div>
                 <ChatInput
                   onSend={handleSend}
                   loading={chat.streaming}

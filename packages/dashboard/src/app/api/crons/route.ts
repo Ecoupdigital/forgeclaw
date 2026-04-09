@@ -70,17 +70,16 @@ export async function PUT(request: Request) {
     };
 
     if (action === "toggle") {
-      const job = core.getCronJob(id);
-      if (job) {
-        core.updateCronJob(id, { enabled: !job.enabled });
-        return Response.json({
-          success: true,
-          id,
-          action,
-          enabled: !job.enabled,
-          source: "core",
-        });
-      }
+      const enabled = updates.enabled as boolean | undefined;
+      const newEnabled = enabled !== undefined ? enabled : !(core.getCronJob(id)?.enabled);
+      core.updateCronJob(id, { enabled: newEnabled });
+      return Response.json({
+        success: true,
+        id,
+        action,
+        enabled: newEnabled,
+        source: "core",
+      });
     }
 
     if (action === "update" && updates) {
