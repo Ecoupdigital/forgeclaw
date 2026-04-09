@@ -220,7 +220,7 @@ export class ClaudeRunner {
       }
     }
 
-    args.push('--allow-dangerously-skip-permissions', '--dangerously-skip-permissions');
+    args.push('--permission-mode', 'bypassPermissions');
 
     return args;
   }
