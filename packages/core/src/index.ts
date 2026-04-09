@@ -10,3 +10,5 @@ export * from './up-detector';
 export * from './memory-manager';
 export * from './vault-navigator';
 export * from './cron-engine';
+export * from './file-handler';
+export * from './voice-handler';
