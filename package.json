@@ -1,0 +1,26 @@
+{
+  "name": "forgeclaw",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Your Personal AI Command Center",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter '*' dev",
+    "dev:bot": "bun run --filter @forgeclaw/bot dev",
+    "dev:dashboard": "bun run --filter @forgeclaw/dashboard dev",
+    "build": "bun run --filter '*' build",
+    "start": "bun run --filter @forgeclaw/bot start",
+    "typecheck": "bun run --filter '*' typecheck",
+    "test": "bunx --bun vitest run",
+    "test:watch": "bunx --bun vitest"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.11",
+    "vitest": "^4.1.3"
+  }
+}
