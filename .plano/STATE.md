@@ -7,8 +7,8 @@
 
 ## Posicao Atual
 **Fase:** 10 de 10
-**Status:** Build completo, pronto para testes e polish
-**Progresso:** [████████░░] 80%
+**Status:** Build completo + bot em producao + melhorias iterativas
+**Progresso:** [█████████░] 90%
 
 ## Contexto Acumulado
 
@@ -19,6 +19,7 @@
 - [2026-04-09] Harness system: 7 arquivos em ~/.forgeclaw/harness/, dados extraidos do Obsidian vault
 - [2026-04-09] Dashboard usa mock data — precisa integrar com @forgeclaw/core
 - [2026-04-09] Repo: github.com/Ecoupdigital/forgeclaw
+- [Phase 10]: Bot usa Bun.spawn com cwd ao inves de --cwd flag
 
 ### Bloqueios
 Nenhum
