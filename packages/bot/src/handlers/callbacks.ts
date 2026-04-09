@@ -1,5 +1,5 @@
 import type { Context } from 'grammy';
-import { sessionManager, stateStore } from '@forgeclaw/core';
+import { sessionManager, stateStore, upDetector } from '@forgeclaw/core';
 import type { ForgeClawConfig } from '@forgeclaw/core';
 import { InlineKeyboard } from 'grammy';
 import { getActiveRunners } from './text';
@@ -42,10 +42,14 @@ export function createCallbackHandler(config: ForgeClawConfig) {
     }
 
     if (data === 'action:up') {
-      const upKeyboard = new InlineKeyboard()
-        .text('/up:status', 'up:status').text('/up:plan', 'up:plan').row()
-        .text('/up:next', 'up:next').text('/up:review', 'up:review').row()
-        .text('/up:fix', 'up:fix').text('/up:test', 'up:test').row();
+      const grid = upDetector.getUPCommandsGrid();
+      const upKeyboard = new InlineKeyboard();
+
+      for (let i = 0; i < grid.length; i++) {
+        upKeyboard.text(grid[i].label, `up:${grid[i].command}`);
+        if ((i + 1) % 3 === 0) upKeyboard.row();
+      }
+      if (grid.length % 3 !== 0) upKeyboard.row();
 
       await ctx.reply('<b>UP Commands:</b>', {
         parse_mode: 'HTML',

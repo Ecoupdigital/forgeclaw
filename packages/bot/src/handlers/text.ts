@@ -1,6 +1,7 @@
 import type { Context } from 'grammy';
-import { ClaudeRunner, sessionManager, stateStore } from '@forgeclaw/core';
+import { ClaudeRunner, sessionManager, stateStore, upDetector } from '@forgeclaw/core';
 import type { StreamEvent, ForgeClawConfig } from '@forgeclaw/core';
+import { InlineKeyboard } from 'grammy';
 import { convertToHtml, buildContextBar, buildActionKeyboard, truncateForTelegram } from '../utils/formatting';
 import { messageQueue } from '../utils/queue';
 
@@ -155,13 +156,41 @@ async function processMessage(
             const contextBar = buildContextBar(contextPercent);
             const finalMessage = truncateForTelegram(`${finalHtml}\n\n<i>${contextBar}</i>`);
 
+            // Build keyboard: detected actions first, standard [UP][Parar][Novo] last
+            const fullResponseText = accumulatedText || ((event.data.result as string) ?? '');
+            const actions = upDetector.extractAllActions(fullResponseText);
+            const keyboard = new InlineKeyboard();
+
+            // Add detected UP command buttons (3 per row)
+            if (actions.upCommands.length > 0) {
+              for (let i = 0; i < actions.upCommands.length; i++) {
+                const cmd = actions.upCommands[i];
+                keyboard.text(cmd.label, `up:${cmd.command}`);
+                if ((i + 1) % 3 === 0) keyboard.row();
+              }
+              if (actions.upCommands.length % 3 !== 0) keyboard.row();
+            }
+
+            // Add detected numbered option buttons (1 per row)
+            if (actions.numberedOptions.length > 0) {
+              for (let i = 0; i < actions.numberedOptions.length; i++) {
+                const opt = actions.numberedOptions[i];
+                const optLabel = opt.text.length > 28 ? opt.text.slice(0, 25) + '...' : opt.text;
+                keyboard.text(`${opt.number}. ${optLabel}`, `option:${opt.number}`);
+                keyboard.row();
+              }
+            }
+
+            // Standard action row always at the bottom
+            keyboard.text('UP', 'action:up').text('Parar', 'action:stop').text('Novo', 'action:new');
+
             await safeEditText(
               ctx,
               chatId,
               placeholder.message_id,
               finalMessage,
               'HTML',
-              buildActionKeyboard(),
+              keyboard,
             );
 
             // Save assistant message
