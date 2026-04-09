@@ -5,33 +5,43 @@ import {
   mockTopics,
 } from "@/lib/mock-data";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const topicId = url.searchParams.get("topicId");
+
   try {
-    const topics = core.listTopics();
+    // If topicId specified, return messages for that topic
+    if (topicId) {
+      const msgs = core.getMessages(Number(topicId), 100);
+      return Response.json({
+        messages: msgs ?? [],
+        source: msgs ? "core" : "mock",
+      });
+    }
+
+    // Otherwise return all sessions
     const sessions = core.listSessions();
 
-    if (topics && sessions) {
-      // Fetch messages for all topics
-      const allMessages = topics.flatMap((t) => {
-        const msgs = core.getMessages(t.id, 50);
-        return msgs ?? [];
-      });
-
+    if (sessions && sessions.length > 0) {
       return Response.json({
         sessions,
-        topics,
-        messages: allMessages,
         source: "core",
       });
     }
   } catch (err) {
-    console.warn("[api/sessions] Core unavailable, using mock data:", err);
+    console.warn("[api/sessions] Core unavailable:", err);
+  }
+
+  // Fallback to mock
+  if (topicId) {
+    return Response.json({
+      messages: mockMessages.filter((m) => m.topicId === Number(topicId)),
+      source: "mock",
+    });
   }
 
   return Response.json({
     sessions: mockSessions,
-    topics: mockTopics,
-    messages: mockMessages,
     source: "mock",
   });
 }
@@ -41,10 +51,6 @@ export async function POST() {
     {
       error: "Use WebSocket on port 4041 for chat",
       wsUrl: "ws://localhost:4041",
-      protocol: {
-        send: '{ type: "send", sessionKey: "<chatId>:<topicId>", message: "<text>" }',
-        subscribe: '{ type: "subscribe", sessionKey: "<chatId>:<topicId>" }',
-      },
     },
     { status: 410 }
   );

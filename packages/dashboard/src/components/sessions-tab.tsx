@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SessionSidebar } from "./session-sidebar";
@@ -9,69 +9,130 @@ import { ChatMessage } from "./chat-message";
 import { ChatInput } from "./chat-input";
 import { KanbanBoard } from "./kanban-board";
 import { useWebSocket, useChatSession } from "@/lib/ws-client";
-import type { StreamingMessage } from "@/lib/ws-client";
-import {
-  mockTopics,
-  mockSessions,
-  mockMessages,
-  mockPlans,
-} from "@/lib/mock-data";
+import { mockPlans } from "@/lib/mock-data";
 import type { Message } from "@/lib/types";
+
+interface SessionData {
+  id: string;
+  topicId: number;
+  projectDir: string | null;
+  claudeSessionId: string | null;
+  contextUsage: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+interface TopicData {
+  id: number;
+  threadId: number | null;
+  chatId: number;
+  name: string;
+  projectDir: string | null;
+  sessionId: string | null;
+}
 
 type ViewMode = "chat" | "kanban";
 
 export function SessionsTab() {
-  const [selectedTopicId, setSelectedTopicId] = useState<number | null>(
-    mockTopics[0]?.id ?? null
-  );
+  const [sessions, setSessions] = useState<SessionData[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("chat");
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const ws = useWebSocket();
 
-  const selectedTopic = useMemo(
-    () => mockTopics.find((t) => t.id === selectedTopicId) ?? null,
-    [selectedTopicId]
-  );
+  // Fetch sessions from API
+  useEffect(() => {
+    async function fetchSessions() {
+      try {
+        const res = await fetch("/api/sessions");
+        const data = await res.json();
+        if (data.sessions) {
+          setSessions(data.sessions);
+          if (!selectedSessionId && data.sessions.length > 0) {
+            setSelectedSessionId(data.sessions[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch sessions:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchSessions();
+  }, []);
+
+  // Fetch messages when session changes
+  useEffect(() => {
+    if (!selectedSessionId) return;
+    const session = sessions.find((s) => s.id === selectedSessionId);
+    if (!session) return;
+
+    async function fetchMessages() {
+      try {
+        const res = await fetch(`/api/sessions?topicId=${session!.topicId}`);
+        const data = await res.json();
+        if (data.messages) {
+          setMessages(data.messages);
+        }
+      } catch (err) {
+        console.error("Failed to fetch messages:", err);
+      }
+    }
+    fetchMessages();
+    setLocalMessages([]);
+  }, [selectedSessionId, sessions]);
 
   const selectedSession = useMemo(
-    () =>
-      mockSessions.find((s) => s.topicId === selectedTopicId) ?? null,
-    [selectedTopicId]
+    () => sessions.find((s) => s.id === selectedSessionId) ?? null,
+    [selectedSessionId, sessions]
   );
 
-  // Build sessionKey from topic
-  const sessionKey = useMemo(() => {
-    if (!selectedTopic) return null;
-    return `${selectedTopic.chatId}:${selectedTopic.id}`;
-  }, [selectedTopic]);
+  // Build sessionKey for WebSocket
+  const sessionKey = selectedSessionId ?? null;
 
   const chat = useChatSession(sessionKey, ws);
 
-  // Load stored messages from mock data initially
-  const storedMessages = useMemo(
+  // Build sidebar items from sessions
+  const sidebarTopics = useMemo(
     () =>
-      selectedTopicId
-        ? mockMessages
-            .filter((m) => m.topicId === selectedTopicId)
-            .sort((a, b) => a.createdAt - b.createdAt)
-        : [],
-    [selectedTopicId]
+      sessions.map((s) => ({
+        id: s.topicId,
+        threadId: null,
+        chatId: 0,
+        name: s.projectDir
+          ? s.projectDir.split("/").pop() ?? `Session ${s.id}`
+          : `Session ${s.topicId}`,
+        projectDir: s.projectDir,
+        sessionId: s.id,
+      })),
+    [sessions]
   );
 
-  // Reset local messages when topic changes
-  useEffect(() => {
-    setLocalMessages([]);
-    chat.clearStreaming();
-  }, [selectedTopicId]);
+  const sidebarSessions = useMemo(
+    () =>
+      sessions.map((s) => ({
+        ...s,
+        id: s.id,
+      })),
+    [sessions]
+  );
 
-  // When streaming message completes, add it to local messages
+  // Stored messages sorted
+  const storedMessages = useMemo(
+    () => [...messages].sort((a, b) => a.createdAt - b.createdAt),
+    [messages]
+  );
+
+  // When streaming message completes, add to local
   useEffect(() => {
     if (chat.streamingMessage?.done && chat.streamingMessage.content) {
       const msg: Message = {
         id: Date.now(),
-        topicId: selectedTopicId ?? 0,
+        topicId: selectedSession?.topicId ?? 0,
         role: "assistant",
         content: chat.streamingMessage.content,
         createdAt: chat.streamingMessage.createdAt,
@@ -81,57 +142,66 @@ export function SessionsTab() {
     }
   }, [chat.streamingMessage?.done]);
 
-  // All messages = stored + local
   const allMessages = useMemo(
     () => [...storedMessages, ...localMessages],
     [storedMessages, localMessages]
   );
 
-  // Auto-scroll on new messages / streaming
+  // Auto-scroll
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [allMessages.length, chat.streamingMessage?.content]);
 
   const handleSend = (message: string) => {
-    // Add user message locally
     const userMsg: Message = {
       id: Date.now(),
-      topicId: selectedTopicId ?? 0,
+      topicId: selectedSession?.topicId ?? 0,
       role: "user",
       content: message,
       createdAt: Date.now(),
     };
     setLocalMessages((prev) => [...prev, userMsg]);
-
-    // Send via WebSocket
     chat.send(message);
   };
+
+  const handleSelectSession = useCallback((topicId: number) => {
+    const session = sessions.find((s) => s.topicId === topicId);
+    if (session) {
+      setSelectedSessionId(session.id);
+    }
+  }, [sessions]);
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <p className="text-sm text-text-secondary">Loading sessions...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full">
       <SessionSidebar
-        topics={mockTopics}
-        sessions={mockSessions}
-        selectedTopicId={selectedTopicId}
-        onSelectTopic={setSelectedTopicId}
+        topics={sidebarTopics}
+        sessions={sidebarSessions}
+        selectedTopicId={selectedSession?.topicId ?? null}
+        onSelectTopic={handleSelectSession}
       />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        {selectedTopic ? (
+        {selectedSession ? (
           <>
-            {/* Topic header with view toggle + WS status */}
             <div className="flex items-center justify-between border-b border-violet-dim bg-deep-space px-4">
               <div className="flex items-center gap-3">
                 <ContextBar
-                  topicName={selectedTopic.name ?? `Topic #${selectedTopic.id}`}
-                  contextUsage={selectedSession?.contextUsage ?? 0}
-                  sessionDuration={
-                    selectedSession
-                      ? Date.now() - selectedSession.createdAt
-                      : null
+                  topicName={
+                    selectedSession.projectDir
+                      ? selectedSession.projectDir.split("/").pop() ?? "Session"
+                      : `Session ${selectedSession.topicId}`
                   }
+                  contextUsage={selectedSession.contextUsage ?? 0}
+                  sessionDuration={Date.now() - selectedSession.createdAt}
                 />
-                {/* Connection indicator */}
                 <div className="flex items-center gap-1.5">
                   <div
                     className={`h-2 w-2 rounded-full ${
@@ -148,7 +218,7 @@ export function SessionsTab() {
               <div className="flex items-center gap-1 pr-2">
                 <Button
                   variant={viewMode === "chat" ? "default" : "ghost"}
-                  size="xs"
+                  size="sm"
                   onClick={() => setViewMode("chat")}
                   className={
                     viewMode === "chat"
@@ -160,7 +230,7 @@ export function SessionsTab() {
                 </Button>
                 <Button
                   variant={viewMode === "kanban" ? "default" : "ghost"}
-                  size="xs"
+                  size="sm"
                   onClick={() => setViewMode("kanban")}
                   className={
                     viewMode === "kanban"
@@ -179,11 +249,9 @@ export function SessionsTab() {
                   <div className="flex flex-col">
                     {allMessages.length === 0 && !chat.streamingMessage && (
                       <div className="flex flex-col items-center justify-center py-16 text-center">
-                        <div className="mb-3 text-3xl text-text-secondary/30">
-                          /
-                        </div>
+                        <div className="mb-3 text-3xl text-text-secondary/30">/</div>
                         <p className="text-sm text-text-secondary">
-                          No messages in this topic
+                          No messages in this session
                         </p>
                         <p className="mt-1 text-xs text-text-secondary/60">
                           Send a message to start a conversation
@@ -193,14 +261,15 @@ export function SessionsTab() {
                     {allMessages.map((msg) => (
                       <ChatMessage key={msg.id} message={msg} />
                     ))}
-                    {/* Streaming message (in-progress) */}
                     {chat.streamingMessage && !chat.streamingMessage.done && (
                       <ChatMessage
                         message={{
                           id: -1,
-                          topicId: selectedTopicId ?? 0,
+                          topicId: selectedSession.topicId ?? 0,
                           role: "assistant",
-                          content: chat.streamingMessage.content || (chat.streamingMessage.thinking ? "Thinking..." : ""),
+                          content:
+                            chat.streamingMessage.content ||
+                            (chat.streamingMessage.thinking ? "Thinking..." : ""),
                           createdAt: chat.streamingMessage.createdAt,
                         }}
                         streaming={true}
@@ -226,7 +295,9 @@ export function SessionsTab() {
             <div className="text-center">
               <div className="mb-3 font-mono text-4xl text-violet/20">FC</div>
               <p className="text-sm text-text-secondary">
-                Select a topic to view messages
+                {sessions.length === 0
+                  ? "No sessions yet. Send a message in Telegram to create one."
+                  : "Select a session to view messages"}
               </p>
             </div>
           </div>
