@@ -18,13 +18,12 @@ export class ContextBuilder {
     const isContent = this.harnessLoader.isContentTask(userMessage);
     const parts: string[] = [];
 
-    // 1. Harness files
-    const harness = await this.harnessLoader.load({ isContentTask: isContent });
-    if (harness) parts.push(harness);
+    // Harness files are injected via --append-system-prompt-file (CLAUDE.md)
+    // Do NOT duplicate them in the prompt
 
-    // 2. Yesterday's daily log
+    // 1. Yesterday's daily log (lightweight context)
     const dailyLog = await this.loadYesterdayLog();
-    if (dailyLog) parts.push(dailyLog);
+    if (dailyLog) parts.push(`# Atividade de Ontem\n${dailyLog}`);
 
     // 3. Vault path instruction
     if (this.config.vaultPath) {

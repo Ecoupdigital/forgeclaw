@@ -63,8 +63,9 @@ export class ClaudeRunner {
     const args = this.buildArgs(options);
     args.push(prompt);
 
-    console.log('[claude-runner] Spawning:', args.join(' ').substring(0, 200));
+    console.log('[claude-runner] Spawning:', args.slice(0, 8).join(' '));
     console.log('[claude-runner] CWD:', options.cwd || process.cwd());
+    console.log('[claude-runner] Prompt length:', prompt.length);
 
     this.proc = Bun.spawn(args, {
       stdin: 'ignore',
