@@ -204,7 +204,7 @@ export class ClaudeRunner {
       }
     }
 
-    args.push('--dangerously-skip-permissions');
+    args.push('--permission-mode', 'bypassPermissions');
 
     return args;
   }
