@@ -17,6 +17,8 @@ interface StreamMessage {
   session_id?: string;
   content?: ContentBlock[];
   result?: string;
+  is_error?: boolean;
+  errors?: string[];
   usage?: { input_tokens: number; output_tokens: number };
   model_context_limit?: number;
   cost_usd?: number;
@@ -39,8 +41,17 @@ export class ClaudeRunner {
         return;
       } catch (err) {
         if (this.aborted) throw err;
+        const errMsg = err instanceof Error ? err.message : String(err);
+
+        // If resume session not found, retry without session ID
+        if (errMsg.includes('No conversation found') && options.sessionId) {
+          console.warn(`[claude-runner] Session ${options.sessionId} expired, starting fresh`);
+          options = { ...options, sessionId: undefined };
+          continue;
+        }
+
         if (attempts >= MAX_RETRIES) {
-          throw new Error(`Claude CLI failed after ${MAX_RETRIES} attempts: ${err instanceof Error ? err.message : String(err)}`);
+          throw new Error(`Claude CLI failed after ${MAX_RETRIES} attempts: ${errMsg}`);
         }
         console.error(`[claude-runner] Attempt ${attempts} failed, retrying...`, err);
         await new Promise((r) => setTimeout(r, 1000 * attempts));
@@ -156,6 +167,11 @@ export class ClaudeRunner {
     }
 
     if (msg.type === 'result') {
+      // Check for error results (e.g. session not found)
+      if (msg.is_error && msg.errors?.length) {
+        throw new Error(msg.errors.join('; '));
+      }
+
       yield {
         type: 'done',
         data: {
