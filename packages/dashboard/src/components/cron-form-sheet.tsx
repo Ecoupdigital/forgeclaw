@@ -16,6 +16,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { CRON_PRESETS, CRON_CUSTOM_SENTINEL } from "@/lib/cron-presets";
 import type { CronJob, SkillInfo } from "@/lib/types";
 
@@ -95,7 +100,6 @@ export function CronFormSheet({
   // External data
   const [topics, setTopics] = useState<TopicSlim[]>([]);
   const [skills, setSkills] = useState<SkillInfo[]>([]);
-  const [skillsOpen, setSkillsOpen] = useState(false);
 
   // Submit state
   const [saving, setSaving] = useState(false);
@@ -342,13 +346,51 @@ export function CronFormSheet({
               className="min-h-[120px] resize-y border-violet-dim bg-night-panel font-mono text-xs text-text-body focus-visible:ring-violet"
             />
             <div className="flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setSkillsOpen(true)}
-                className="text-[11px] text-violet underline hover:text-violet/80"
-              >
-                Skills disponiveis ({skills.length})
-              </button>
+              <Popover>
+                <PopoverTrigger
+                  render={
+                    <button
+                      type="button"
+                      className="text-xs text-violet underline hover:text-violet/80"
+                    >
+                      Skills disponiveis ({skills.length})
+                    </button>
+                  }
+                />
+                <PopoverContent
+                  className="max-h-[60vh] w-[min(24rem,calc(100vw-2rem))] overflow-y-auto border-violet-dim bg-deep-space"
+                  side="top"
+                  align="start"
+                >
+                  <p className="mb-2 text-xs text-text-secondary">
+                    Voce pode chamar qualquer uma destas no prompt (ex:
+                    /up:progresso). Skills que dependem de input interativo
+                    nao funcionam bem em cron.
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {skills.length === 0 && (
+                      <p className="text-xs text-text-secondary">
+                        No skills found in ~/.claude/skills/
+                      </p>
+                    )}
+                    {skills.map((s) => (
+                      <div
+                        key={s.source}
+                        className="rounded-md border border-violet-dim bg-night-panel p-2"
+                      >
+                        <p className="font-mono text-xs text-text-primary">
+                          {s.name}
+                        </p>
+                        {s.description && (
+                          <p className="mt-0.5 text-[11px] text-text-secondary">
+                            {s.description}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
               <span className="text-xs text-text-secondary">
                 {prompt.length} chars
               </span>
@@ -429,46 +471,6 @@ export function CronFormSheet({
           </div>
         </SheetFooter>
       </SheetContent>
-
-      {/* Skills helper sheet (second sheet, nested) */}
-      <Sheet open={skillsOpen} onOpenChange={setSkillsOpen}>
-        <SheetContent
-          side="right"
-          className="w-full max-w-md overflow-y-auto bg-deep-space border-violet-dim"
-        >
-          <SheetHeader>
-            <SheetTitle className="text-text-primary">
-              Skills disponiveis
-            </SheetTitle>
-            <SheetDescription className="text-text-secondary">
-              Voce pode chamar qualquer uma destas no prompt (ex:
-              /up:progresso). Skills que dependem de input interativo
-              (AskUserQuestion) nao funcionam bem em cron.
-            </SheetDescription>
-          </SheetHeader>
-          <Separator className="bg-violet-dim" />
-          <div className="flex flex-col gap-2 p-4">
-            {skills.length === 0 && (
-              <p className="text-xs text-text-secondary">
-                No skills found in ~/.claude/skills/
-              </p>
-            )}
-            {skills.map((s) => (
-              <div
-                key={s.source}
-                className="rounded-md border border-violet-dim bg-night-panel p-2"
-              >
-                <p className="font-mono text-xs text-text-primary">{s.name}</p>
-                {s.description && (
-                  <p className="mt-0.5 text-[11px] text-text-secondary">
-                    {s.description}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </SheetContent>
-      </Sheet>
     </Sheet>
   );
 }
