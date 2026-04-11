@@ -6,10 +6,10 @@
 **Foco Atual:** Fase 08 — UI de gerenciamento de cron jobs (DASH-04)
 
 ## Posicao Atual
-**Fase:** 08 de 10 (re-aberta para sub-recorte DASH-04)
-**Plano Atual:** 08-06 de 06 (08-01..08-05 concluidos)
-**Status:** CronFormSheet pronto; falta wireup CRUD em crons-tab (08-06)
-**Progresso:** [█████████░] 95%
+**Fase:** 08 de 10 (sub-recorte DASH-04 concluido)
+**Plano Atual:** 08-06 de 06 — completo (todos os planos 08-01..08-06 entregues)
+**Status:** Aguardando verificacao manual fim-a-fim no browser; sub-recorte DASH-04 fechado
+**Progresso:** [██████████] 100%
 
 ## Contexto Acumulado
 
@@ -28,6 +28,10 @@
 - [Phase 8]: Managed section marker is '## Managed by Dashboard' spanning to next '^## ' or EOF; parser strips it pre-parse; writer replaces only that block preserving rest of file
 - [2026-04-11][08-05] CronFormSheet (client component) usa cron-parser v5 (`CronExpressionParser.parse`, NAO `parseExpression`) + cronstrue (zero-dep). Validacao on-the-fly, preview duplo (human + next 3 runs), TZ local, helper sheet aninhado para skills, dropdown topic com null=default. POST envia origin:'db' explicito.
 - [2026-04-11][08-05] Native `<select>` preferido a `dropdown-menu` shadcn dentro de Sheet (evita portal-in-portal, melhor a11y/keyboard, mobile-friendly).
+- [2026-04-11][08-06] Toast inline (state + setTimeout) escolhido sobre sonner/react-hot-toast — manter deps lean num feature de uma tab so. Plano explicitamente pediu "rasteiro".
+- [2026-04-11][08-06] Duplicate via id=0 sentinel reaproveita `Boolean(initialJob?.id)` do CronFormSheet — zero mudancas no form, prefill funciona como side-effect do contrato existente.
+- [2026-04-11][08-06] CronCard origin badge: `db` violet/violeta forte, `file` cinza-violeta neutro. Edit/Delete disabled em file-origin com tooltip "Edit in HEARTBEAT.md" + defesa em profundidade no backend (PUT/DELETE retornam 403).
+- [2026-04-11][08-06] Sub-recorte DASH-04 fechado — 08-01..08-06 todos com SUMMARY. Fase 08 pronta para verificacao manual fim-a-fim no browser.
 
 ### Bloqueios
 Nenhum
@@ -36,5 +40,5 @@ Nenhum
 - `packages/dashboard/src/components/sessions-tab.tsx:185` — TopicInfo.createdAt missing (pre-existente, registrado em .plano/fases/08-dashboard-web/deferred-items.md)
 
 ## Continuidade de Sessao
-Ultima parada: Completado 08-05-cron-form-sheet-PLAN.md (CronFormSheet client component + cron-parser/cronstrue deps + CRON_PRESETS).
-Proximas acoes: 08-06 (CRUD wireup) — montar CronFormSheet em crons-tab.tsx, botao "+ New cron", Edit/Delete/Duplicate por card com guard de origin, toast + pulse pos-save, empty state acionavel.
+Ultima parada: Completado 08-06-crud-actions-crons-tab-PLAN.md — DeleteCronDialog criado, CronCard refatorado com origin badge + Edit/Duplicate/Delete (origin-aware), CronsTab reescrito com CronFormSheet wireado, Advanced sheet, empty state acionavel, toast inline, pulse highlight 3s, ordenacao por proximo disparo via cron-parser. **Sub-recorte DASH-04 fechado.**
+Proximas acoes: Verificacao manual end-to-end no browser pelo orquestrador da fase (criar/editar/duplicar/deletar um cron via UI); apos isso, encerrar Fase 08.

@@ -52,7 +52,7 @@
 - [ ] DASH-01: Implementar dashboard Next.js 15 com layout base (sidebar, header), Tailwind CSS, shadcn/ui, autenticacao localhost-only
 - [ ] DASH-02: Implementar chat view com streaming bidirecional via WebSocket nativo do Bun
 - [ ] DASH-03: Implementar kanban de sessoes/topicos com atualizacao real-time via WebSocket (< 1s)
-- [ ] DASH-04: Implementar UI de gerenciamento de crons (listar, criar, editar, toggle, ver logs)
+- [x] DASH-04: Implementar UI de gerenciamento de crons (listar, criar, editar, toggle, ver logs)
 - [ ] DASH-05: Implementar UI de visualizacao/edicao de memoria (MEMORY.md + daily logs)
 - [ ] DASH-06: Implementar UI de configuracao (editar forgeclaw.config.json, salvar sem restart)
 - [ ] DASH-07: Implementar UI de edicao do harness (editor de cada um dos 7 arquivos)
@@ -111,7 +111,7 @@
 | DASH-01 | Fase 8 | Pendente |
 | DASH-02 | Fase 8 | Pendente |
 | DASH-03 | Fase 8 | Pendente |
-| DASH-04 | Fase 8 | Pendente |
+| DASH-04 | Fase 8 | Completo |
 | DASH-05 | Fase 8 | Pendente |
 | DASH-06 | Fase 8 | Pendente |
 | DASH-07 | Fase 8 | Pendente |
