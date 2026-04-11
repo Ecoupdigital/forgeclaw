@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { CRON_PRESETS, CRON_CUSTOM_SENTINEL } from "@/lib/cron-presets";
 import type { CronJob, SkillInfo } from "@/lib/types";
 
@@ -388,16 +389,14 @@ export function CronFormSheet({
 
           {/* Enabled */}
           <div className="flex items-center gap-2">
-            <input
+            <Switch
               id="cron-enabled"
-              type="checkbox"
               checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
-              className="h-4 w-4 accent-violet"
+              onCheckedChange={(checked) => setEnabled(checked)}
             />
             <label
               htmlFor="cron-enabled"
-              className="text-xs text-text-secondary"
+              className="cursor-pointer text-xs text-text-secondary"
             >
               Enabled
             </label>
