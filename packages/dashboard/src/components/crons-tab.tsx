@@ -273,7 +273,7 @@ export function CronsTab() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex h-10 items-center justify-between px-4">
+      <div className="flex min-h-10 flex-col gap-2 px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:py-0">
         <h2 className="text-sm font-semibold text-text-primary">
           Cron Jobs ({jobs.filter((j) => j.enabled).length} active)
         </h2>
@@ -283,7 +283,8 @@ export function CronsTab() {
             onClick={handleNew}
             className="bg-violet text-white hover:bg-violet/90"
           >
-            + New cron
+            <span className="sm:hidden">+ New</span>
+            <span className="hidden sm:inline">+ New cron</span>
           </Button>
           <Button
             variant="outline"
@@ -314,7 +315,7 @@ export function CronsTab() {
               <Button
                 size="lg"
                 onClick={handleNew}
-                className="mt-2 bg-violet text-white hover:bg-violet/90"
+                className="mt-2 w-full max-w-xs bg-violet text-white hover:bg-violet/90 sm:w-auto"
               >
                 + Create your first cron
               </Button>

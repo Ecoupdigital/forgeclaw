@@ -68,9 +68,11 @@ export function CronCard({
       }`}
     >
       <CardHeader className="p-4 pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm text-text-primary">{job.name}</CardTitle>
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <CardTitle className="text-sm text-text-primary break-words">
+            {job.name}
+          </CardTitle>
+          <div className="flex flex-wrap items-center gap-1.5">
             <Badge
               variant="outline"
               className={`text-[10px] uppercase ${
