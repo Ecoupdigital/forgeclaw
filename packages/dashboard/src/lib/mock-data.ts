@@ -146,6 +146,8 @@ export const mockCronJobs: CronJob[] = [
     enabled: true,
     lastRun: now - day,
     lastStatus: "success",
+    origin: "file",
+    sourceFile: "~/.forgeclaw/HEARTBEAT.md",
   },
   {
     id: 2,
@@ -156,6 +158,8 @@ export const mockCronJobs: CronJob[] = [
     enabled: true,
     lastRun: now - 16 * hour,
     lastStatus: "success",
+    origin: "file",
+    sourceFile: "~/.forgeclaw/HEARTBEAT.md",
   },
   {
     id: 3,
@@ -166,6 +170,8 @@ export const mockCronJobs: CronJob[] = [
     enabled: false,
     lastRun: now - 2 * hour,
     lastStatus: "failed",
+    origin: "db",
+    sourceFile: null,
   },
 ];
 

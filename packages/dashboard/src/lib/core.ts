@@ -96,6 +96,8 @@ interface CronJobRow {
   enabled: number;
   last_run: number | null;
   last_status: string | null;
+  origin: string;
+  source_file: string | null;
 }
 
 interface CronLogRow {
@@ -151,6 +153,8 @@ function mapCronJob(row: CronJobRow): CronJob {
     enabled: row.enabled === 1,
     lastRun: row.last_run,
     lastStatus: row.last_status,
+    origin: row.origin === "db" ? "db" : "file",
+    sourceFile: row.source_file,
   };
 }
 
@@ -223,7 +227,7 @@ export function listCronJobs(): CronJob[] | null {
   try {
     const rows = d
       .prepare(
-        "SELECT id, name, schedule, prompt, target_topic_id, enabled, last_run, last_status FROM cron_jobs"
+        "SELECT id, name, schedule, prompt, target_topic_id, enabled, last_run, last_status, origin, source_file FROM cron_jobs ORDER BY id DESC"
       )
       .all() as CronJobRow[];
     return rows.map(mapCronJob);
@@ -238,7 +242,7 @@ export function getCronJob(id: number): CronJob | null {
   try {
     const row = d
       .prepare(
-        "SELECT id, name, schedule, prompt, target_topic_id, enabled, last_run, last_status FROM cron_jobs WHERE id = ?"
+        "SELECT id, name, schedule, prompt, target_topic_id, enabled, last_run, last_status, origin, source_file FROM cron_jobs WHERE id = ?"
       )
       .get(id) as CronJobRow | undefined;
     return row ? mapCronJob(row) : null;
@@ -255,7 +259,7 @@ export function createCronJob(
   try {
     const result = d
       .prepare(
-        "INSERT INTO cron_jobs (name, schedule, prompt, target_topic_id, enabled, last_run, last_status) VALUES (?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO cron_jobs (name, schedule, prompt, target_topic_id, enabled, last_run, last_status, origin, source_file) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
       )
       .run(
         job.name,
@@ -264,7 +268,9 @@ export function createCronJob(
         job.targetTopicId,
         job.enabled ? 1 : 0,
         job.lastRun,
-        job.lastStatus
+        job.lastStatus,
+        job.origin ?? "db",
+        job.sourceFile ?? null
       );
     return Number(result.lastInsertRowid);
   } catch {
@@ -310,12 +316,31 @@ export function updateCronJob(
       fields.push("last_status = ?");
       values.push(updates.lastStatus);
     }
+    if (updates.origin !== undefined) {
+      fields.push("origin = ?");
+      values.push(updates.origin);
+    }
+    if (updates.sourceFile !== undefined) {
+      fields.push("source_file = ?");
+      values.push(updates.sourceFile);
+    }
 
     if (fields.length === 0) return true;
     values.push(id);
     d.prepare(`UPDATE cron_jobs SET ${fields.join(", ")} WHERE id = ?`).run(
       ...values
     );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function deleteCronJob(id: number): boolean {
+  const d = getDb();
+  if (!d) return false;
+  try {
+    d.prepare("DELETE FROM cron_jobs WHERE id = ?").run(id);
     return true;
   } catch {
     return false;
