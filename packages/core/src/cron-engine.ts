@@ -296,6 +296,15 @@ class CronEngine {
 
   async executeJob(job: CronJob): Promise<void> {
     const startedAt = Date.now();
+    const executedAt = new Date(startedAt);
+    // Substituir template vars ({today}, {yesterday}, {now}) ANTES de chamar o runner.
+    // Calculado uma vez por execucao — retry reutiliza o mesmo valor para consistencia.
+    // O prompt original (nao-expandido) permanece no DB; a expansao e apenas em memoria.
+    const expandedPrompt = expandTemplateVars(job.prompt, executedAt);
+    if (expandedPrompt !== job.prompt) {
+      console.log(`[cron-engine] Expanded template vars in job "${job.name}"`);
+    }
+
     const logId = stateStore.createCronLog({
       jobId: job.id,
       startedAt,
@@ -320,7 +329,7 @@ class CronEngine {
         const collected: string[] = [];
         const config = await getConfig();
 
-        for await (const event of runner.run(job.prompt, { cwd: config.workingDir })) {
+        for await (const event of runner.run(expandedPrompt, { cwd: config.workingDir })) {
           if (event.type === 'text' && typeof event.data.text === 'string') {
             collected.push(event.data.text);
           }
