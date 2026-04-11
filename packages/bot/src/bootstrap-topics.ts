@@ -70,18 +70,41 @@ export async function bootstrapTopicsFromSessions(
     created++;
   }
 
-  // Step 2: enrich names from Telegram API. Cache chat titles per chatId to
-  // avoid hammering the API. getChat is a public method, no special perms.
+  // Step 2: enrich names from Telegram API, but ONLY for topics whose current
+  // name is still generic (came from step 1 or an older bootstrap). If the
+  // user — or the forum_topic_created/edited listener — set a real name
+  // already, we must never overwrite it. Without this guard every restart
+  // would obliterate manual renames on the next bootstrap pass.
+  //
+  // A name is "generic" iff it matches one of our placeholder patterns:
+  //   - "Topic <n>"              (fallback for forum threads)
+  //   - "Direct chat"            (fallback for DMs)
+  //   - "<chatTitle> · Topic <n>" (old generic enrichment format — treat as
+  //                                 generic so we can repair older rows)
+  const isGenericName = (
+    name: string | null,
+    threadId: number | null
+  ): boolean => {
+    if (!name) return true;
+    if (name === 'Direct chat') return true;
+    if (threadId !== null && name === `Topic ${threadId}`) return true;
+    if (threadId !== null && name.endsWith(` · Topic ${threadId}`)) return true;
+    return false;
+  };
+
   const chatTitleCache = new Map<number, string | null>();
   let enriched = 0;
 
   for (const ref of uniq.values()) {
+    const topic = stateStore.getTopicByChatAndThread(ref.chatId, ref.threadId);
+    if (!topic) continue;
+
+    // Respect existing non-generic names. If the user renamed it, leave it.
+    if (!isGenericName(topic.name, ref.threadId)) continue;
+
     try {
-      // Fetch chat title once per chatId.
       if (!chatTitleCache.has(ref.chatId)) {
         const chat = await bot.api.getChat(ref.chatId);
-        // ChatFullInfo has different shapes for DMs vs groups.
-        // DMs have first_name/last_name; groups/channels have title.
         const title =
           (('title' in chat ? chat.title : undefined) as string | undefined) ??
           (('first_name' in chat ? chat.first_name : undefined) as
@@ -92,9 +115,6 @@ export async function bootstrapTopicsFromSessions(
       }
       const chatTitle = chatTitleCache.get(ref.chatId);
 
-      // Build a display name. For DMs we just use the chat title (user's name).
-      // For forum topics we use "Group · Topic N" since there is no Bot API
-      // method to fetch individual topic names.
       let name: string;
       if (ref.threadId) {
         name = chatTitle
@@ -104,11 +124,7 @@ export async function bootstrapTopicsFromSessions(
         name = chatTitle ?? `Direct chat`;
       }
 
-      const topic = stateStore.getTopicByChatAndThread(
-        ref.chatId,
-        ref.threadId
-      );
-      if (topic && topic.name !== name) {
+      if (topic.name !== name) {
         stateStore.upsertTopic({
           chatId: ref.chatId,
           threadId: ref.threadId,
@@ -117,8 +133,6 @@ export async function bootstrapTopicsFromSessions(
         enriched++;
       }
     } catch (err) {
-      // getChat can fail if the bot was removed, chat deleted, rate-limited.
-      // Non-fatal — the generic name from step 1 stays.
       console.warn(
         `[bootstrap-topics] Failed to enrich chat ${ref.chatId}:`,
         err instanceof Error ? err.message : err
