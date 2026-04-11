@@ -36,7 +36,7 @@ export function DeleteCronDialog({
             This cannot be undone. Cron logs for this job are kept for audit.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <DialogFooter className="!flex-col gap-2 sm:!flex-row sm:justify-end">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
