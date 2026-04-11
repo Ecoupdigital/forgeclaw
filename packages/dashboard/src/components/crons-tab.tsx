@@ -13,6 +13,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { CronExpressionParser } from "cron-parser";
+import { AlarmClock } from "lucide-react";
 import { CronCard } from "./cron-card";
 import { CronFormSheet } from "./cron-form-sheet";
 import { DeleteCronDialog } from "./delete-cron-dialog";
@@ -281,9 +282,10 @@ export function CronsTab() {
         <div className="flex flex-col gap-3 p-4">
           {sortedJobs.length === 0 && (
             <div className="flex flex-col items-center gap-3 py-16 text-center">
-              <div className="text-5xl" aria-hidden="true">
-                ⏰
-              </div>
+              <AlarmClock
+                className="h-14 w-14 text-violet/60"
+                aria-hidden="true"
+              />
               <p className="text-sm text-text-secondary">No cron jobs yet</p>
               <p className="max-w-xs text-sm text-text-body">
                 Schedule a prompt to run automatically. You can call any of your
