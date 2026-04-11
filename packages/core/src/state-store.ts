@@ -59,7 +59,9 @@ class StateStore {
         target_topic_id INTEGER,
         enabled INTEGER DEFAULT 1,
         last_run INTEGER,
-        last_status TEXT
+        last_status TEXT,
+        origin TEXT NOT NULL DEFAULT 'file',
+        source_file TEXT
       );
 
       CREATE TABLE IF NOT EXISTS cron_logs (
@@ -71,6 +73,22 @@ class StateStore {
         output TEXT
       );
     `);
+
+    // Migration: add origin and source_file columns to cron_jobs if they don't exist.
+    // Idempotent — safe to run on existing DBs that predate these columns.
+    try {
+      const cols = (this.db.query("PRAGMA table_info(cron_jobs)").all() as Array<{ name: string }>).map(
+        (c) => c.name
+      );
+      if (!cols.includes('origin')) {
+        this.db.exec("ALTER TABLE cron_jobs ADD COLUMN origin TEXT NOT NULL DEFAULT 'file'");
+      }
+      if (!cols.includes('source_file')) {
+        this.db.exec('ALTER TABLE cron_jobs ADD COLUMN source_file TEXT');
+      }
+    } catch (err) {
+      console.warn('[state-store] Failed to run cron_jobs migration:', err);
+    }
   }
 
   // Sessions
@@ -182,23 +200,33 @@ class StateStore {
   // Cron Jobs
   createCronJob(job: Omit<CronJob, 'id'>): number {
     const result = this.db.run(
-      'INSERT INTO cron_jobs (name, schedule, prompt, target_topic_id, enabled, last_run, last_status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [job.name, job.schedule, job.prompt, job.targetTopicId, job.enabled ? 1 : 0, job.lastRun, job.lastStatus]
+      'INSERT INTO cron_jobs (name, schedule, prompt, target_topic_id, enabled, last_run, last_status, origin, source_file) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        job.name,
+        job.schedule,
+        job.prompt,
+        job.targetTopicId,
+        job.enabled ? 1 : 0,
+        job.lastRun,
+        job.lastStatus,
+        job.origin ?? 'db',
+        job.sourceFile ?? null,
+      ]
     );
     return Number(result.lastInsertRowid);
   }
 
   getCronJob(id: number): CronJob | null {
     const row = this.db.query(
-      'SELECT id, name, schedule, prompt, target_topic_id, enabled, last_run, last_status FROM cron_jobs WHERE id = ?'
+      'SELECT id, name, schedule, prompt, target_topic_id, enabled, last_run, last_status, origin, source_file FROM cron_jobs WHERE id = ?'
     ).get(id) as CronJobRow | null;
     return row ? mapCronJobRow(row) : null;
   }
 
   listCronJobs(enabledOnly: boolean = false): CronJob[] {
     const query = enabledOnly
-      ? 'SELECT id, name, schedule, prompt, target_topic_id, enabled, last_run, last_status FROM cron_jobs WHERE enabled = 1'
-      : 'SELECT id, name, schedule, prompt, target_topic_id, enabled, last_run, last_status FROM cron_jobs';
+      ? 'SELECT id, name, schedule, prompt, target_topic_id, enabled, last_run, last_status, origin, source_file FROM cron_jobs WHERE enabled = 1'
+      : 'SELECT id, name, schedule, prompt, target_topic_id, enabled, last_run, last_status, origin, source_file FROM cron_jobs';
     return (this.db.query(query).all() as CronJobRow[]).map(mapCronJobRow);
   }
 
@@ -213,6 +241,8 @@ class StateStore {
     if (updates.enabled !== undefined) { fields.push('enabled = ?'); values.push(updates.enabled ? 1 : 0); }
     if (updates.lastRun !== undefined) { fields.push('last_run = ?'); values.push(updates.lastRun); }
     if (updates.lastStatus !== undefined) { fields.push('last_status = ?'); values.push(updates.lastStatus); }
+    if (updates.origin !== undefined) { fields.push('origin = ?'); values.push(updates.origin); }
+    if (updates.sourceFile !== undefined) { fields.push('source_file = ?'); values.push(updates.sourceFile); }
 
     if (fields.length === 0) return;
     values.push(id);
@@ -281,6 +311,8 @@ interface CronJobRow {
   enabled: number;
   last_run: number | null;
   last_status: string | null;
+  origin: string;
+  source_file: string | null;
 }
 
 interface CronLogRow {
@@ -326,6 +358,8 @@ function mapCronJobRow(row: CronJobRow): CronJob {
     enabled: row.enabled === 1,
     lastRun: row.last_run,
     lastStatus: row.last_status,
+    origin: row.origin === 'db' ? 'db' : 'file',
+    sourceFile: row.source_file,
   };
 }
 
