@@ -7,9 +7,9 @@
 
 ## Posicao Atual
 **Fase:** 08 de 10 (re-aberta para sub-recorte DASH-04)
-**Plano Atual:** 08-02 de 06 (08-01 concluido)
-**Status:** Schema origin/source_file pronto, partindo para skills/topics endpoints
-**Progresso:** [█████████░] 91%
+**Plano Atual:** 08-06 de 06 (08-01..08-05 concluidos)
+**Status:** CronFormSheet pronto; falta wireup CRUD em crons-tab (08-06)
+**Progresso:** [█████████░] 95%
 
 ## Contexto Acumulado
 
@@ -26,6 +26,8 @@
 - [2026-04-11][08-01] Cron jobs: schema ganhou origin ('file'|'db') + source_file. DB e source-of-truth para jobs db-origin; HEARTBEAT.md continua source-of-truth para file-origin. Migration idempotente via PRAGMA table_info gate.
 - [2026-04-11][08-01] Dashboard nao pode mutar jobs file-origin: PUT update e DELETE em /api/crons retornam 403 quando job.origin === 'file'.
 - [Phase 8]: Managed section marker is '## Managed by Dashboard' spanning to next '^## ' or EOF; parser strips it pre-parse; writer replaces only that block preserving rest of file
+- [2026-04-11][08-05] CronFormSheet (client component) usa cron-parser v5 (`CronExpressionParser.parse`, NAO `parseExpression`) + cronstrue (zero-dep). Validacao on-the-fly, preview duplo (human + next 3 runs), TZ local, helper sheet aninhado para skills, dropdown topic com null=default. POST envia origin:'db' explicito.
+- [2026-04-11][08-05] Native `<select>` preferido a `dropdown-menu` shadcn dentro de Sheet (evita portal-in-portal, melhor a11y/keyboard, mobile-friendly).
 
 ### Bloqueios
 Nenhum
@@ -34,5 +36,5 @@ Nenhum
 - `packages/dashboard/src/components/sessions-tab.tsx:185` — TopicInfo.createdAt missing (pre-existente, registrado em .plano/fases/08-dashboard-web/deferred-items.md)
 
 ## Continuidade de Sessao
-Ultima parada: Completado 08-01-schema-origin-PLAN.md (schema cron_jobs.origin/source_file + CRUD origin-aware).
-Proximas acoes: continuar Fase 8 — plano 08-02 (skills + topics endpoints) ja tem commits feat parciais; verificar/finalizar; depois 08-03/05/06.
+Ultima parada: Completado 08-05-cron-form-sheet-PLAN.md (CronFormSheet client component + cron-parser/cronstrue deps + CRON_PRESETS).
+Proximas acoes: 08-06 (CRUD wireup) — montar CronFormSheet em crons-tab.tsx, botao "+ New cron", Edit/Delete/Duplicate por card com guard de origin, toast + pulse pos-save, empty state acionavel.
