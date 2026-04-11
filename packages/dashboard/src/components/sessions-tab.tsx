@@ -20,6 +20,13 @@ interface SessionData {
   contextUsage: number;
   createdAt: number;
   updatedAt: number;
+  // Enriched server-side via /api/sessions joining with the topics table.
+  // Null if no matching row in `topics` (shouldn't happen after bug 688 fix
+  // but defensive for historical data).
+  topicName?: string | null;
+  topicRowId?: number | null;
+  chatId?: number | null;
+  threadId?: number | null;
 }
 
 interface TopicData {
@@ -96,18 +103,24 @@ export function SessionsTab() {
 
   const chat = useChatSession(sessionKey, ws);
 
-  // Build sidebar items from sessions
+  // Build sidebar items from sessions. Name resolution priority:
+  //   1. topicName (from the topics table, enriched server-side)
+  //   2. projectDir basename (legacy fallback for sessions linked to a project)
+  //   3. generic "Session <id>" placeholder
   const sidebarTopics = useMemo(
     () =>
       sessions.map((s) => ({
         id: s.topicId,
-        threadId: null,
-        chatId: 0,
-        name: s.projectDir
-          ? s.projectDir.split("/").pop() ?? `Session ${s.id}`
-          : `Session ${s.topicId}`,
+        threadId: s.threadId ?? null,
+        chatId: s.chatId ?? 0,
+        name:
+          s.topicName ??
+          (s.projectDir
+            ? s.projectDir.split("/").pop() ?? `Session ${s.id}`
+            : `Session ${s.topicId}`),
         projectDir: s.projectDir,
         sessionId: s.id,
+        createdAt: s.createdAt,
       })),
     [sessions]
   );
@@ -195,9 +208,10 @@ export function SessionsTab() {
               <div className="flex items-center gap-3">
                 <ContextBar
                   topicName={
-                    selectedSession.projectDir
+                    selectedSession.topicName ??
+                    (selectedSession.projectDir
                       ? selectedSession.projectDir.split("/").pop() ?? "Session"
-                      : `Session ${selectedSession.topicId}`
+                      : `Session ${selectedSession.topicId}`)
                   }
                   contextUsage={selectedSession.contextUsage ?? 0}
                   sessionDuration={Date.now() - selectedSession.createdAt}

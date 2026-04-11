@@ -4,6 +4,7 @@ import {
   mockMessages,
   mockTopics,
 } from "@/lib/mock-data";
+import type { TopicInfo } from "@/lib/types";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -19,12 +20,37 @@ export async function GET(request: Request) {
       });
     }
 
-    // Otherwise return all sessions
+    // Otherwise return all sessions, enriched with topic info from the
+    // `topics` table. Without this enrichment the frontend can only show
+    // generic "Session N" labels because sessions.topic_id is just the
+    // Telegram thread_id (numeric), not the topic row name.
+    //
+    // session.id is a composite key "<chatId>:<threadId>" or "<chatId>" for
+    // DMs. Build a lookup from the same shape of topics (chatId, threadId).
     const sessions = core.listSessions();
 
     if (sessions && sessions.length > 0) {
+      const topics = (core.listTopics() ?? []) as TopicInfo[];
+      const topicByKey = new Map<string, TopicInfo>();
+      for (const t of topics) {
+        const key =
+          t.threadId !== null && t.threadId !== undefined
+            ? `${t.chatId}:${t.threadId}`
+            : `${t.chatId}`;
+        topicByKey.set(key, t);
+      }
+      const enriched = sessions.map((s) => {
+        const topic = topicByKey.get(s.id);
+        return {
+          ...s,
+          topicName: topic?.name ?? null,
+          topicRowId: topic?.id ?? null,
+          chatId: topic?.chatId ?? null,
+          threadId: topic?.threadId ?? null,
+        };
+      });
       return Response.json({
-        sessions,
+        sessions: enriched,
         source: "core",
       });
     }
