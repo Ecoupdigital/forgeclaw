@@ -1,5 +1,5 @@
 import { Cron } from 'croner';
-import { readFile, watch } from 'node:fs/promises';
+import { readFile, writeFile, watch } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
@@ -286,6 +286,8 @@ class CronEngine {
             prompt: parsed.prompt,
             targetTopicId,
             enabled: true,
+            origin: 'file',
+            sourceFile: this.heartbeatPath,
           });
           console.log(`[cron-engine] Updated job: ${parsed.name}`);
         } else if (!existing.enabled) {
@@ -470,6 +472,85 @@ class CronEngine {
         console.error('[cron-engine] Watch error:', err);
       }
     })();
+  }
+
+  /**
+   * Reescreve apenas a secao "## Managed by Dashboard" do HEARTBEAT.md com os jobs fornecidos.
+   * Preserva todo o conteudo antes do marcador e qualquer header apos o bloco managed.
+   * Esta secao e ignorada pelo parser — e apenas um mirror legivel por humanos/git para
+   * jobs DB-origin (dashboard CRUD).
+   *
+   * Filtra automaticamente apenas jobs com origin='db' — jobs file-origin ja estao no arquivo
+   * por natureza.
+   */
+  async writeDashboardSection(jobs: CronJob[]): Promise<void> {
+    let content = '';
+    if (existsSync(this.heartbeatPath)) {
+      content = await readFile(this.heartbeatPath, 'utf-8');
+    }
+
+    const marker = '## Managed by Dashboard';
+    const markerRegex = /^## Managed by Dashboard\s*$/m;
+    const match = markerRegex.exec(content);
+
+    // Monta o corpo da secao managed. Usa '### ' (h3) nos headers de jobs para evitar
+    // qualquer colisao com o parser (que procura '^## '). Defense-in-depth — o parser
+    // ja ignora tudo nesta secao, mas '###' garante que jobs mirror jamais sejam
+    // reparseados se alguem editar manualmente o marcador.
+    const dbJobs = jobs.filter((j) => j.origin === 'db');
+    const lines: string[] = [
+      marker,
+      '',
+      '> Auto-generated mirror from dashboard DB. Edits here are ignored by the parser.',
+      '',
+    ];
+
+    if (dbJobs.length === 0) {
+      lines.push('_No dashboard-managed jobs yet._');
+      lines.push('');
+    } else {
+      for (const job of dbJobs) {
+        const topicLabel = job.targetTopicId ? `topic#${job.targetTopicId}` : 'default';
+        const enabledLabel = job.enabled ? '' : ' _(disabled)_';
+        lines.push(`### ${job.name}${enabledLabel}`);
+        lines.push(`- schedule: \`${job.schedule}\` → tópico: ${topicLabel}`);
+        // Preserva quebras de linha como espacos e limita para evitar poluicao do arquivo
+        const preview = job.prompt.replace(/\s+/g, ' ').trim().slice(0, 500);
+        lines.push(`- prompt: ${preview}`);
+        lines.push('');
+      }
+    }
+
+    const sectionBody = lines.join('\n');
+
+    let newContent: string;
+    if (match) {
+      const start = match.index;
+      const afterHeader = start + match[0].length;
+      // Procura proximo header '^## ' apos o marcador. Os '### ' do body nao batem com '^## '.
+      const rest = content.slice(afterHeader);
+      const nextTopLevel = rest.match(/^## /m);
+      if (nextTopLevel && nextTopLevel.index !== undefined) {
+        // Preserva quaisquer secoes '^## ' que venham depois do bloco managed.
+        newContent =
+          content.slice(0, start) +
+          sectionBody +
+          '\n' +
+          content.slice(afterHeader + nextTopLevel.index);
+      } else {
+        // Marcador existe mas nada depois — substitui ate o fim.
+        newContent = content.slice(0, start) + sectionBody + '\n';
+      }
+    } else {
+      // Marcador nao existe — append ao fim do arquivo (com separacao).
+      const trimmed = content.trimEnd();
+      newContent = (trimmed ? trimmed + '\n\n' : '') + sectionBody + '\n';
+    }
+
+    await writeFile(this.heartbeatPath, newContent, 'utf-8');
+    console.log(
+      `[cron-engine] Wrote ${dbJobs.length} DB-origin job(s) to HEARTBEAT.md managed section`
+    );
   }
 
   async runJobNow(jobId: number): Promise<void> {
