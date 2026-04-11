@@ -20,9 +20,12 @@
 - [2026-04-09] Dashboard usa mock data — precisa integrar com @forgeclaw/core
 - [2026-04-09] Repo: github.com/Ecoupdigital/forgeclaw
 - [Phase 10]: Bot usa Bun.spawn com cwd ao inves de --cwd flag
+- [2026-04-11][08-04] Template vars de cron ({today}, {yesterday}, {now}) expandidas em runtime via `expandTemplateVars` em cron-engine.ts; formato ISO local; DB mantem prompt literal; calculo unico por execucao (reutilizado no retry)
+- [Phase 8]: Regex frontmatter parser in /api/skills (no new deps) — gray-matter/yaml not in package
 
 ### Bloqueios
 Nenhum
 
 ## Continuidade de Sessao
-Proximas acoes: integrar dashboard com core real, testes E2E, documentacao.
+Ultima parada: Completado 08-04-cronengine-template-vars-PLAN.md (template vars runtime no CronEngine).
+Proximas acoes: continuar Fase 8 — planos 08-05 (cron form sheet) e 08-06 (CRUD actions) podem consumir `expandTemplateVars` para preview; integrar dashboard com core real, testes E2E, documentacao.
