@@ -75,3 +75,9 @@ export interface PlanCard {
   status: "planned" | "executing" | "completed";
   agent?: string;
 }
+
+export interface SkillInfo {
+  name: string;
+  description: string;
+  source: string; // path relativo, ex: "apify/SKILL.md" ou "buscar-x.md"
+}
