@@ -8,7 +8,7 @@
 ## Posicao Atual
 **Fase:** 08 de 10 (sub-recorte DASH-04 concluido)
 **Plano Atual:** 08-06 de 06 — completo (todos os planos 08-01..08-06 entregues)
-**Status:** Aguardando verificacao manual fim-a-fim no browser; sub-recorte DASH-04 fechado
+**Status:** Ready to plan
 **Progresso:** [██████████] 100%
 
 ## Contexto Acumulado

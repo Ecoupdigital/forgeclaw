@@ -9,7 +9,7 @@
 - [ ] **Fase 5: UP Detection + Botoes** - UPDetector + action keyboards + botoes interativos
 - [ ] **Fase 6: Voz + Arquivos** - voice transcription + file handling (inbound e outbound)
 - [ ] **Fase 7: Sistema de Crons** - CronEngine + HEARTBEAT.md parser + hot reload
-- [ ] **Fase 8: Dashboard Web** - Next.js 15 + Chat + Kanban + Crons + Memoria + Config + Harness
+- [ ] **Fase 8: Dashboard Web** - Next.js 15 + Chat + Kanban + Crons + Memoria + Config + Harness _(DASH-04 subset concluido 2026-04-11; DASH-01/02/03/05/06/07 pendentes)_
 - [ ] **Fase 9: Instalador CLI** - npx forgeclaw install + onboarding + systemd/launchd
 - [ ] **Fase 10: Testes E2E + Documentacao** - testes completos + README + docs
 
@@ -130,6 +130,6 @@
 | 5 | 0/? | Pendente | -- |
 | 6 | 0/? | Pendente | -- |
 | 7 | 0/? | Pendente | -- |
-| 8 | 2/6 | In Progress|  |
+| 8 | 6/6 (DASH-04 subset) | DASH-04 Done | 2026-04-11 |
 | 9 | 0/? | Pendente | -- |
 | 10 | 0/? | Pendente | -- |
