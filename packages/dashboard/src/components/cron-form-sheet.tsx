@@ -304,7 +304,7 @@ export function CronFormSheet({
                 className="mt-2 font-mono border-violet-dim bg-night-panel text-text-body"
               />
             )}
-            <p className="text-[10px] text-text-secondary/70">
+            <p className="text-xs text-text-secondary">
               Timezone: {LOCAL_TZ}
             </p>
             {preview.error && (
@@ -348,11 +348,11 @@ export function CronFormSheet({
               >
                 Skills disponiveis ({skills.length})
               </button>
-              <span className="text-[10px] text-text-secondary/60">
+              <span className="text-xs text-text-secondary">
                 {prompt.length} chars
               </span>
             </div>
-            <p className="text-[10px] text-text-secondary/60">
+            <p className="text-xs text-text-secondary">
               Template vars: <span className="font-mono">{"{today}"}</span>{" "}
               <span className="font-mono">{"{yesterday}"}</span>{" "}
               <span className="font-mono">{"{now}"}</span>

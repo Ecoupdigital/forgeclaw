@@ -285,7 +285,7 @@ export function CronsTab() {
                 ⏰
               </div>
               <p className="text-sm text-text-secondary">No cron jobs yet</p>
-              <p className="max-w-xs text-xs text-text-secondary/60">
+              <p className="max-w-xs text-sm text-text-body">
                 Schedule a prompt to run automatically. You can call any of your
                 Claude skills.
               </p>
