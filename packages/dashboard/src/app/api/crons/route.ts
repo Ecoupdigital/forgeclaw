@@ -5,6 +5,61 @@ import { CronExpressionParser } from "cron-parser";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
+// IPC → bot process
+// ---------------------------------------------------------------------------
+//
+// The dashboard (Next.js, port 4040) is a separate process from the bot
+// (which hosts the CronEngine). After any CRUD on db-origin jobs, we notify
+// the bot via HTTP on its ws-server fetch handler (port 4041) so the engine
+// re-loads from SQLite. Without this, new/edited jobs only become active on
+// next bot boot or on HEARTBEAT.md fs.watch event.
+//
+// Fire-and-forget with a short timeout. If the bot is offline the request
+// silently fails — that's fine, the job is persisted and will be picked up
+// on next boot. We never block the HTTP response on this.
+
+const BOT_IPC_URL =
+  process.env.FORGECLAW_BOT_IPC_URL ?? "http://127.0.0.1:4041";
+
+async function notifyCronReload(): Promise<void> {
+  try {
+    await fetch(`${BOT_IPC_URL}/cron/reload`, {
+      method: "POST",
+      signal: AbortSignal.timeout(1000),
+    });
+  } catch {
+    // Bot offline or unreachable — not an error. Changes are persisted; next
+    // boot (or next HEARTBEAT.md change) will pick them up.
+  }
+}
+
+async function notifyCronRunNow(id: number): Promise<{
+  ok: boolean;
+  status: number;
+  error?: string;
+}> {
+  try {
+    const res = await fetch(`${BOT_IPC_URL}/cron/run-now`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+      signal: AbortSignal.timeout(2000),
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      error?: string;
+    };
+    return { ok: res.ok && data.ok !== false, status: res.status, error: data.error };
+  } catch (err) {
+    return {
+      ok: false,
+      status: 503,
+      error: err instanceof Error ? err.message : "Bot unreachable",
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Schemas
 // ---------------------------------------------------------------------------
 //
@@ -154,6 +209,9 @@ export async function POST(request: Request) {
     );
   }
 
+  // 8. Notify bot to reload cron engine (fire-and-forget).
+  notifyCronReload();
+
   return Response.json(
     {
       success: true,
@@ -204,6 +262,7 @@ export async function DELETE(request: Request) {
       );
     }
     const deleted = core.deleteCronJob(id);
+    if (deleted) notifyCronReload();
     return Response.json({ success: deleted, id });
   } catch (err) {
     return Response.json(
@@ -285,6 +344,7 @@ export async function PUT(request: Request) {
         { status: 500 }
       );
     }
+    notifyCronReload();
     return Response.json({
       success: true,
       id,
@@ -335,22 +395,30 @@ export async function PUT(request: Request) {
         { status: 500 }
       );
     }
+    notifyCronReload();
     return Response.json({ success: true, id, action, source: "core" });
   }
 
   // --- run_now ---
-  // Still not supported from dashboard process (requires bot IPC).
+  // Dispatches to the bot process via IPC. The bot hosts the CronEngine and
+  // ClaudeRunner; the dashboard cannot execute jobs directly.
   if (action === "run_now") {
-    return Response.json(
-      {
-        success: false,
-        id,
-        action,
-        error:
-          "Manual execution requires the bot process. Use the Telegram bot to trigger /cron run.",
-      },
-      { status: 501 }
-    );
+    const ipc = await notifyCronRunNow(id);
+    if (!ipc.ok) {
+      return Response.json(
+        {
+          success: false,
+          id,
+          action,
+          error:
+            ipc.status === 503
+              ? `Bot process unreachable: ${ipc.error ?? "unknown"}. Is the bot running?`
+              : ipc.error ?? "Bot returned an error",
+        },
+        { status: ipc.status === 503 ? 503 : 500 }
+      );
+    }
+    return Response.json({ success: true, id, action, source: "ipc" });
   }
 
   // Unreachable (KNOWN_ACTIONS guard above) — defensive 400.

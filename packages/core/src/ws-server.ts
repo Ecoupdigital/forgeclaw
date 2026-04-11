@@ -3,6 +3,7 @@ import { ClaudeRunner } from './claude-runner';
 import { sessionManager } from './session-manager';
 import { stateStore } from './state-store';
 import { eventBus } from './event-bus';
+import { cronEngine } from './cron-engine';
 import type { StreamEvent, SessionInfo } from './types';
 
 const WS_PORT = 4041;
@@ -236,12 +237,58 @@ export function startWSServer(): void {
     port: WS_PORT,
     hostname: '127.0.0.1',
 
-    fetch(req, server) {
+    async fetch(req, server) {
       const url = new URL(req.url);
 
       // Health check endpoint
       if (url.pathname === '/health') {
         return new Response('ok', { status: 200 });
+      }
+
+      // IPC: dashboard → bot. Reload cron engine after CRUD on db-origin jobs.
+      // The dashboard (separate process) writes to SQLite via core.createCronJob,
+      // but the CronEngine (running in THIS process) only re-reads on boot or
+      // HEARTBEAT.md fs.watch. This endpoint bridges that gap.
+      //
+      // Fire-and-forget semantics: the dashboard doesn't wait for reload to finish,
+      // it just signals. Reload is async and reports progress via console logs.
+      if (url.pathname === '/cron/reload' && req.method === 'POST') {
+        cronEngine.reload().catch((err) => {
+          console.error('[ws-server] cron reload failed:', err);
+        });
+        return Response.json({ ok: true, action: 'reload' });
+      }
+
+      // IPC: dashboard → bot. Trigger a single job by id immediately.
+      // Replaces the 501 stub in /api/crons PUT action=run_now — the dashboard
+      // can now actually fire a cron without waiting for its schedule.
+      if (url.pathname === '/cron/run-now' && req.method === 'POST') {
+        try {
+          const body = (await req.json()) as { id?: unknown };
+          const id = Number(body?.id);
+          if (!Number.isInteger(id) || id <= 0) {
+            return Response.json(
+              { ok: false, error: 'Missing or invalid id' },
+              { status: 400 }
+            );
+          }
+          const found = await cronEngine.runJobById(id);
+          if (!found) {
+            return Response.json(
+              { ok: false, error: 'Cron job not found' },
+              { status: 404 }
+            );
+          }
+          return Response.json({ ok: true, action: 'run-now', id });
+        } catch (err) {
+          return Response.json(
+            {
+              ok: false,
+              error: err instanceof Error ? err.message : 'Unknown error',
+            },
+            { status: 400 }
+          );
+        }
       }
 
       const upgraded = server.upgrade(req, {

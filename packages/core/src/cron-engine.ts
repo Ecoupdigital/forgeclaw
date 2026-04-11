@@ -444,6 +444,32 @@ class CronEngine {
     console.log('[cron-engine] Stopped');
   }
 
+  /**
+   * Reload jobs from DB (and HEARTBEAT.md) without restarting the process.
+   * Triggered by the dashboard via IPC after CRUD operations on db-origin jobs.
+   * Idempotent and safe to call while running — internally stops and re-starts.
+   */
+  async reload(): Promise<void> {
+    console.log('[cron-engine] Reload requested via IPC');
+    if (this.running) {
+      await this.stop();
+    }
+    await this.start();
+    console.log('[cron-engine] Reload complete');
+  }
+
+  /**
+   * Execute a job by id immediately, without waiting for its schedule.
+   * Returns true if the job was found and executed (success or failure), false if not found.
+   * Used by the "Run now" action via IPC.
+   */
+  async runJobById(id: number): Promise<boolean> {
+    const job = stateStore.getCronJob(id);
+    if (!job) return false;
+    await this.executeJob(job);
+    return true;
+  }
+
   private watchHeartbeat(): void {
     this.watchAbort = new AbortController();
 
