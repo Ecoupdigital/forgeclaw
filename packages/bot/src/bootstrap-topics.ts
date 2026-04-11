@@ -125,11 +125,10 @@ export async function bootstrapTopicsFromSessions(
       }
 
       if (topic.name !== name) {
-        stateStore.upsertTopic({
-          chatId: ref.chatId,
-          threadId: ref.threadId,
-          name,
-        });
+        // Use updateTopicName directly — upsertTopic is insert-only on name
+        // and would not change an existing row's name. Guarded above by
+        // isGenericName so we only reach this branch for generic names.
+        stateStore.updateTopicName(topic.id, name);
         enriched++;
       }
     } catch (err) {

@@ -181,17 +181,25 @@ class StateStore {
   }
 
   /**
-   * Create-or-update a topic row by its composite key (chatId, threadId).
+   * Insert-if-missing a topic row by its composite key (chatId, threadId).
    *
-   * Fixes bug 688: sessionManager historically only created rows in `sessions`
-   * and never in `topics`, leaving the topics table empty even when messages
-   * flowed through. Callers (sessionManager and bootstrap scripts) now ensure
-   * a topic row exists before creating a session, so downstream code like
-   * cron target-topic dropdowns and cron:result router can resolve.
+   * Fixes bug 688: sessionManager historically never created rows in `topics`,
+   * leaving the table empty even when messages flowed through. Callers now
+   * ensure a topic row exists before creating a session.
    *
-   * Name policy: only OVERWRITES an existing name if the new name is truthy
-   * AND different. Never blanks a name. Bootstrap with generic names is safe
-   * because real names from Telegram API calls will upgrade them later.
+   * **Name policy is INSERT-ONLY.** If the row already exists, the existing
+   * name is kept verbatim — no comparison, no merge, no overwrite. This is
+   * the key invariant: the only paths that CHANGE a topic name are explicit
+   * renames:
+   *   - `updateTopicName(id, name)` called from forum_topic_created /
+   *     forum_topic_edited listeners in the bot
+   *   - `/topic_rename` command
+   *   - bootstrap-topics enrichment (guarded by isGenericName so user-set
+   *     names are never touched)
+   *
+   * Without this invariant, every incoming message reset the name to the
+   * generic fallback sessionManager passes ('Topic N'), quietly erasing
+   * whatever the user had set.
    */
   upsertTopic(args: {
     chatId: number;
@@ -202,10 +210,6 @@ class StateStore {
   }): TopicInfo {
     const existing = this.getTopicByChatAndThread(args.chatId, args.threadId);
     if (existing) {
-      if (args.name && args.name.trim().length > 0 && args.name !== existing.name) {
-        this.updateTopicName(existing.id, args.name);
-        return { ...existing, name: args.name };
-      }
       return existing;
     }
 
