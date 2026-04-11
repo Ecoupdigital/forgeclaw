@@ -125,18 +125,36 @@ export function CronsTab() {
     [jobs, showToast]
   );
 
-  const handleToggle = useCallback(async (id: number, enabled: boolean) => {
-    setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, enabled } : j)));
-    try {
-      await fetch("/api/crons", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, action: "toggle", enabled }),
+  const handleToggle = useCallback(
+    async (id: number, enabled: boolean) => {
+      let snapshot: CronJob[] = [];
+      setJobs((prev) => {
+        snapshot = prev;
+        return prev.map((j) => (j.id === id ? { ...j, enabled } : j));
       });
-    } catch (err) {
-      console.error("Failed to toggle cron:", err);
-    }
-  }, []);
+      try {
+        const res = await fetch("/api/crons", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, action: "toggle", enabled }),
+        });
+        if (!res.ok) {
+          const data = (await res
+            .json()
+            .catch(() => ({}))) as { error?: string };
+          throw new Error(
+            data.error || `Toggle failed (HTTP ${res.status})`
+          );
+        }
+      } catch (err) {
+        console.error("Failed to toggle cron:", err);
+        setJobs(snapshot);
+        const msg = err instanceof Error ? err.message : "Toggle failed";
+        showToast(msg, "error");
+      }
+    },
+    [showToast]
+  );
 
   const handleNew = useCallback(() => {
     setEditingJob(null);

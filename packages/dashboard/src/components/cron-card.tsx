@@ -143,7 +143,15 @@ export function CronCard({
             variant="outline"
             size="xs"
             onClick={() => onToggle(job.id, !job.enabled)}
-            className="border-violet-dim text-text-secondary hover:text-text-body hover:bg-night-panel"
+            disabled={isFileOrigin}
+            title={
+              isFileOrigin
+                ? "Cannot toggle file-origin jobs. Edit in HEARTBEAT.md."
+                : job.enabled
+                ? "Pause this cron"
+                : "Resume this cron"
+            }
+            className="border-violet-dim text-text-secondary hover:text-text-body hover:bg-night-panel disabled:cursor-not-allowed disabled:opacity-40"
           >
             {job.enabled ? "Pause" : "Resume"}
           </Button>
