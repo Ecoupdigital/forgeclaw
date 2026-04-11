@@ -201,6 +201,21 @@ export function listTopics(): TopicInfo[] | null {
   }
 }
 
+export function getTopic(id: number): TopicInfo | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const row = d
+      .prepare(
+        "SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at FROM topics WHERE id = ?"
+      )
+      .get(id) as TopicRow | undefined;
+    return row ? mapTopic(row) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function getMessages(
   topicId: number,
   limit: number = 50

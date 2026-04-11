@@ -1,5 +1,80 @@
 import * as core from "@/lib/core";
 import { mockCronJobs } from "@/lib/mock-data";
+import type { CronJob } from "@/lib/types";
+import { CronExpressionParser } from "cron-parser";
+import { z } from "zod";
+
+// ---------------------------------------------------------------------------
+// Schemas
+// ---------------------------------------------------------------------------
+//
+// IMPORTANT: `origin` and `sourceFile` are deliberately NOT accepted from the
+// body. The dashboard may only create/update jobs with origin='db'. File-origin
+// jobs are owned by the HEARTBEAT.md parser (see .plano/fases/08-dashboard-web/
+// 08-CONTEXT.md → "Fonte de verdade"). `.strict()` rejects unknown fields (400)
+// so a client cannot smuggle origin/sourceFile in.
+
+const createCronSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, "Name is required")
+      .max(100, "Name too long (max 100 chars)"),
+    schedule: z.string().trim().min(1, "Schedule is required"),
+    prompt: z
+      .string()
+      .trim()
+      .min(1, "Prompt is required")
+      .max(5000, "Prompt too long (max 5000 chars)"),
+    targetTopicId: z.number().int().positive().nullable().optional(),
+    enabled: z.boolean().optional().default(true),
+  })
+  .strict();
+
+// Partial for PUT action=update. Keeps the same caps/strict rules but every
+// field is optional. We still forbid origin/sourceFile via `.strict()`.
+const updateCronSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, "Name cannot be empty")
+      .max(100, "Name too long (max 100 chars)")
+      .optional(),
+    schedule: z.string().trim().min(1, "Schedule cannot be empty").optional(),
+    prompt: z
+      .string()
+      .trim()
+      .min(1, "Prompt cannot be empty")
+      .max(5000, "Prompt too long (max 5000 chars)")
+      .optional(),
+    targetTopicId: z.number().int().positive().nullable().optional(),
+    enabled: z.boolean().optional(),
+  })
+  .strict();
+
+const KNOWN_ACTIONS = new Set(["toggle", "update", "run_now"]);
+
+function badRequest(error: string, details?: unknown) {
+  return Response.json(
+    { success: false, error, ...(details !== undefined ? { details } : {}) },
+    { status: 400 }
+  );
+}
+
+function validateScheduleString(schedule: string): string | null {
+  try {
+    CronExpressionParser.parse(schedule);
+    return null;
+  } catch (err) {
+    return err instanceof Error ? err.message : "Invalid cron expression";
+  }
+}
+
+// ---------------------------------------------------------------------------
+// GET
+// ---------------------------------------------------------------------------
 
 export async function GET() {
   try {
@@ -14,80 +89,93 @@ export async function GET() {
   return Response.json({ jobs: mockCronJobs, source: "mock" });
 }
 
+// ---------------------------------------------------------------------------
+// POST — create cron job
+// ---------------------------------------------------------------------------
+
 export async function POST(request: Request) {
+  // 1. Parse JSON defensively.
+  let body: unknown;
   try {
-    const body = await request.json();
-    const {
-      name,
-      schedule,
-      prompt,
-      targetTopicId,
-      enabled,
-      origin,
-      sourceFile,
-    } = body as {
-      name: string;
-      schedule: string;
-      prompt: string;
-      targetTopicId: number | null;
-      enabled: boolean;
-      origin?: "file" | "db";
-      sourceFile?: string | null;
-    };
+    body = await request.json();
+  } catch {
+    return badRequest("Invalid JSON body");
+  }
 
-    const resolvedOrigin: "file" | "db" = origin ?? "db";
-    const resolvedSourceFile: string | null = sourceFile ?? null;
+  // 2. Must be a plain object (not array / primitive / null).
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return badRequest("Request body must be a JSON object");
+  }
 
-    const id = core.createCronJob({
-      name,
-      schedule,
-      prompt,
-      targetTopicId: targetTopicId ?? null,
-      enabled: enabled ?? true,
-      lastRun: null,
-      lastStatus: null,
-      origin: resolvedOrigin,
-      sourceFile: resolvedSourceFile,
-    });
+  // 3. Schema validation (strict: rejects unknown fields such as origin/sourceFile).
+  const parsed = createCronSchema.safeParse(body);
+  if (!parsed.success) {
+    return badRequest("Validation failed", parsed.error.flatten());
+  }
+  const data = parsed.data;
 
-    if (id !== null) {
-      return Response.json({
-        success: true,
-        job: {
-          id,
-          name,
-          schedule,
-          prompt,
-          targetTopicId,
-          enabled,
-          origin: resolvedOrigin,
-          sourceFile: resolvedSourceFile,
-        },
-        source: "core",
-      });
+  // 4. Validate schedule via cron-parser.
+  const scheduleError = validateScheduleString(data.schedule);
+  if (scheduleError) {
+    return badRequest(`Invalid cron expression: ${scheduleError}`);
+  }
+
+  // 5. If targetTopicId provided, verify the topic exists (G13).
+  if (data.targetTopicId != null) {
+    const topic = core.getTopic(data.targetTopicId);
+    if (!topic) {
+      return badRequest(
+        `Topic not found: targetTopicId=${data.targetTopicId}`
+      );
     }
+  }
 
-    // Fallback: return a fake ID
-    return Response.json({
-      success: true,
-      job: {
-        id: Date.now(),
-        ...body,
-        origin: resolvedOrigin,
-        sourceFile: resolvedSourceFile,
-      },
-      source: "mock",
-    });
-  } catch (err) {
+  // 6. Persist. origin/sourceFile are HARD-CODED — never trust body.
+  const id = core.createCronJob({
+    name: data.name,
+    schedule: data.schedule,
+    prompt: data.prompt,
+    targetTopicId: data.targetTopicId ?? null,
+    enabled: data.enabled,
+    lastRun: null,
+    lastStatus: null,
+    origin: "db",
+    sourceFile: null,
+  });
+
+  // 7. NO mock-id fallback. A null from core means the DB actually failed.
+  if (id === null) {
     return Response.json(
       {
         success: false,
-        error: err instanceof Error ? err.message : "Unknown error",
+        error: "Failed to create cron job (database unavailable or rejected)",
       },
-      { status: 400 }
+      { status: 500 }
     );
   }
+
+  return Response.json(
+    {
+      success: true,
+      job: {
+        id,
+        name: data.name,
+        schedule: data.schedule,
+        prompt: data.prompt,
+        targetTopicId: data.targetTopicId ?? null,
+        enabled: data.enabled,
+        origin: "db",
+        sourceFile: null,
+      },
+      source: "core",
+    },
+    { status: 200 }
+  );
 }
+
+// ---------------------------------------------------------------------------
+// DELETE
+// ---------------------------------------------------------------------------
 
 export async function DELETE(request: Request) {
   try {
@@ -128,73 +216,143 @@ export async function DELETE(request: Request) {
   }
 }
 
-export async function PUT(request: Request) {
-  try {
-    const body = await request.json();
-    const { id, action, ...updates } = body as {
-      id: number;
-      action: string;
-      [key: string]: unknown;
-    };
+// ---------------------------------------------------------------------------
+// PUT — toggle / update / run_now
+// ---------------------------------------------------------------------------
 
-    if (action === "toggle") {
-      const enabled = updates.enabled as boolean | undefined;
-      const newEnabled = enabled !== undefined ? enabled : !(core.getCronJob(id)?.enabled);
-      core.updateCronJob(id, { enabled: newEnabled });
-      return Response.json({
-        success: true,
-        id,
-        action,
-        enabled: newEnabled,
-        source: "core",
-      });
+export async function PUT(request: Request) {
+  // 1. Parse body.
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("Invalid JSON body");
+  }
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return badRequest("Request body must be a JSON object");
+  }
+
+  const { id, action, ...updates } = body as {
+    id?: unknown;
+    action?: unknown;
+    [key: string]: unknown;
+  };
+
+  // 2. id must be a positive integer.
+  if (typeof id !== "number" || !Number.isInteger(id) || id <= 0) {
+    return badRequest("Missing or invalid id (must be a positive integer)");
+  }
+
+  // 3. action must be one of the known ones.
+  if (typeof action !== "string" || !KNOWN_ACTIONS.has(action)) {
+    return badRequest(
+      `Unknown action. Must be one of: ${[...KNOWN_ACTIONS].join(", ")}`
+    );
+  }
+
+  // 4. Resource must exist.
+  const existing = core.getCronJob(id);
+  if (!existing) {
+    return Response.json(
+      { success: false, error: "Cron job not found" },
+      { status: 404 }
+    );
+  }
+
+  // 5. Guard file-origin for mutating actions (toggle AND update).
+  if (existing.origin === "file" && (action === "toggle" || action === "update")) {
+    return Response.json(
+      {
+        success: false,
+        error:
+          "Cannot modify file-origin jobs from dashboard. Edit in HEARTBEAT.md.",
+      },
+      { status: 403 }
+    );
+  }
+
+  // --- toggle ---
+  if (action === "toggle") {
+    const explicitEnabled =
+      typeof updates.enabled === "boolean" ? updates.enabled : undefined;
+    const newEnabled =
+      explicitEnabled !== undefined ? explicitEnabled : !existing.enabled;
+
+    const ok = core.updateCronJob(id, { enabled: newEnabled });
+    if (!ok) {
+      return Response.json(
+        { success: false, error: "Failed to toggle cron job" },
+        { status: 500 }
+      );
+    }
+    return Response.json({
+      success: true,
+      id,
+      action,
+      enabled: newEnabled,
+      source: "core",
+    });
+  }
+
+  // --- update ---
+  if (action === "update") {
+    const parsed = updateCronSchema.safeParse(updates);
+    if (!parsed.success) {
+      return badRequest("Validation failed", parsed.error.flatten());
+    }
+    const patch = parsed.data;
+
+    // Must have at least one field to update.
+    if (Object.keys(patch).length === 0) {
+      return badRequest("No updatable fields provided");
     }
 
-    if (action === "update" && updates) {
-      const existing = core.getCronJob(id);
-      if (existing && existing.origin === "file") {
-        return Response.json(
-          {
-            success: false,
-            error: "Cannot update file-origin jobs from dashboard",
-          },
-          { status: 403 }
+    // Revalidate schedule if present.
+    if (patch.schedule !== undefined) {
+      const scheduleError = validateScheduleString(patch.schedule);
+      if (scheduleError) {
+        return badRequest(`Invalid cron expression: ${scheduleError}`);
+      }
+    }
+
+    // Revalidate targetTopicId if present and non-null (G13).
+    if (patch.targetTopicId != null) {
+      const topic = core.getTopic(patch.targetTopicId);
+      if (!topic) {
+        return badRequest(
+          `Topic not found: targetTopicId=${patch.targetTopicId}`
         );
       }
-      const updated = core.updateCronJob(
-        id,
-        updates as Partial<Omit<import("@/lib/types").CronJob, "id">>
-      );
-      if (updated) {
-        return Response.json({
-          success: true,
-          id,
-          action,
-          source: "core",
-        });
-      }
     }
 
-    // action === "run_now" requires the cron engine runtime (bot process)
-    // We can't execute ClaudeRunner from the dashboard process
-    if (action === "run_now") {
-      return Response.json({
+    const updated = core.updateCronJob(
+      id,
+      patch as Partial<Omit<CronJob, "id">>
+    );
+    if (!updated) {
+      return Response.json(
+        { success: false, error: "Failed to update cron job" },
+        { status: 500 }
+      );
+    }
+    return Response.json({ success: true, id, action, source: "core" });
+  }
+
+  // --- run_now ---
+  // Still not supported from dashboard process (requires bot IPC).
+  if (action === "run_now") {
+    return Response.json(
+      {
         success: false,
         id,
         action,
         error:
           "Manual execution requires the bot process. Use the Telegram bot to trigger /cron run.",
-      });
-    }
-
-    return Response.json({ success: true, id, action, source: "mock" });
-  } catch (err) {
-    return Response.json(
-      {
-        success: false,
-        error: err instanceof Error ? err.message : "Unknown error",
       },
-      { status: 400 }
+      { status: 501 }
     );
   }
+
+  // Unreachable (KNOWN_ACTIONS guard above) — defensive 400.
+  return badRequest("Unknown action");
 }
