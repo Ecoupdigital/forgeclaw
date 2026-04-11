@@ -1,6 +1,6 @@
 import type { Context } from 'grammy';
 import { InputFile, InlineKeyboard } from 'grammy';
-import { ClaudeRunner, sessionManager, stateStore, upDetector, fileHandler, ContextBuilder, harnessLoader, memoryManager } from '@forgeclaw/core';
+import { ClaudeRunner, sessionManager, stateStore, upDetector, fileHandler, ContextBuilder, harnessLoader, memoryManager, eventBus } from '@forgeclaw/core';
 import type { StreamEvent, ForgeClawConfig } from '@forgeclaw/core';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -87,11 +87,25 @@ async function processMessage(
     });
 
     // Save user message
+    const userCreatedAt = Date.now();
     stateStore.createMessage({
       topicId: topicId ?? chatId,
       role: 'user',
       content: text,
-      createdAt: Date.now(),
+      createdAt: userCreatedAt,
+    });
+
+    // Mirror to dashboard (and any other listeners). `origin: 'telegram'` so
+    // the mirror listener in ws-server forwards to dashboard subscribers, and
+    // the listener in bot/index.ts ignores it (would loop to itself otherwise).
+    eventBus.emit('message:incoming', {
+      sessionKey,
+      chatId,
+      topicId,
+      role: 'user',
+      content: text,
+      origin: 'telegram',
+      createdAt: userCreatedAt,
     });
 
     // GAP 1: Build enriched prompt with context (harness, memory, vault, state)
@@ -209,11 +223,24 @@ async function processMessage(
             );
 
             // Save assistant message
+            const assistantContent = accumulatedText || ((event.data.result as string) ?? '');
+            const assistantCreatedAt = Date.now();
             stateStore.createMessage({
               topicId: topicId ?? chatId,
               role: 'assistant',
-              content: accumulatedText || ((event.data.result as string) ?? ''),
-              createdAt: Date.now(),
+              content: assistantContent,
+              createdAt: assistantCreatedAt,
+            });
+
+            // Mirror to dashboard subscribers via eventBus.
+            eventBus.emit('message:outgoing', {
+              sessionKey,
+              chatId,
+              topicId,
+              role: 'assistant',
+              content: assistantContent,
+              origin: 'telegram',
+              createdAt: assistantCreatedAt,
             });
 
             // GAP 9: Memory auto-extract — save brief entry in daily log

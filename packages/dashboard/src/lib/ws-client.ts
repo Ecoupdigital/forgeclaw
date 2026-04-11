@@ -32,11 +32,21 @@ interface WsStatusMessage {
   processing: boolean;
 }
 
+interface WsRemoteMessage {
+  type: "remote_message";
+  sessionKey: string;
+  role: "user" | "assistant";
+  content: string;
+  origin: "telegram" | "dashboard";
+  createdAt: number;
+}
+
 type WsServerMessage =
   | WsStreamMessage
   | WsSessionsMessage
   | WsErrorMessage
-  | WsStatusMessage;
+  | WsStatusMessage
+  | WsRemoteMessage;
 
 // --- Accumulated message from stream events ---
 
@@ -63,6 +73,11 @@ interface WebSocketState {
   connected: boolean;
   sessions: SessionInfo[];
   streamingMessages: Map<string, StreamingMessage>;
+  // Messages that originated in OTHER channels (Telegram) and got mirrored
+  // here live via eventBus → ws-server broadcast. Keyed by sessionKey.
+  // Each entry is an append-only list of the mirrored messages.
+  remoteMessages: Map<string, Message[]>;
+  clearRemoteMessages: (sessionKey: string) => void;
   processingKeys: Set<string>;
   lastError: string | null;
 }
@@ -78,10 +93,18 @@ export function useWebSocket(): WebSocketState {
   const [streamingMessages, setStreamingMessages] = useState<
     Map<string, StreamingMessage>
   >(new Map());
+  const [remoteMessages, setRemoteMessages] = useState<
+    Map<string, Message[]>
+  >(new Map());
   const [processingKeys, setProcessingKeys] = useState<Set<string>>(
     new Set()
   );
   const [lastError, setLastError] = useState<string | null>(null);
+
+  // Monotonic fake id for remote messages. Real DB ids are not exposed via
+  // the broadcast (they're async and the event is fired before the tx commit
+  // propagates). Negative range so it never collides with DB-assigned ids.
+  const remoteIdRef = useRef(-1);
 
   const connect = useCallback(() => {
     if (!mountedRef.current) return;
@@ -151,6 +174,29 @@ export function useWebSocket(): WebSocketState {
               return next;
             });
             break;
+
+          case "remote_message": {
+            setRemoteMessages((prev) => {
+              const next = new Map(prev);
+              const list = next.get(msg.sessionKey) ?? [];
+              // Parse sessionKey "chatId:threadId" or "chatId" to derive topicId
+              // for the Message type. Fallback to 0 for DMs.
+              const parts = msg.sessionKey.split(":");
+              const topicId =
+                parts.length > 1 ? Number(parts[1]) || 0 : 0;
+              const id = remoteIdRef.current--;
+              const message: Message = {
+                id,
+                topicId,
+                role: msg.role,
+                content: msg.content,
+                createdAt: msg.createdAt,
+              };
+              next.set(msg.sessionKey, [...list, message]);
+              return next;
+            });
+            break;
+          }
         }
       };
 
@@ -255,6 +301,15 @@ export function useWebSocket(): WebSocketState {
     sendRaw({ type: "list_sessions" });
   }, [sendRaw]);
 
+  const clearRemoteMessages = useCallback((sessionKey: string) => {
+    setRemoteMessages((prev) => {
+      if (!prev.has(sessionKey)) return prev;
+      const next = new Map(prev);
+      next.delete(sessionKey);
+      return next;
+    });
+  }, []);
+
   return {
     send: sendRaw,
     subscribe,
@@ -264,6 +319,8 @@ export function useWebSocket(): WebSocketState {
     connected,
     sessions,
     streamingMessages,
+    remoteMessages,
+    clearRemoteMessages,
     processingKeys,
     lastError,
   };

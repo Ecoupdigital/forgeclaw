@@ -64,7 +64,24 @@ interface WsStatusResponse {
   processing: boolean;
 }
 
-type WsServerMessage = WsStreamResponse | WsSessionsResponse | WsErrorResponse | WsStatusResponse;
+// Remote message: a message that originated in a DIFFERENT channel (e.g. the
+// Telegram bot) and is being mirrored to this dashboard client for live view.
+// Sent when the eventBus emits message:incoming/outgoing with origin != dashboard.
+interface WsRemoteMessageResponse {
+  type: 'remote_message';
+  sessionKey: string;
+  role: 'user' | 'assistant';
+  content: string;
+  origin: 'telegram' | 'dashboard';
+  createdAt: number;
+}
+
+type WsServerMessage =
+  | WsStreamResponse
+  | WsSessionsResponse
+  | WsErrorResponse
+  | WsStatusResponse
+  | WsRemoteMessageResponse;
 
 // --- State ---
 
@@ -129,11 +146,26 @@ async function handleSend(ws: WsSocket, msg: WsSendMessage): Promise<void> {
   const session = await sessionManager.getOrCreateSession(chatId, topicId);
 
   // Save user message
+  const userCreatedAt = Date.now();
   stateStore.createMessage({
     topicId: topicId ?? chatId,
     role: 'user',
     content: message,
-    createdAt: Date.now(),
+    createdAt: userCreatedAt,
+  });
+
+  // Mirror to Telegram side via eventBus. `origin: 'dashboard'` makes the
+  // Telegram-side listener accept it (forwards to bot.api.sendMessage with
+  // a prefix) and makes the ws-server-side listener ignore it (the sender
+  // dashboard already sees its own messages via normal streaming).
+  eventBus.emit('message:incoming', {
+    sessionKey,
+    chatId,
+    topicId,
+    role: 'user',
+    content: message,
+    origin: 'dashboard',
+    createdAt: userCreatedAt,
   });
 
   // Notify processing started
@@ -172,11 +204,24 @@ async function handleSend(ws: WsSocket, msg: WsSendMessage): Promise<void> {
         }
 
         // Save assistant message
+        const assistantContent = accumulatedText || ((event.data.result as string) ?? '');
+        const assistantCreatedAt = Date.now();
         stateStore.createMessage({
           topicId: topicId ?? chatId,
           role: 'assistant',
-          content: accumulatedText || ((event.data.result as string) ?? ''),
-          createdAt: Date.now(),
+          content: assistantContent,
+          createdAt: assistantCreatedAt,
+        });
+
+        // Mirror the final assistant message to Telegram via eventBus.
+        eventBus.emit('message:outgoing', {
+          sessionKey,
+          chatId,
+          topicId,
+          role: 'assistant',
+          content: assistantContent,
+          origin: 'dashboard',
+          createdAt: assistantCreatedAt,
         });
       }
     }
@@ -387,6 +432,39 @@ export function startWSServer(): void {
       send(ws, payload);
     }
   });
+
+  // Mirror inbound (user) and outbound (assistant) chat messages from OTHER
+  // channels (currently only Telegram) to dashboard subscribers. Events with
+  // origin === 'dashboard' are skipped because the sender dashboard already
+  // sees its own messages via normal streaming (handleSend) and broadcasting
+  // them again would duplicate. The composite sessionKey must match the
+  // subscriber's subscription; broadcastToSubscribers already does that
+  // filtering.
+  const mirrorToDashboard = (data: Record<string, unknown>) => {
+    const origin = data.origin as 'telegram' | 'dashboard' | undefined;
+    if (origin === 'dashboard' || origin === undefined) return;
+
+    const sessionKey = data.sessionKey as string | undefined;
+    const role = data.role as 'user' | 'assistant' | undefined;
+    const content = data.content as string | undefined;
+    const createdAt = data.createdAt as number | undefined;
+
+    if (!sessionKey || !role || content === undefined || createdAt === undefined) {
+      return;
+    }
+
+    broadcastToSubscribers(sessionKey, {
+      type: 'remote_message',
+      sessionKey,
+      role,
+      content,
+      origin,
+      createdAt,
+    });
+  };
+
+  eventBus.on('message:incoming', mirrorToDashboard);
+  eventBus.on('message:outgoing', mirrorToDashboard);
 
   console.log(`[ws-server] WebSocket server started on ws://127.0.0.1:${WS_PORT}`);
 }

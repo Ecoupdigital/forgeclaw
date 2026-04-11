@@ -182,6 +182,51 @@ async function main(): Promise<void> {
   console.log('[forgeclaw] Starting cron engine...');
   await cronEngine.start();
 
+  // Mirror chat messages that originated OUTSIDE Telegram (currently only the
+  // dashboard) into the corresponding Telegram chat+thread. This gives the
+  // dashboard a bidirectional chat: messages typed in the dashboard land in
+  // the same Telegram topic as if the user had typed them on the phone.
+  //
+  // User messages get a "[dashboard]" prefix so it's obvious they came from
+  // the other side (you can't impersonate yourself as a Telegram user with a
+  // bot token — so the bot sends them on your behalf, labeled). Assistant
+  // messages are sent plain because they are the bot's own output anyway.
+  //
+  // Loop safety: events with origin === 'telegram' are skipped, otherwise the
+  // bot would echo its own messages back to itself forever.
+  const mirrorToTelegram = async (data: Record<string, unknown>, kind: 'incoming' | 'outgoing') => {
+    const origin = data.origin as 'telegram' | 'dashboard' | undefined;
+    if (origin === 'telegram' || origin === undefined) return;
+
+    const chatId = data.chatId as number | undefined;
+    const topicId = data.topicId as number | null | undefined;
+    const content = data.content as string | undefined;
+    if (typeof chatId !== 'number' || typeof content !== 'string' || content.length === 0) {
+      return;
+    }
+
+    const prefix = kind === 'incoming' ? '📱 [dashboard] ' : '';
+    const text = (prefix + content).slice(0, 4000);
+
+    try {
+      await bot.api.sendMessage(chatId, text, {
+        ...(topicId ? { message_thread_id: topicId } : {}),
+      });
+    } catch (err) {
+      console.error(
+        `[forgeclaw] Failed to mirror ${kind} message from ${origin} to Telegram:`,
+        err instanceof Error ? err.message : err
+      );
+    }
+  };
+
+  eventBus.on('message:incoming', (data) => {
+    mirrorToTelegram(data, 'incoming');
+  });
+  eventBus.on('message:outgoing', (data) => {
+    mirrorToTelegram(data, 'outgoing');
+  });
+
   // Route cron results to Telegram topics
   eventBus.on('cron:result', async (data) => {
     const { jobId, jobName, topicId, output, status } = data as {
