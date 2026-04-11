@@ -103,6 +103,8 @@ export function CronsTab() {
   const handleRunNow = useCallback(
     async (id: number) => {
       setRunningId(id);
+      const job = jobs.find((j) => j.id === id);
+      showToast(`Triggering cron "${job?.name ?? `#${id}`}"...`);
       try {
         const res = await fetch("/api/crons", {
           method: "PUT",
@@ -120,7 +122,7 @@ export function CronsTab() {
         setTimeout(() => setRunningId(null), 3000);
       }
     },
-    [showToast]
+    [jobs, showToast]
   );
 
   const handleToggle = useCallback(async (id: number, enabled: boolean) => {
