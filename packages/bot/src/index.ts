@@ -78,6 +78,49 @@ async function main(): Promise<void> {
   // Register photo handler
   bot.on('message:photo', createPhotoHandler(config));
 
+  // Forum topic lifecycle: capture real names as Telegram sends them.
+  //
+  // The Bot API has no method to fetch a topic name by thread_id (confirmed
+  // via tdlib/telegram-bot-api#634, open since 2024, still unresolved). The
+  // ONLY way to know a topic's real name is to listen for the two service
+  // messages that carry it: forum_topic_created (on creation) and
+  // forum_topic_edited (when someone renames, icon changes come without name).
+  //
+  // When a user creates a new topic in a forum supergroup, Telegram emits a
+  // service message to that thread with the name and icon. We upsert the row.
+  // Next time the dashboard cron form dropdown loads, it shows the real name
+  // instead of the generic "Topic N" placeholder from the bootstrap.
+  bot.on('message:forum_topic_created', async (ctx) => {
+    const chatId = ctx.chat?.id;
+    const threadId = ctx.message?.message_thread_id;
+    const created = ctx.message?.forum_topic_created;
+    if (!chatId || !threadId || !created?.name) return;
+    try {
+      stateStore.upsertTopic({ chatId, threadId, name: created.name });
+      console.log(
+        `[forgeclaw] forum_topic_created: ${chatId}/${threadId} → "${created.name}"`
+      );
+    } catch (err) {
+      console.error('[forgeclaw] upsertTopic on create failed:', err);
+    }
+  });
+
+  bot.on('message:forum_topic_edited', async (ctx) => {
+    const chatId = ctx.chat?.id;
+    const threadId = ctx.message?.message_thread_id;
+    const edited = ctx.message?.forum_topic_edited;
+    // name is optional: if only the icon changed, name is undefined — skip.
+    if (!chatId || !threadId || !edited?.name) return;
+    try {
+      stateStore.upsertTopic({ chatId, threadId, name: edited.name });
+      console.log(
+        `[forgeclaw] forum_topic_edited: ${chatId}/${threadId} → "${edited.name}"`
+      );
+    } catch (err) {
+      console.error('[forgeclaw] upsertTopic on edit failed:', err);
+    }
+  });
+
   // Error handler
   bot.catch((err) => {
     const ctx = err.ctx;
