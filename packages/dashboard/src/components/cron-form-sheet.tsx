@@ -202,7 +202,6 @@ export function CronFormSheet({
             prompt: prompt.trim(),
             targetTopicId,
             enabled,
-            origin: "db",
           }),
         });
       }
