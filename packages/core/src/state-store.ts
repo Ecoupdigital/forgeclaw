@@ -180,6 +180,50 @@ class StateStore {
     return row ? mapTopicRow(row) : null;
   }
 
+  /**
+   * Create-or-update a topic row by its composite key (chatId, threadId).
+   *
+   * Fixes bug 688: sessionManager historically only created rows in `sessions`
+   * and never in `topics`, leaving the topics table empty even when messages
+   * flowed through. Callers (sessionManager and bootstrap scripts) now ensure
+   * a topic row exists before creating a session, so downstream code like
+   * cron target-topic dropdowns and cron:result router can resolve.
+   *
+   * Name policy: only OVERWRITES an existing name if the new name is truthy
+   * AND different. Never blanks a name. Bootstrap with generic names is safe
+   * because real names from Telegram API calls will upgrade them later.
+   */
+  upsertTopic(args: {
+    chatId: number;
+    threadId: number | null;
+    name?: string | null;
+    projectDir?: string | null;
+    sessionId?: string | null;
+  }): TopicInfo {
+    const existing = this.getTopicByChatAndThread(args.chatId, args.threadId);
+    if (existing) {
+      if (args.name && args.name.trim().length > 0 && args.name !== existing.name) {
+        this.updateTopicName(existing.id, args.name);
+        return { ...existing, name: args.name };
+      }
+      return existing;
+    }
+
+    const id = this.createTopic({
+      chatId: args.chatId,
+      threadId: args.threadId,
+      name: args.name ?? null,
+      projectDir: args.projectDir ?? null,
+      sessionId: args.sessionId ?? null,
+      createdAt: Date.now(),
+    });
+    const created = this.getTopic(id);
+    if (!created) {
+      throw new Error(`Failed to read back upserted topic (id=${id})`);
+    }
+    return created;
+  }
+
   updateTopicName(id: number, name: string): void {
     this.db.run('UPDATE topics SET name = ? WHERE id = ?', [name, id]);
   }

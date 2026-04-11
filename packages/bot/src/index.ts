@@ -11,6 +11,7 @@ import { createCallbackHandler } from './handlers/callbacks';
 import { createVoiceHandler } from './handlers/voice';
 import { createDocumentHandler } from './handlers/document';
 import { createPhotoHandler } from './handlers/photo';
+import { bootstrapTopicsFromSessions } from './bootstrap-topics';
 
 async function main(): Promise<void> {
   console.log('[forgeclaw] Loading configuration...');
@@ -122,6 +123,17 @@ async function main(): Promise<void> {
   // Start bot with concurrent runner
   console.log('[forgeclaw] Starting bot with concurrent runner...');
   const handle = run(bot);
+
+  // Bug 688 fix: populate the `topics` table from existing sessions and
+  // enrich names from the Telegram API. Must run BEFORE cron engine so the
+  // cron:result listener can resolve target topics on the first run.
+  // Non-blocking on errors — bot continues even if the bootstrap fails.
+  try {
+    console.log('[forgeclaw] Bootstrapping topics from sessions...');
+    await bootstrapTopicsFromSessions(bot);
+  } catch (err) {
+    console.error('[forgeclaw] bootstrap-topics failed (non-fatal):', err);
+  }
 
   // Start cron engine (HEARTBEAT.md scheduler)
   console.log('[forgeclaw] Starting cron engine...');

@@ -13,6 +13,18 @@ class SessionManager {
     const key = this.buildKey(chatId, topicId);
 
     return this.withLock(key, async () => {
+      // Fix bug 688: ensure a topic row exists for every session. Prior to this,
+      // `topics` stayed empty even after thousands of messages, which broke the
+      // cron target-topic dropdown and the cron:result router. Safe to call on
+      // every request — upsertTopic short-circuits if the row already exists.
+      stateStore.upsertTopic({
+        chatId,
+        threadId: topicId,
+        name: topicId ? `Topic ${topicId}` : `Direct chat`,
+        projectDir: projectDir ?? null,
+        sessionId: key,
+      });
+
       const existing = stateStore.getSession(key);
       if (existing) return existing;
 

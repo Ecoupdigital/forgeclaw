@@ -86,7 +86,7 @@ export function createCallbackHandler(config: ForgeClawConfig) {
         const topic = await ctx.api.createForumTopic(chatId, topicName);
         const projectDir = isGeral ? null : join(config.workingDir, projectName);
 
-        stateStore.createTopic({
+        stateStore.upsertTopic({
           threadId: topic.message_thread_id,
           chatId,
           name: topicName,
@@ -118,17 +118,19 @@ export function createCallbackHandler(config: ForgeClawConfig) {
       // Find or create topic record
       let topicRecord = stateStore.getTopicByChatAndThread(chatId, topicId);
       if (!topicRecord) {
-        const id = stateStore.createTopic({
+        topicRecord = stateStore.upsertTopic({
           threadId: topicId,
           chatId,
           name: projectName === '__none__' ? 'Geral' : projectName,
           projectDir: isNone ? null : join(config.workingDir, projectName),
           sessionId: null,
         });
-        topicRecord = stateStore.getTopic(id);
       } else {
         // Update existing topic
-        stateStore.updateTopicName(topicRecord.id, isNone ? topicRecord.name : projectName);
+        const nextName = isNone
+          ? topicRecord.name ?? 'Geral'
+          : projectName ?? topicRecord.name ?? 'Geral';
+        stateStore.updateTopicName(topicRecord.id, nextName);
         // Update project dir on session too
         const session = sessionManager.getSession(chatId, topicId);
         if (session) {

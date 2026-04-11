@@ -233,7 +233,7 @@ export function registerCommands(config: ForgeClawConfig) {
         const projectDir = join(config.workingDir, args);
         const hasProject = (() => { try { return statSync(projectDir).isDirectory(); } catch { return false; } })();
 
-        stateStore.createTopic({
+        stateStore.upsertTopic({
           threadId: topic.message_thread_id,
           chatId,
           name: args,
