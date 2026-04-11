@@ -1,9 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import {
+  Pause,
+  Play,
+  RefreshCw,
+  ScrollText,
+  MoreHorizontal,
+  Pencil,
+  Copy,
+  Trash2,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import type { CronJob, CronLog } from "@/lib/types";
 
 interface CronCardProps {
@@ -43,7 +60,6 @@ export function CronCard({
   const [showLogs, setShowLogs] = useState(false);
   const isRunning = runningId === job.id;
   const isFileOrigin = job.origin === "file";
-  const fileTooltip = "Edit in HEARTBEAT.md";
 
   return (
     <Card
@@ -114,31 +130,30 @@ export function CronCard({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:flex lg:flex-wrap lg:items-center">
+          {/* Primary: Run now (violet filled) */}
           <Button
-            variant="outline"
-            size="xs"
-            onClick={() => setShowLogs(!showLogs)}
-            className="border-violet-dim text-text-secondary hover:text-text-body hover:bg-night-panel"
-          >
-            {showLogs ? "Hide logs" : "View logs"}
-          </Button>
-          <Button
-            variant="outline"
+            variant="default"
             size="xs"
             onClick={() => onRunNow(job.id)}
             disabled={isRunning}
-            className="border-violet-dim text-violet hover:bg-violet/10"
+            title="Run this cron now"
+            className="bg-violet text-white hover:bg-violet/90"
           >
             {isRunning ? (
               <span className="flex items-center gap-1">
-                <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-violet/30 border-t-violet" />
+                <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                 Running
               </span>
             ) : (
-              "Run now"
+              <span className="flex items-center gap-1">
+                <RefreshCw aria-hidden="true" />
+                Run now
+              </span>
             )}
           </Button>
+
+          {/* Secondary: Pause/Resume (violet outline) */}
           <Button
             variant="outline"
             size="xs"
@@ -151,39 +166,86 @@ export function CronCard({
                 ? "Pause this cron"
                 : "Resume this cron"
             }
-            className="border-violet-dim text-text-secondary hover:text-text-body hover:bg-night-panel disabled:cursor-not-allowed disabled:opacity-40"
+            className="border-violet-dim text-violet hover:bg-violet/10 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {job.enabled ? "Pause" : "Resume"}
+            {job.enabled ? (
+              <span className="flex items-center gap-1">
+                <Pause aria-hidden="true" />
+                Pause
+              </span>
+            ) : (
+              <span className="flex items-center gap-1">
+                <Play aria-hidden="true" />
+                Resume
+              </span>
+            )}
           </Button>
+
+          {/* Tertiary: View logs (discreet outline) */}
           <Button
             variant="outline"
             size="xs"
-            onClick={() => onEdit(job)}
-            disabled={isFileOrigin}
-            title={isFileOrigin ? fileTooltip : "Edit this cron"}
-            className="border-violet-dim text-text-secondary hover:text-text-body hover:bg-night-panel disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Edit
-          </Button>
-          <Button
-            variant="outline"
-            size="xs"
-            onClick={() => onDuplicate(job)}
-            title="Duplicate as a new dashboard cron"
+            onClick={() => setShowLogs(!showLogs)}
+            title={showLogs ? "Hide logs" : "View recent logs"}
             className="border-violet-dim text-text-secondary hover:text-text-body hover:bg-night-panel"
           >
-            Duplicate
+            <span className="flex items-center gap-1">
+              <ScrollText aria-hidden="true" />
+              {showLogs ? "Hide" : "Logs"}
+            </span>
           </Button>
-          <Button
-            variant="outline"
-            size="xs"
-            onClick={() => onDelete(job)}
-            disabled={isFileOrigin}
-            title={isFileOrigin ? fileTooltip : "Delete this cron"}
-            className="border-violet-dim text-red-400 hover:text-red-300 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Delete
-          </Button>
+
+          {/* More menu: Edit / Duplicate / Delete */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  aria-label="More actions"
+                  title="More actions"
+                  className="text-text-secondary hover:text-text-body hover:bg-night-panel"
+                >
+                  <span className="flex items-center gap-1">
+                    <MoreHorizontal aria-hidden="true" />
+                    <span className="sm:hidden lg:inline">More</span>
+                  </span>
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end" side="bottom" className="min-w-36">
+              <DropdownMenuItem
+                disabled={isFileOrigin}
+                onClick={() => onEdit(job)}
+              >
+                <Pencil aria-hidden="true" />
+                Edit
+                {isFileOrigin && (
+                  <span className="ml-auto text-[10px] text-text-secondary">
+                    file
+                  </span>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onDuplicate(job)}>
+                <Copy aria-hidden="true" />
+                Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={isFileOrigin}
+                onClick={() => onDelete(job)}
+              >
+                <Trash2 aria-hidden="true" />
+                Delete
+                {isFileOrigin && (
+                  <span className="ml-auto text-[10px] text-text-secondary">
+                    file
+                  </span>
+                )}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {showLogs && (
