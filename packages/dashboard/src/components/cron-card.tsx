@@ -11,7 +11,11 @@ interface CronCardProps {
   logs: CronLog[];
   onRunNow: (id: number) => void;
   onToggle: (id: number, enabled: boolean) => void;
+  onEdit: (job: CronJob) => void;
+  onDelete: (job: CronJob) => void;
+  onDuplicate: (job: CronJob) => void;
   runningId: number | null;
+  highlighted?: boolean;
 }
 
 function formatTimestamp(ts: number | null): string {
@@ -30,17 +34,42 @@ export function CronCard({
   logs,
   onRunNow,
   onToggle,
+  onEdit,
+  onDelete,
+  onDuplicate,
   runningId,
+  highlighted = false,
 }: CronCardProps) {
   const [showLogs, setShowLogs] = useState(false);
   const isRunning = runningId === job.id;
+  const isFileOrigin = job.origin === "file";
+  const fileTooltip = "Edit in HEARTBEAT.md";
 
   return (
-    <Card className="border-violet-dim bg-deep-space transition-colors hover:border-violet-glow">
+    <Card
+      className={`border-violet-dim bg-deep-space transition-all hover:border-violet-glow ${
+        highlighted ? "animate-pulse ring-2 ring-violet" : ""
+      }`}
+    >
       <CardHeader className="p-4 pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm text-text-primary">{job.name}</CardTitle>
           <div className="flex items-center gap-2">
+            <Badge
+              variant="outline"
+              className={`text-[10px] uppercase ${
+                job.origin === "db"
+                  ? "border-violet/60 bg-violet/20 text-violet"
+                  : "border-text-secondary/30 bg-text-secondary/10 text-text-secondary"
+              }`}
+              title={
+                job.origin === "db"
+                  ? "Created via dashboard (stored in DB)"
+                  : "Declared in HEARTBEAT.md"
+              }
+            >
+              {job.origin}
+            </Badge>
             <Badge
               variant="outline"
               className={`text-[10px] ${
@@ -78,11 +107,14 @@ export function CronCard({
           </div>
           <div className="text-xs text-text-secondary">
             <span className="text-text-secondary">Prompt: </span>
-            <span className="text-text-body">{job.prompt.slice(0, 80)}{job.prompt.length > 80 ? "..." : ""}</span>
+            <span className="text-text-body">
+              {job.prompt.slice(0, 80)}
+              {job.prompt.length > 80 ? "..." : ""}
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="xs"
@@ -114,6 +146,35 @@ export function CronCard({
             className="border-violet-dim text-text-secondary hover:text-text-body hover:bg-night-panel"
           >
             {job.enabled ? "Pause" : "Resume"}
+          </Button>
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => onEdit(job)}
+            disabled={isFileOrigin}
+            title={isFileOrigin ? fileTooltip : "Edit this cron"}
+            className="border-violet-dim text-text-secondary hover:text-text-body hover:bg-night-panel disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Edit
+          </Button>
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => onDuplicate(job)}
+            title="Duplicate as a new dashboard cron"
+            className="border-violet-dim text-text-secondary hover:text-text-body hover:bg-night-panel"
+          >
+            Duplicate
+          </Button>
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => onDelete(job)}
+            disabled={isFileOrigin}
+            title={isFileOrigin ? fileTooltip : "Delete this cron"}
+            className="border-violet-dim text-red-400 hover:text-red-300 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Delete
           </Button>
         </div>
 
