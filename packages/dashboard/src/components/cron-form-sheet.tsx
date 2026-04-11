@@ -45,10 +45,43 @@ interface SchedulePreview {
   error: string | null;
 }
 
-const LOCAL_TZ =
+// Server timezone — must match CronEngine's runtime timezone so the "next
+// runs" the form shows match what the scheduler actually does. CronEngine
+// uses `new Cron(expr, handler)` with croner's default (system local time),
+// and the host runs in Etc/UTC. If the host TZ ever changes, update this.
+const SERVER_TZ = "Etc/UTC";
+
+// Display timezone — where the USER is. This is what the form shows next to
+// "Next runs:" so the user sees wall-clock times in their own locale,
+// independent of whatever TZ the server happens to run in.
+const DISPLAY_TZ = "America/Sao_Paulo";
+
+// Optional override via browser detection. Currently hard-coded to BRT
+// because the user is in Novo Hamburgo/RS and wants presets to feel like
+// their local time. If this product ever goes multi-user we should read
+// from a profile setting.
+const BROWSER_TZ =
   typeof Intl !== "undefined"
     ? Intl.DateTimeFormat().resolvedOptions().timeZone
     : "local";
+
+const displayFormatter =
+  typeof Intl !== "undefined"
+    ? new Intl.DateTimeFormat("pt-BR", {
+        timeZone: DISPLAY_TZ,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      })
+    : null;
+
+function formatInDisplayTz(d: Date): string {
+  if (displayFormatter) return displayFormatter.format(d);
+  return d.toISOString();
+}
 
 function validateSchedule(expr: string): SchedulePreview {
   const trimmed = expr.trim();
@@ -60,10 +93,13 @@ function validateSchedule(expr: string): SchedulePreview {
     };
   }
   try {
-    const iter = CronExpressionParser.parse(trimmed);
+    // Parse in the SERVER's timezone so the Date objects we get back
+    // represent the exact moments CronEngine will fire. We then format
+    // those moments in the user's display timezone for readable output.
+    const iter = CronExpressionParser.parse(trimmed, { tz: SERVER_TZ });
     const runs: string[] = [];
     for (let i = 0; i < 3; i++) {
-      runs.push(iter.next().toDate().toLocaleString());
+      runs.push(formatInDisplayTz(iter.next().toDate()));
     }
     let human: string | null = null;
     try {
@@ -309,7 +345,8 @@ export function CronFormSheet({
               />
             )}
             <p className="text-xs text-text-secondary">
-              Timezone: {LOCAL_TZ}
+              Runs on server ({SERVER_TZ}), displayed in {DISPLAY_TZ}
+              {BROWSER_TZ !== DISPLAY_TZ && ` · your browser: ${BROWSER_TZ}`}
             </p>
             {preview.error && (
               <p className="text-xs text-red-400">{preview.error}</p>
