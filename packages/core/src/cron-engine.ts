@@ -248,11 +248,24 @@ class CronEngine {
   }
 
   private async syncJobsWithDb(parsedJobs: ParsedJob[]): Promise<void> {
-    const existingJobs = stateStore.listCronJobs();
+    // Hot reload so afeta jobs file-origin. Jobs DB-origin sao intocados — source-of-truth
+    // deles e o DB via dashboard CRUD, nao o arquivo HEARTBEAT.md.
+    const allJobs = stateStore.listCronJobs();
+    const existingJobs = allJobs.filter((j) => j.origin === 'file');
     const existingByName = new Map(existingJobs.map((j) => [j.name, j]));
     const parsedNames = new Set(parsedJobs.map((j) => j.name));
 
-    // Create or update jobs from HEARTBEAT.md
+    // HEARTBEAT vence em conflito: se um job db-origin tem o mesmo name que um parsed job,
+    // desabilitar o db-origin (marcacao, nao delete, para preservar cron_logs historicos).
+    const parsedNamesSet = new Set(parsedJobs.map((p) => p.name));
+    for (const job of allJobs) {
+      if (job.origin === 'db' && parsedNamesSet.has(job.name) && job.enabled) {
+        stateStore.updateCronJob(job.id, { enabled: false });
+        console.log(`[cron-engine] DB-origin job "${job.name}" conflicts with HEARTBEAT.md, disabled.`);
+      }
+    }
+
+    // Create or update file-origin jobs from HEARTBEAT.md
     for (const parsed of parsedJobs) {
       const existing = existingByName.get(parsed.name);
 
@@ -275,9 +288,13 @@ class CronEngine {
             enabled: true,
           });
           console.log(`[cron-engine] Updated job: ${parsed.name}`);
+        } else if (!existing.enabled) {
+          // Job voltou ao arquivo apos ter sido removido — re-enable
+          stateStore.updateCronJob(existing.id, { enabled: true });
+          console.log(`[cron-engine] Re-enabled job: ${parsed.name}`);
         }
       } else {
-        // Create new
+        // Create new file-origin job
         stateStore.createCronJob({
           name: parsed.name,
           schedule: parsed.schedule,
@@ -286,16 +303,19 @@ class CronEngine {
           enabled: true,
           lastRun: null,
           lastStatus: null,
+          origin: 'file',
+          sourceFile: this.heartbeatPath,
         });
         console.log(`[cron-engine] Created job: ${parsed.name}`);
       }
     }
 
-    // Disable jobs removed from HEARTBEAT.md
+    // Disable file-origin jobs removed from HEARTBEAT.md.
+    // DB-origin jobs are NEVER touched here (only in the conflict loop above).
     for (const existing of existingJobs) {
       if (!parsedNames.has(existing.name) && existing.enabled) {
         stateStore.updateCronJob(existing.id, { enabled: false });
-        console.log(`[cron-engine] Disabled removed job: ${existing.name}`);
+        console.log(`[cron-engine] Disabled removed job (file-origin): ${existing.name}`);
       }
     }
   }
