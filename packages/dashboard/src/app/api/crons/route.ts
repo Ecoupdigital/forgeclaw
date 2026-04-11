@@ -39,17 +39,28 @@ async function notifyCronRunNow(id: number): Promise<{
   error?: string;
 }> {
   try {
+    // Bot responds 202 Accepted almost immediately — the actual Claude run
+    // happens in the background and reports result via cron_logs. 3s is plenty
+    // for the "started" ack; if the bot takes longer than that, something
+    // is wrong with the IPC path itself.
     const res = await fetch(`${BOT_IPC_URL}/cron/run-now`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
-      signal: AbortSignal.timeout(2000),
+      signal: AbortSignal.timeout(3000),
     });
     const data = (await res.json().catch(() => ({}))) as {
       ok?: boolean;
       error?: string;
     };
-    return { ok: res.ok && data.ok !== false, status: res.status, error: data.error };
+    // 202 Accepted is success for run-now (started in background).
+    // 200 OK also acceptable. 404/400/500 are real errors.
+    const httpOk = res.status === 202 || res.status === 200;
+    return {
+      ok: httpOk && data.ok !== false,
+      status: res.status,
+      error: data.error,
+    };
   } catch (err) {
     return {
       ok: false,

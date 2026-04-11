@@ -262,6 +262,13 @@ export function startWSServer(): void {
       // IPC: dashboard → bot. Trigger a single job by id immediately.
       // Replaces the 501 stub in /api/crons PUT action=run_now — the dashboard
       // can now actually fire a cron without waiting for its schedule.
+      //
+      // **Fire-and-forget semantics.** A real cron execution can take 30s-2min
+      // (Claude run), much longer than the dashboard's 2s IPC timeout. We
+      // resolve the job existence SYNCHRONOUSLY (so we can return 404 cleanly),
+      // then kick off executeJob in the background and respond 202 Accepted
+      // immediately. The result will show up in cron_logs and lastRun/lastStatus
+      // via normal engine flow.
       if (url.pathname === '/cron/run-now' && req.method === 'POST') {
         try {
           const body = (await req.json()) as { id?: unknown };
@@ -272,14 +279,21 @@ export function startWSServer(): void {
               { status: 400 }
             );
           }
-          const found = await cronEngine.runJobById(id);
-          if (!found) {
+          const job = stateStore.getCronJob(id);
+          if (!job) {
             return Response.json(
               { ok: false, error: 'Cron job not found' },
               { status: 404 }
             );
           }
-          return Response.json({ ok: true, action: 'run-now', id });
+          // Fire the execution in the background. Do NOT await.
+          cronEngine.executeJob(job).catch((err) => {
+            console.error(`[ws-server] run-now execution failed for job ${id}:`, err);
+          });
+          return Response.json(
+            { ok: true, action: 'run-now', id, status: 'started' },
+            { status: 202 }
+          );
         } catch (err) {
           return Response.json(
             {
