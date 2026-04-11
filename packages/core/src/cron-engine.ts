@@ -109,6 +109,37 @@ function naturalToCron(schedule: string): string | null {
   return null;
 }
 
+function pad2(n: number): string {
+  return n < 10 ? `0${n}` : String(n);
+}
+
+function formatDateIso(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+function formatDateTimeIso(d: Date): string {
+  return `${formatDateIso(d)}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+/**
+ * Substitui template vars no prompt do cron antes de enviar ao ClaudeRunner.
+ * Vars suportadas:
+ *   - {today}     -> YYYY-MM-DD local
+ *   - {yesterday} -> YYYY-MM-DD local de ontem
+ *   - {now}       -> YYYY-MM-DDTHH:MM local
+ *
+ * Substituicao literal (sem regex). Vars desconhecidas sao deixadas intactas.
+ */
+function expandTemplateVars(prompt: string, now: Date = new Date()): string {
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  return prompt
+    .split('{today}').join(formatDateIso(now))
+    .split('{yesterday}').join(formatDateIso(yesterday))
+    .split('{now}').join(formatDateTimeIso(now));
+}
+
 class CronEngine {
   private heartbeatPath: string;
   private scheduledJobs: Cron[] = [];
@@ -420,5 +451,5 @@ class CronEngine {
 }
 
 export const cronEngine = new CronEngine();
-export { CronEngine, naturalToCron };
+export { CronEngine, naturalToCron, expandTemplateVars };
 export type { ParsedJob };
