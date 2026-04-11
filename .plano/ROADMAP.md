@@ -130,6 +130,6 @@
 | 5 | 0/? | Pendente | -- |
 | 6 | 0/? | Pendente | -- |
 | 7 | 0/? | Pendente | -- |
-| 8 | 0/? | Pendente | -- |
+| 8 | 2/6 | In Progress|  |
 | 9 | 0/? | Pendente | -- |
 | 10 | 0/? | Pendente | -- |
