@@ -27,6 +27,8 @@ export interface CronJob {
   enabled: boolean;
   lastRun: number | null;
   lastStatus: string | null;
+  origin: "file" | "db";
+  sourceFile: string | null;
 }
 
 export interface CronLog {
