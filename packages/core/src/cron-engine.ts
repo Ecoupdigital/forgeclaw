@@ -152,6 +152,25 @@ class CronEngine {
   }
 
   parseHeartbeat(content: string): ParsedJob[] {
+    // Descartar a secao "## Managed by Dashboard" (mirror do dashboard, nao fonte de verdade).
+    // A secao vai do marcador ate o proximo header '^## ' OU o fim do arquivo.
+    // O DB continua sendo source-of-truth para jobs DB-origin — a secao e apenas mirror legivel.
+    const managedHeader = /^## Managed by Dashboard\s*$/m;
+    const managedMatch = managedHeader.exec(content);
+    if (managedMatch) {
+      const start = managedMatch.index;
+      const afterHeader = start + managedMatch[0].length;
+      const rest = content.slice(afterHeader);
+      const nextHeaderMatch = rest.match(/^## /m);
+      if (nextHeaderMatch && nextHeaderMatch.index !== undefined) {
+        // Remove apenas o trecho do marcador ate o proximo header '^## '
+        content = content.slice(0, start) + content.slice(afterHeader + nextHeaderMatch.index);
+      } else {
+        // Remove do marcador ate o fim do arquivo
+        content = content.slice(0, start);
+      }
+    }
+
     const jobs: ParsedJob[] = [];
     const headerRegex = /^## (.+?) → tópico: (.+)$/gm;
     const headers: { schedule: string; topic: string; index: number }[] = [];
