@@ -32,8 +32,9 @@ const DB_PATH = join(FORGECLAW_DIR, "db", "forgeclaw.db");
 const CONFIG_PATH = join(FORGECLAW_DIR, "forgeclaw.config.json");
 const HARNESS_DIR = join(FORGECLAW_DIR, "harness");
 const HEARTBEAT_PATH = join(FORGECLAW_DIR, "HEARTBEAT.md");
-const MEMORY_DIR = join(FORGECLAW_DIR, "memory");
-const DAILY_DIR = join(MEMORY_DIR, "DAILY");
+// Daily log lives in the Obsidian vault so ForgeClaw and Claude Code CLI share it.
+const DAILY_DIR =
+  process.env.FORGECLAW_DAILY_LOG_DIR ?? "/home/vault/05-pessoal/daily-log";
 const MEMORY_FILE = join(HARNESS_DIR, "MEMORY.md");
 
 // --- SQLite (lazy, singleton) ---
@@ -77,6 +78,8 @@ interface TopicRow {
   project_dir: string | null;
   session_id: string | null;
   created_at: number;
+  runtime: string | null;
+  runtime_fallback: number;
 }
 
 interface MessageRow {
@@ -98,6 +101,8 @@ interface CronJobRow {
   last_status: string | null;
   origin: string;
   source_file: string | null;
+  runtime: string | null;
+  model: string | null;
 }
 
 interface CronLogRow {
@@ -130,6 +135,8 @@ function mapTopic(row: TopicRow): TopicInfo {
     projectDir: row.project_dir,
     sessionId: row.session_id,
     createdAt: row.created_at,
+    runtime: (row.runtime as "claude-code" | "codex" | null) ?? null,
+    runtimeFallback: row.runtime_fallback === 1,
   };
 }
 
@@ -155,6 +162,8 @@ function mapCronJob(row: CronJobRow): CronJob {
     lastStatus: row.last_status,
     origin: row.origin === "db" ? "db" : "file",
     sourceFile: row.source_file,
+    runtime: (row.runtime as "claude-code" | "codex" | null) ?? null,
+    model: row.model,
   };
 }
 
@@ -192,7 +201,7 @@ export function listTopics(): TopicInfo[] | null {
   try {
     const rows = d
       .prepare(
-        "SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at FROM topics ORDER BY created_at DESC"
+        "SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at, runtime, runtime_fallback FROM topics ORDER BY created_at DESC"
       )
       .all() as TopicRow[];
     return rows.map(mapTopic);
@@ -207,7 +216,7 @@ export function getTopic(id: number): TopicInfo | null {
   try {
     const row = d
       .prepare(
-        "SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at FROM topics WHERE id = ?"
+        "SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at, runtime, runtime_fallback FROM topics WHERE id = ?"
       )
       .get(id) as TopicRow | undefined;
     return row ? mapTopic(row) : null;
@@ -242,7 +251,7 @@ export function listCronJobs(): CronJob[] | null {
   try {
     const rows = d
       .prepare(
-        "SELECT id, name, schedule, prompt, target_topic_id, enabled, last_run, last_status, origin, source_file FROM cron_jobs ORDER BY id DESC"
+        "SELECT id, name, schedule, prompt, target_topic_id, enabled, last_run, last_status, origin, source_file, runtime, model FROM cron_jobs ORDER BY id DESC"
       )
       .all() as CronJobRow[];
     return rows.map(mapCronJob);
@@ -257,7 +266,7 @@ export function getCronJob(id: number): CronJob | null {
   try {
     const row = d
       .prepare(
-        "SELECT id, name, schedule, prompt, target_topic_id, enabled, last_run, last_status, origin, source_file FROM cron_jobs WHERE id = ?"
+        "SELECT id, name, schedule, prompt, target_topic_id, enabled, last_run, last_status, origin, source_file, runtime, model FROM cron_jobs WHERE id = ?"
       )
       .get(id) as CronJobRow | undefined;
     return row ? mapCronJob(row) : null;
@@ -274,7 +283,7 @@ export function createCronJob(
   try {
     const result = d
       .prepare(
-        "INSERT INTO cron_jobs (name, schedule, prompt, target_topic_id, enabled, last_run, last_status, origin, source_file) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO cron_jobs (name, schedule, prompt, target_topic_id, enabled, last_run, last_status, origin, source_file, runtime, model) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
       )
       .run(
         job.name,
@@ -285,7 +294,9 @@ export function createCronJob(
         job.lastRun,
         job.lastStatus,
         job.origin ?? "db",
-        job.sourceFile ?? null
+        job.sourceFile ?? null,
+        job.runtime ?? null,
+        job.model ?? null
       );
     return Number(result.lastInsertRowid);
   } catch {
@@ -338,6 +349,14 @@ export function updateCronJob(
     if (updates.sourceFile !== undefined) {
       fields.push("source_file = ?");
       values.push(updates.sourceFile);
+    }
+    if (updates.runtime !== undefined) {
+      fields.push("runtime = ?");
+      values.push(updates.runtime);
+    }
+    if (updates.model !== undefined) {
+      fields.push("model = ?");
+      values.push(updates.model);
     }
 
     if (fields.length === 0) return true;
@@ -401,6 +420,380 @@ export async function writeMemoryContent(content: string): Promise<boolean> {
   }
 }
 
+// --- Memory v1.5 helpers ---
+
+export interface MemoryEntryDTO {
+  id: number;
+  userId: string;
+  workspaceId: string;
+  kind: string;
+  content: string;
+  contentHash: string;
+  sourceType: string | null;
+  createdAt: number;
+  updatedAt: number;
+  accessCount: number;
+  pinned: boolean;
+  archivedAt: number | null;
+  reviewed: boolean;
+  confidence: number | null;
+}
+
+export interface RetrievalDTO {
+  id: number;
+  query: string;
+  source: string;
+  hits: Array<{ memoryId: number; score: number; reason: string; contentPreview?: string }>;
+  injected: boolean;
+  at: number;
+}
+
+interface MemoryRow {
+  id: number;
+  user_id: string;
+  workspace_id: string;
+  kind: string;
+  content: string;
+  content_hash: string;
+  source_type: string | null;
+  source_session_id: string | null;
+  created_at: number;
+  updated_at: number;
+  last_accessed_at: number | null;
+  access_count: number;
+  pinned: number;
+  archived_at: number | null;
+  metadata: string | null;
+  reviewed: number;
+  confidence: number | null;
+}
+
+function mapMemRow(r: MemoryRow): MemoryEntryDTO {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    workspaceId: r.workspace_id,
+    kind: r.kind,
+    content: r.content,
+    contentHash: r.content_hash,
+    sourceType: r.source_type,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+    accessCount: r.access_count,
+    pinned: r.pinned === 1,
+    archivedAt: r.archived_at,
+    reviewed: r.reviewed === 1,
+    confidence: r.confidence,
+  };
+}
+
+export function listMemoryEntriesV2(
+  opts: {
+    kind?: string;
+    reviewStatus?: "approved" | "pending" | "all";
+    includeArchived?: boolean;
+    limit?: number;
+  } = {},
+): MemoryEntryDTO[] | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const parts: string[] = ["user_id = 'default'", "workspace_id = 'default'"];
+    const values: (string | number)[] = [];
+    if (opts.kind) {
+      parts.push("kind = ?");
+      values.push(opts.kind);
+    }
+    if (!opts.includeArchived) {
+      parts.push("archived_at IS NULL");
+    }
+    const reviewStatus = opts.reviewStatus ?? "approved";
+    if (reviewStatus === "approved") parts.push("reviewed = 1");
+    else if (reviewStatus === "pending") parts.push("reviewed = 0");
+
+    const limit = opts.limit ?? 200;
+    values.push(limit);
+
+    const rows = d
+      .prepare(
+        `SELECT id, user_id, workspace_id, kind, content, content_hash, source_type, source_session_id,
+                created_at, updated_at, last_accessed_at, access_count, pinned, archived_at, metadata, reviewed, confidence
+         FROM memory_entries
+         WHERE ${parts.join(" AND ")}
+         ORDER BY pinned DESC, reviewed DESC, updated_at DESC LIMIT ?`,
+      )
+      .all(...values) as MemoryRow[];
+    return rows.map(mapMemRow);
+  } catch {
+    return null;
+  }
+}
+
+// --- Mutations ---
+
+import { createHash } from "node:crypto";
+
+function sha256(content: string): string {
+  return createHash("sha256").update(content).digest("hex");
+}
+
+function auditLog(
+  d: BetterSqlite3.Database,
+  memoryId: number,
+  action: string,
+  oldContent: string | null,
+  newContent: string | null,
+  actor: string,
+  reason: string | null,
+) {
+  d.prepare(
+    `INSERT INTO memory_audit (memory_id, action, old_content, new_content, actor, reason, at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).run(memoryId, action, oldContent, newContent, actor, reason, Date.now());
+}
+
+export function createMemoryEntryV2(input: {
+  kind: string;
+  content: string;
+  pinned?: boolean;
+  reviewed?: boolean;
+}): { id: number; error?: string } | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const now = Date.now();
+    const hash = sha256(input.content);
+
+    // Dedup check
+    const existing = d
+      .prepare(
+        "SELECT id FROM memory_entries WHERE user_id = 'default' AND workspace_id = 'default' AND content_hash = ? AND archived_at IS NULL",
+      )
+      .get(hash) as { id: number } | undefined;
+    if (existing) {
+      return { id: existing.id, error: "duplicate (content already exists)" };
+    }
+
+    const result = d
+      .prepare(
+        `INSERT INTO memory_entries
+         (user_id, workspace_id, kind, content, content_hash, source_type, source_session_id,
+          created_at, updated_at, access_count, pinned, metadata, reviewed, confidence)
+         VALUES ('default', 'default', ?, ?, ?, 'manual', NULL, ?, ?, 0, ?, NULL, ?, NULL)`,
+      )
+      .run(
+        input.kind,
+        input.content,
+        hash,
+        now,
+        now,
+        input.pinned ? 1 : 0,
+        input.reviewed === false ? 0 : 1,
+      );
+    const id = Number(result.lastInsertRowid);
+    auditLog(d, id, "create", null, input.content, "user", "dashboard manual create");
+    return { id };
+  } catch (err) {
+    return { id: -1, error: err instanceof Error ? err.message : "create failed" };
+  }
+}
+
+export function updateMemoryEntryV2(
+  id: number,
+  updates: { content?: string; kind?: string; pinned?: boolean; reviewed?: boolean },
+): boolean {
+  const d = getDb();
+  if (!d) return false;
+  try {
+    const existing = d
+      .prepare("SELECT content FROM memory_entries WHERE id = ?")
+      .get(id) as { content: string } | undefined;
+    if (!existing) return false;
+
+    const fields: string[] = [];
+    const values: (string | number | null)[] = [];
+
+    if (updates.content !== undefined) {
+      fields.push("content = ?", "content_hash = ?");
+      values.push(updates.content, sha256(updates.content));
+    }
+    if (updates.kind !== undefined) {
+      fields.push("kind = ?");
+      values.push(updates.kind);
+    }
+    if (updates.pinned !== undefined) {
+      fields.push("pinned = ?");
+      values.push(updates.pinned ? 1 : 0);
+    }
+    if (updates.reviewed !== undefined) {
+      fields.push("reviewed = ?");
+      values.push(updates.reviewed ? 1 : 0);
+    }
+
+    if (fields.length === 0) return true;
+
+    fields.push("updated_at = ?");
+    values.push(Date.now());
+    values.push(id);
+
+    d.prepare(
+      `UPDATE memory_entries SET ${fields.join(", ")} WHERE id = ?`,
+    ).run(...values);
+
+    const action =
+      updates.reviewed === true ? "approve"
+      : updates.reviewed === false ? "unapprove"
+      : updates.pinned === true ? "pin"
+      : updates.pinned === false ? "unpin"
+      : "update";
+
+    auditLog(
+      d,
+      id,
+      action,
+      existing.content,
+      updates.content ?? null,
+      "user",
+      "dashboard edit",
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function archiveMemoryEntryV2(id: number): boolean {
+  const d = getDb();
+  if (!d) return false;
+  try {
+    const existing = d
+      .prepare("SELECT content FROM memory_entries WHERE id = ?")
+      .get(id) as { content: string } | undefined;
+    if (!existing) return false;
+    d.prepare("UPDATE memory_entries SET archived_at = ? WHERE id = ?").run(
+      Date.now(),
+      id,
+    );
+    auditLog(d, id, "archive", existing.content, null, "user", "dashboard archive");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function restoreMemoryEntryV2(id: number): boolean {
+  const d = getDb();
+  if (!d) return false;
+  try {
+    d.prepare("UPDATE memory_entries SET archived_at = NULL WHERE id = ?").run(id);
+    auditLog(d, id, "restore", null, null, "user", "dashboard restore");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function listRetrievalsV2(limit: number = 50): RetrievalDTO[] | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const rows = d
+      .prepare(
+        `SELECT id, query, source, hits_json, injected, at
+         FROM memory_retrievals
+         ORDER BY at DESC LIMIT ?`,
+      )
+      .all(limit) as Array<{
+      id: number;
+      query: string;
+      source: string;
+      hits_json: string;
+      injected: number;
+      at: number;
+    }>;
+    return rows.map((r) => ({
+      id: r.id,
+      query: r.query,
+      source: r.source,
+      hits: JSON.parse(r.hits_json) as RetrievalDTO['hits'],
+      injected: r.injected === 1,
+      at: r.at,
+    }));
+  } catch {
+    return null;
+  }
+}
+
+export function listMemoryAuditV2(memoryId?: number, limit: number = 50): Array<{
+  id: number;
+  memoryId: number;
+  action: string;
+  oldContent: string | null;
+  newContent: string | null;
+  actor: string;
+  reason: string | null;
+  at: number;
+}> | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const rows = memoryId
+      ? (d
+          .prepare(
+            `SELECT id, memory_id, action, old_content, new_content, actor, reason, at
+             FROM memory_audit WHERE memory_id = ? ORDER BY at DESC LIMIT ?`,
+          )
+          .all(memoryId, limit) as Array<{
+          id: number;
+          memory_id: number;
+          action: string;
+          old_content: string | null;
+          new_content: string | null;
+          actor: string;
+          reason: string | null;
+          at: number;
+        }>)
+      : (d
+          .prepare(
+            `SELECT id, memory_id, action, old_content, new_content, actor, reason, at
+             FROM memory_audit ORDER BY at DESC LIMIT ?`,
+          )
+          .all(limit) as Array<{
+          id: number;
+          memory_id: number;
+          action: string;
+          old_content: string | null;
+          new_content: string | null;
+          actor: string;
+          reason: string | null;
+          at: number;
+        }>);
+    return rows.map((r) => ({
+      id: r.id,
+      memoryId: r.memory_id,
+      action: r.action,
+      oldContent: r.old_content,
+      newContent: r.new_content,
+      actor: r.actor,
+      reason: r.reason,
+      at: r.at,
+    }));
+  } catch {
+    return null;
+  }
+}
+
+export async function readDailyLog(date: string): Promise<string | null> {
+  try {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+    const filePath = join(DAILY_DIR, `${date}.md`);
+    if (!existsSync(filePath)) return null;
+    return await readFile(filePath, "utf-8");
+  } catch {
+    return null;
+  }
+}
+
 export async function listDailyLogs(): Promise<DailyLog[] | null> {
   try {
     if (!existsSync(DAILY_DIR)) return null;
@@ -440,7 +833,30 @@ export async function getConfig(): Promise<ForgeClawConfig | null> {
     if (parsed.botToken) {
       parsed.botToken = parsed.botToken.slice(0, 6) + "***hidden***";
     }
+    // Mask dashboardToken for dashboard display
+    if (parsed.dashboardToken) {
+      parsed.dashboardToken = parsed.dashboardToken.slice(0, 8) + "***hidden***";
+    }
     return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Read the dashboard token from config WITHOUT masking.
+ * Used server-side only (proxy, API auth) to validate incoming tokens.
+ * Returns null if config doesn't exist or has no dashboardToken.
+ */
+export async function getDashboardToken(): Promise<string | null> {
+  try {
+    if (!existsSync(CONFIG_PATH)) return null;
+    const raw = await readFile(CONFIG_PATH, "utf-8");
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (typeof parsed.dashboardToken === "string" && parsed.dashboardToken.length > 0) {
+      return parsed.dashboardToken;
+    }
+    return null;
   } catch {
     return null;
   }
