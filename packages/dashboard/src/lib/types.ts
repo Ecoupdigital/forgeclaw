@@ -1,3 +1,5 @@
+export type RuntimeName = "claude-code" | "codex";
+
 export interface SessionInfo {
   id: string;
   topicId: number | null;
@@ -16,6 +18,8 @@ export interface TopicInfo {
   projectDir: string | null;
   sessionId: string | null;
   createdAt: number;
+  runtime?: RuntimeName | null;
+  runtimeFallback?: boolean;
 }
 
 export interface CronJob {
@@ -29,6 +33,8 @@ export interface CronJob {
   lastStatus: string | null;
   origin: "file" | "db";
   sourceFile: string | null;
+  runtime?: RuntimeName | null;
+  model?: string | null;
 }
 
 export interface CronLog {
@@ -63,11 +69,17 @@ export interface HarnessFile {
 export interface ForgeClawConfig {
   botToken: string;
   allowedUsers: number[];
+  allowedGroups?: number[];
   workingDir: string;
   vaultPath?: string;
-  voiceProvider?: "openai" | "google" | "none";
+  voiceProvider?: "groq" | "openai" | "none";
   claudeModel?: string;
   maxConcurrentSessions?: number;
+  defaultRuntime?: RuntimeName;
+  showRuntimeBadge?: boolean;
+  memoryReviewMode?: "auto" | "hybrid" | "review";
+  memoryAutoApproveThreshold?: number;
+  dashboardToken?: string;
 }
 
 export interface PlanCard {
@@ -81,5 +93,5 @@ export interface PlanCard {
 export interface SkillInfo {
   name: string;
   description: string;
-  source: string; // path relativo, ex: "apify/SKILL.md" ou "buscar-x.md"
+  source: string;
 }
