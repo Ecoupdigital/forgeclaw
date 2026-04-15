@@ -126,3 +126,17 @@
 | DOC-01 | Fase 10 | Pendente |
 | DOC-02 | Fase 10 | Pendente |
 | DOC-03 | Fase 10 | Pendente |
+| PKG-B1 | Fase 11 | Pendente |
+| PKG-B2 | Fase 11 | Pendente |
+| PKG-B3 | Fase 12 | Pendente |
+| PKG-B4 | Fase 12 | Pendente |
+| PKG-B5 | Fase 11 | Pendente |
+| PKG-B6 | Fase 13 | Pendente |
+
+## Packaging Blockers (PKG)
+- [ ] PKG-B1: Dashboard instalado como serviço de sistema (systemd/launchd) em modo produção
+- [ ] PKG-B2: API keys (OPENAI_API_KEY, GROQ_API_KEY) injetadas no environment dos serviços via env file
+- [ ] PKG-B3: voiceProvider aceita valores válidos (groq/openai/none), installer oferece Groq, VoiceHandler respeita config
+- [ ] PKG-B4: CLAUDE.md harness gerado automaticamente concatenando os 6 arquivos harness individuais
+- [ ] PKG-B5: `bun install` executado automaticamente durante o onboarding
+- [ ] PKG-B6: Dashboard protegido por token de autenticação (login page, middleware, API validation)

@@ -133,3 +133,44 @@
 | 8 | 6/6 (DASH-04 subset) | DASH-04 Done | 2026-04-11 |
 | 9 | 0/? | Pendente | -- |
 | 10 | 0/? | Pendente | -- |
+| 11 | 0/? | Pendente | -- |
+| 12 | 0/? | Pendente | -- |
+| 13 | 0/? | Pendente | -- |
+
+### Fase 11: Service & Environment Infrastructure (B1 + B2 + B5)
+**Objetivo:** Instalar dashboard como serviço de sistema, criar env file com API keys, adicionar passo de bun install no installer.
+**Depende de:** Fases 8, 9
+**Requisitos:** [PKG-B1, PKG-B2, PKG-B5]
+**Critérios de Sucesso:**
+  1. Env file (~/.forgeclaw/.env) criado com API keys durante install
+  2. Bot systemd service usa EnvironmentFile= para carregar env vars
+  3. Dashboard systemd/launchd service criado e instalado pelo installer
+  4. Dashboard roda em production mode (next build + next start)
+  5. `bun install` executado automaticamente durante install com spinner
+  6. Ambos serviços auto-start após install e reboot
+
+### Fase 12: Voice & Harness Config (B3 + B4)
+**Objetivo:** Corrigir voiceProvider com valores válidos, adicionar opção Groq, gerar CLAUDE.md harness compilado.
+**Depende de:** Fase 11
+**Requisitos:** [PKG-B3, PKG-B4]
+**Critérios de Sucesso:**
+  1. Installer oferece Groq (recomendado) + OpenAI + None para voz
+  2. Config salva voiceProvider válido ('groq', 'openai', 'none')
+  3. VoiceHandler respeita campo voiceProvider do config
+  4. Installer coleta GROQ_API_KEY quando Groq selecionado
+  5. CLAUDE.md gerado concatenando SOUL+USER+AGENTS+TOOLS+MEMORY+STYLE
+  6. compileHarness() function existe para recompilação
+  7. Bot verifica existência do CLAUDE.md no startup
+
+### Fase 13: Dashboard Authentication (B6)
+**Objetivo:** Adicionar autenticação por token no dashboard e WebSocket server.
+**Depende de:** Fase 11
+**Requisitos:** [PKG-B6]
+**Critérios de Sucesso:**
+  1. Token aleatório gerado durante install
+  2. Token salvo em config como `dashboardToken`
+  3. Next.js middleware valida cookie de token em todas rotas exceto /login
+  4. Página /login aceita token e seta cookie
+  5. API routes validam token via header ou cookie
+  6. WS server valida token no upgrade request
+  7. Token exibido ao usuário após install
