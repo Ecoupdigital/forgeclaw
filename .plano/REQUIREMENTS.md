@@ -140,3 +140,15 @@
 - [ ] PKG-B4: CLAUDE.md harness gerado automaticamente concatenando os 6 arquivos harness individuais
 - [ ] PKG-B5: `bun install` executado automaticamente durante o onboarding
 - [ ] PKG-B6: Dashboard protegido por token de autenticação (login page, middleware, API validation)
+
+## HIGH Priority Gaps (HIG)
+- [ ] HIG-H1: APIs retornam arrays vazios (não mock data) quando DB indisponível
+- [ ] HIG-H2: Cron execução cria apenas UMA entry de log (não duas duplicadas)
+- [ ] HIG-H3: Session keys padronizadas como "chatId:topicId" (0 para DMs) em bot e dashboard
+- [ ] HIG-H4: writeConfig() protege tokens mascarados de serem escritos no config
+- [ ] HIG-H5: Claude CLI fallback path é 'claude' (não /root/.local/bin/claude)
+- [ ] HIG-H6: Pedidos explícitos de memória ("lembra que X") salvam entry imediatamente
+- [ ] HIG-H7: Output completo de cron visível na aba de logs do dashboard
+- [ ] HIG-H8: Memory tab com busca FTS5 e paginação (50 entries por página)
+- [ ] HIG-H9: Bot envia typing indicator em loop durante processamento do Claude
+- [ ] HIG-H10: Timezone configurável no config com default America/Sao_Paulo

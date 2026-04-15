@@ -174,3 +174,39 @@
   5. API routes validam token via header ou cookie
   6. WS server valida token no upgrade request
   7. Token exibido ao usuário após install
+
+### Fase 14: Quick Fixes — Mock Data, Claude Path, Typing (H1 + H5 + H9)
+**Objetivo:** Correções triviais/pequenas que impactam primeira impressão do cliente.
+**Depende de:** —
+**Requisitos:** [HIG-H1, HIG-H5, HIG-H9]
+**Critérios de Sucesso:**
+  1. APIs retornam arrays vazios quando DB falha (não mock data)
+  2. Claude CLI fallback é 'claude' (não /root/.local/bin/claude)
+  3. Bot envia typing indicator durante processamento do Claude
+
+### Fase 15: Data Integrity — Cron Logs, Session Keys, Config Safety (H2 + H3 + H4)
+**Objetivo:** Corrigir bugs de integridade de dados que acumulam problemas.
+**Depende de:** —
+**Requisitos:** [HIG-H2, HIG-H3, HIG-H4]
+**Critérios de Sucesso:**
+  1. Cron execução cria UMA entry de log (não duas)
+  2. Session keys sempre no formato "chatId:topicId" (0 para DMs)
+  3. writeConfig() nunca sobrescreve tokens mascarados
+
+### Fase 16: UX Improvements — Cron Output, Memory Search, Timezone (H7 + H8 + H10)
+**Objetivo:** Melhorias de UX no dashboard: output de cron visível, busca de memória, timezone configurável.
+**Depende de:** —
+**Requisitos:** [HIG-H7, HIG-H8, HIG-H10]
+**Critérios de Sucesso:**
+  1. Output de cron visível na aba de logs do dashboard
+  2. Memory tab tem campo de busca FTS5 e paginação (50/page)
+  3. Timezone lida do config com default America/Sao_Paulo
+
+### Fase 17: Immediate Memory Save (H6)
+**Objetivo:** Detectar pedidos explícitos de memória e salvar imediatamente.
+**Depende de:** —
+**Requisitos:** [HIG-H6]
+**Critérios de Sucesso:**
+  1. Frases "lembra que", "remember that" etc. detectadas no input
+  2. Memory entry criada imediatamente via memoryManagerV2
+  3. Usuário recebe confirmação que a memória foi salva
