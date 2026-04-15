@@ -84,16 +84,32 @@ export function MemoryTab() {
 
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // --- Fetchers ---
 
-  const fetchActive = useCallback(async () => {
-    const q = kindFilter === "all" ? "" : `&kind=${kindFilter}`;
-    const res = await fetch(`/api/memory/entries?reviewStatus=approved${q}`, {
-      cache: "no-store",
-    });
+  const fetchActive = useCallback(async (append = false) => {
+    const offset = append ? entriesCountRef.current : 0;
+    const kindParam = kindFilter === "all" ? "" : `&kind=${kindFilter}`;
+    const searchParam = debouncedQuery.length >= 2 ? `&q=${encodeURIComponent(debouncedQuery)}` : "";
+    const res = await fetch(
+      `/api/memory/entries?reviewStatus=approved${kindParam}${searchParam}&limit=${PAGE_SIZE}&offset=${offset}`,
+      { cache: "no-store" },
+    );
     const d = await res.json();
-    setEntries(d.entries ?? []);
-  }, [kindFilter]);
+    const newEntries = d.entries ?? [];
+    setHasMore(d.hasMore ?? false);
+    if (append) {
+      setEntries((prev) => [...prev, ...newEntries]);
+    } else {
+      setEntries(newEntries);
+    }
+  }, [kindFilter, debouncedQuery]);
 
   const fetchPending = useCallback(async () => {
     const res = await fetch(`/api/memory/entries?reviewStatus=pending`, {
@@ -148,8 +164,14 @@ export function MemoryTab() {
   }, [refreshAll]);
 
   useEffect(() => {
-    if (activeTab === "active") void fetchActive();
-  }, [activeTab, fetchActive, kindFilter]);
+    if (activeTab === "active") void fetchActive(false);
+  }, [activeTab, fetchActive, debouncedQuery, kindFilter]);
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    await fetchActive(true);
+    setLoadingMore(false);
+  };
 
   // --- Mutations ---
 
@@ -520,6 +542,14 @@ export function MemoryTab() {
         {/* ACTIVE */}
         {activeTab === "active" && (
           <div className="space-y-3">
+            <Input
+              type="search"
+              placeholder="buscar memories (FTS5)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Buscar memory entries"
+              className="border-violet-dim bg-night-panel text-text-body placeholder:text-text-secondary/60"
+            />
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex gap-1.5 flex-wrap">
                 {KINDS.map((k) => (
@@ -590,10 +620,25 @@ export function MemoryTab() {
 
             {entries.length === 0 ? (
               <p className="py-6 text-center text-sm text-text-secondary">
-                nenhum entry {kindFilter !== "all" && `de kind=${kindFilter}`}
+                {debouncedQuery
+                  ? `nenhum resultado para "${debouncedQuery}"`
+                  : `nenhum entry ${kindFilter !== "all" ? `de kind=${kindFilter}` : ""}`}
               </p>
             ) : (
               entries.map((e) => renderEntryCard(e, { showActions: "active" }))
+            )}
+            {hasMore && (
+              <div className="flex justify-center pt-2">
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="border-violet-dim text-violet hover:bg-violet/10"
+                >
+                  {loadingMore ? "loading..." : `load more (showing ${entries.length})`}
+                </Button>
+              </div>
             )}
           </div>
         )}
