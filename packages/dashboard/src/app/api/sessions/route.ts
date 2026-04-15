@@ -1,9 +1,4 @@
 import * as core from "@/lib/core";
-import {
-  mockSessions,
-  mockMessages,
-  mockTopics,
-} from "@/lib/mock-data";
 import type { TopicInfo } from "@/lib/types";
 import { requireApiAuth } from "@/lib/auth";
 

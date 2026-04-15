@@ -1,5 +1,4 @@
 import * as core from "@/lib/core";
-import { mockCronLogs } from "@/lib/mock-data";
 import { requireApiAuth } from "@/lib/auth";
 
 export async function GET(

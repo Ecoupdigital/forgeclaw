@@ -1,5 +1,4 @@
 import * as core from "@/lib/core";
-import { mockCronJobs } from "@/lib/mock-data";
 import type { CronJob } from "@/lib/types";
 import { CronExpressionParser } from "cron-parser";
 import { z } from "zod";
