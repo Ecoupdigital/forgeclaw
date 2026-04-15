@@ -1,7 +1,9 @@
 import type { Context } from 'grammy';
-import { fileHandler } from '@forgeclaw/core';
+import { fileHandler, sessionManager } from '@forgeclaw/core';
 import type { ForgeClawConfig } from '@forgeclaw/core';
 import { createTextHandler } from './text';
+import { copyFile, mkdir, unlink } from 'node:fs/promises';
+import { join, basename } from 'node:path';
 
 export function createDocumentHandler(config: ForgeClawConfig) {
   const textHandler = createTextHandler(config);
@@ -17,6 +19,7 @@ export function createDocumentHandler(config: ForgeClawConfig) {
     const caption = ctx.message?.caption;
     const fileName = doc.file_name ?? 'unknown';
     let filePath: string | null = null;
+    let localPath: string | null = null;
 
     try {
       // 1. Download file
@@ -32,7 +35,16 @@ export function createDocumentHandler(config: ForgeClawConfig) {
       if (extracted.type === 'text') {
         prompt = `[Arquivo: ${fileName}]\n\n${extracted.content}\n\n${caption ?? 'Analise este arquivo'}`;
       } else if (extracted.type === 'image') {
-        prompt = `[Imagem: ${extracted.content}]\n${caption ?? 'Leia esta imagem com Read tool.'}`;
+        // Copy image to projectDir so Claude CLI can read it
+        const session = await sessionManager.getOrCreateSession(chatId, topicId);
+        const projectDir = session.projectDir ?? config.workingDir;
+        const uploadsDir = join(projectDir, '.forgeclaw-uploads');
+        await mkdir(uploadsDir, { recursive: true });
+        const imgFileName = basename(extracted.content);
+        localPath = join(uploadsDir, imgFileName);
+        await copyFile(extracted.content, localPath);
+        const relativePath = `.forgeclaw-uploads/${imgFileName}`;
+        prompt = `[Imagem: ${relativePath}]\n${caption ?? 'Leia esta imagem com Read tool.'}`;
       } else {
         prompt = `[Arquivo em ${extracted.content}]\n${caption ?? 'Analise este arquivo.'}`;
       }
@@ -51,6 +63,9 @@ export function createDocumentHandler(config: ForgeClawConfig) {
     } finally {
       if (filePath) {
         await fileHandler.cleanup(filePath);
+      }
+      if (localPath) {
+        try { await unlink(localPath); } catch { /* ignore */ }
       }
     }
   };

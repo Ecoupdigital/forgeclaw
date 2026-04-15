@@ -1,7 +1,9 @@
 import type { Context } from 'grammy';
-import { fileHandler } from '@forgeclaw/core';
+import { fileHandler, sessionManager } from '@forgeclaw/core';
 import type { ForgeClawConfig } from '@forgeclaw/core';
 import { createTextHandler } from './text';
+import { copyFile, mkdir, unlink } from 'node:fs/promises';
+import { join, basename } from 'node:path';
 
 export function createPhotoHandler(config: ForgeClawConfig) {
   const textHandler = createTextHandler(config);
@@ -15,19 +17,32 @@ export function createPhotoHandler(config: ForgeClawConfig) {
 
     const topicId = ctx.message?.message_thread_id ?? null;
     const caption = ctx.message?.caption;
-    let filePath: string | null = null;
+    let tmpPath: string | null = null;
+    let localPath: string | null = null;
 
     try {
       // 1. Get highest resolution photo (last in array)
       const bestPhoto = photos[photos.length - 1];
 
-      // 2. Download
-      filePath = await fileHandler.downloadTelegramFile(ctx.api, bestPhoto.file_id);
+      // 2. Download to /tmp
+      tmpPath = await fileHandler.downloadTelegramFile(ctx.api, bestPhoto.file_id);
 
-      // 3. Build prompt
-      const prompt = `[Foto: ${filePath}]\n${caption ?? 'Analise esta imagem'}`;
+      // 3. Resolve projectDir for session
+      const session = await sessionManager.getOrCreateSession(chatId, topicId);
+      const projectDir = session.projectDir ?? config.workingDir;
 
-      // 4. Send to Claude via text handler
+      // 4. Copy to projectDir/.forgeclaw-uploads/
+      const uploadsDir = join(projectDir, '.forgeclaw-uploads');
+      await mkdir(uploadsDir, { recursive: true });
+      const fileName = basename(tmpPath);
+      localPath = join(uploadsDir, fileName);
+      await copyFile(tmpPath, localPath);
+
+      // 5. Build prompt with relative path (Claude CLI runs with cwd=projectDir)
+      const relativePath = `.forgeclaw-uploads/${fileName}`;
+      const prompt = `[Foto: ${relativePath}]\n${caption ?? 'Analise esta imagem. Use a ferramenta Read para ler o arquivo de imagem.'}`;
+
+      // 6. Send to Claude via text handler
       if (ctx.message) {
         (ctx.message as any).text = prompt;
       }
@@ -39,8 +54,11 @@ export function createPhotoHandler(config: ForgeClawConfig) {
         ...(topicId ? { message_thread_id: topicId } : {}),
       });
     } finally {
-      if (filePath) {
-        await fileHandler.cleanup(filePath);
+      if (tmpPath) {
+        await fileHandler.cleanup(tmpPath);
+      }
+      if (localPath) {
+        try { await unlink(localPath); } catch { /* ignore */ }
       }
     }
   };
