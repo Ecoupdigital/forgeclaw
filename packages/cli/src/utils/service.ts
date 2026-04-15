@@ -42,6 +42,28 @@ WantedBy=multi-user.target
 `
 }
 
+function getSystemdDashboardUnit(): string {
+  return `[Unit]
+Description=ForgeClaw Dashboard
+After=forgeclaw.service
+Requires=forgeclaw.service
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/bun run build
+ExecStart=/usr/bin/bun run start
+Restart=always
+RestartSec=5
+EnvironmentFile=-${ENV_FILE_PATH}
+Environment=HOME=${homedir()}
+Environment=NODE_ENV=production
+WorkingDirectory=${DASHBOARD_DIR}
+
+[Install]
+WantedBy=multi-user.target
+`
+}
+
 function getLaunchdPlist(): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
