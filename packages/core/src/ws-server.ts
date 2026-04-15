@@ -303,6 +303,19 @@ function handleListSessions(ws: WsSocket): void {
 // --- Auth ---
 
 /**
+ * Constant-time string comparison to prevent timing attacks on token validation.
+ * Uses XOR accumulation so execution time is independent of where strings differ.
+ */
+function timingSafeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
+/**
  * Validate the dashboard token from a WS upgrade request.
  * Token can come from:
  *   - query parameter: ws://host:4041/?token=xxx
@@ -319,13 +332,13 @@ async function validateWsToken(req: Request): Promise<boolean> {
   // Try query parameter first
   const url = new URL(req.url);
   const queryToken = url.searchParams.get('token');
-  if (queryToken && queryToken === expected) return true;
+  if (queryToken && timingSafeCompare(queryToken, expected)) return true;
 
   // Try Authorization header
   const authHeader = req.headers.get('Authorization');
   if (authHeader) {
     const parts = authHeader.split(' ');
-    if (parts.length === 2 && parts[0] === 'Bearer' && parts[1] === expected) {
+    if (parts.length === 2 && parts[0] === 'Bearer' && timingSafeCompare(parts[1], expected)) {
       return true;
     }
   }
