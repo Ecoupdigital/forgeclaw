@@ -402,12 +402,8 @@ class CronEngine {
     const finishedAt = Date.now();
     const status = success ? 'success' : 'failed';
 
-    // Update cron log
-    // Note: We create a new log entry for the final state since SQLite update by log id
-    // would require an updateCronLog method. We use the existing log entry approach.
-    stateStore.createCronLog({
-      jobId: job.id,
-      startedAt,
+    // Update the "running" log entry with final state
+    stateStore.updateCronLog(logId, {
       finishedAt,
       status,
       output: output.slice(0, 10_000), // Limit output size
