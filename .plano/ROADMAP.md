@@ -210,3 +210,31 @@
   1. Frases "lembra que", "remember that" etc. detectadas no input
   2. Memory entry criada imediatamente via memoryManagerV2
   3. Usuário recebe confirmação que a memória foi salva
+
+### Fase 18: Core Hardening (M1 + M2 + M3 + M8 + M10)
+**Objetivo:** Corrigir defaults hardcoded, consolidar memory system, documentar flags, checar versão Bun, mensagens de erro amigáveis.
+**Depende de:** —
+**Requisitos:** [MED-M1, MED-M2, MED-M3, MED-M8, MED-M10]
+**Critérios de Sucesso:**
+  1. Daily log default é ~/.forgeclaw/memory/daily (não /home/vault)
+  2. Memory v1 deprecated — v2 é o único sistema ativo
+  3. --dangerously-skip-permissions documentado e configurável
+  4. Installer checa versão mínima do Bun (1.1.0)
+  5. Erros do Claude CLI traduzidos para mensagens amigáveis
+
+### Fase 19: Dashboard Safety & UX (M4 + M6 + M9)
+**Objetivo:** Config validation, cron failure highlight, user management no dashboard.
+**Depende de:** —
+**Requisitos:** [MED-M4, MED-M6, MED-M9]
+**Critérios de Sucesso:**
+  1. PUT /api/config valida campos contra whitelist
+  2. Cron failures têm prefixo visual claro no Telegram
+  3. allowedUsers/allowedGroups editáveis no config tab
+
+### Fase 20: Data Export & Photo Handling (M5 + M7)
+**Objetivo:** Comando forgeclaw export + fotos copiadas para workingDir.
+**Depende de:** —
+**Requisitos:** [MED-M5, MED-M7]
+**Critérios de Sucesso:**
+  1. `forgeclaw export` gera .tar.gz com db + config + harness + memory
+  2. Fotos enviadas ao bot são copiadas para workingDir antes de enviar ao Claude

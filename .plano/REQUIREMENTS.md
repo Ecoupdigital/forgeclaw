@@ -152,3 +152,15 @@
 - [ ] HIG-H8: Memory tab com busca FTS5 e paginação (50 entries por página)
 - [ ] HIG-H9: Bot envia typing indicator em loop durante processamento do Claude
 - [ ] HIG-H10: Timezone configurável no config com default America/Sao_Paulo
+
+## MEDIUM Priority Gaps (MED)
+- [ ] MED-M1: Daily log dir default ~/.forgeclaw/memory/daily (não vault pessoal hardcoded)
+- [ ] MED-M2: Memory v1 deprecated, v2 único sistema ativo, sem crons duplicados
+- [ ] MED-M3: --dangerously-skip-permissions documentado e configurável via config
+- [ ] MED-M4: Config PUT valida campos contra whitelist, rejeita desconhecidos
+- [ ] MED-M5: `forgeclaw export` gera .tar.gz com db + config + harness + memory
+- [ ] MED-M6: Cron failures com prefixo visual claro (❌) no Telegram
+- [ ] MED-M7: Fotos copiadas para workingDir antes de enviar path ao Claude
+- [ ] MED-M8: Installer checa versão mínima do Bun (>= 1.1.0)
+- [ ] MED-M9: allowedUsers e allowedGroups editáveis no config tab do dashboard
+- [ ] MED-M10: Erros do Claude CLI traduzidos para mensagens amigáveis no Telegram
