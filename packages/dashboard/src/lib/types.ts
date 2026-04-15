@@ -80,6 +80,7 @@ export interface ForgeClawConfig {
   memoryReviewMode?: "auto" | "hybrid" | "review";
   memoryAutoApproveThreshold?: number;
   dashboardToken?: string;
+  timezone?: string;
 }
 
 export interface PlanCard {
