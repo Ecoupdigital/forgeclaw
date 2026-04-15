@@ -17,6 +17,7 @@ import { agentsTemplate } from '../templates/agents'
 import { toolsTemplate } from '../templates/tools'
 import { memoryTemplate } from '../templates/memory'
 import { styleTemplate } from '../templates/style'
+import { randomBytes } from 'node:crypto'
 import { setupService, writeEnvFile } from '../utils/service'
 import { compileHarness } from '@forgeclaw/core'
 
@@ -253,6 +254,7 @@ export async function install(options: InstallOptions = {}): Promise<void> {
     userName,
     company,
     role,
+    dashboardToken: (existingConfig.dashboardToken as string) ?? randomBytes(32).toString('hex'),
   }
 
   // Create directories
@@ -391,9 +393,12 @@ export async function install(options: InstallOptions = {}): Promise<void> {
 
   Open Telegram and send /start to your bot
   Dashboard: http://localhost:4040
+  Dashboard Token: ${config.dashboardToken}
   Status: forgeclaw status
   Logs: forgeclaw logs
 
   API keys stored in: ~/.forgeclaw/.env
-  Config: ~/.forgeclaw/forgeclaw.config.json`)
+  Config: ~/.forgeclaw/forgeclaw.config.json
+
+  IMPORTANT: Save the Dashboard Token above. You'll need it to access the dashboard.`)
 }
