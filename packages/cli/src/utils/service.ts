@@ -1,4 +1,4 @@
-import { writeFileSync, existsSync, unlinkSync, mkdirSync } from 'node:fs'
+import { writeFileSync, existsSync, unlinkSync, mkdirSync, chmodSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { homedir } from 'node:os'
 
@@ -316,4 +316,25 @@ export async function isServiceRunning(): Promise<boolean> {
     return result.exitCode === 0
   }
   return false
+}
+
+export function writeEnvFile(config: { openaiApiKey?: string | null; groqApiKey?: string | null }): void {
+  const lines: string[] = []
+
+  if (config.openaiApiKey) {
+    lines.push(`OPENAI_API_KEY=${config.openaiApiKey}`)
+  }
+
+  if (config.groqApiKey) {
+    lines.push(`GROQ_API_KEY=${config.groqApiKey}`)
+  }
+
+  if (lines.length === 0) {
+    // No keys to write, skip creating env file
+    return
+  }
+
+  const content = lines.join('\n') + '\n'
+  writeFileSync(ENV_FILE_PATH, content)
+  chmodSync(ENV_FILE_PATH, 0o600) // Restrictive permissions -- only owner can read
 }
