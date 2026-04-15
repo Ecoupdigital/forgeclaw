@@ -70,7 +70,7 @@ export function CronsTab() {
             if (ld.logs) {
               logsMap[job.id] = ld.logs
                 .filter((l) => l.finishedAt)
-                .slice(0, 5);
+                .slice(0, 10);
             }
           } catch {
             /* ignore per-job log failure */
