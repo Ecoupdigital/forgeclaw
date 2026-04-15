@@ -33,6 +33,7 @@ Type=simple
 ExecStart=/usr/bin/bun run ${BOT_ENTRY}
 Restart=always
 RestartSec=5
+EnvironmentFile=-${ENV_FILE_PATH}
 Environment=HOME=${homedir()}
 WorkingDirectory=${resolve(__dirname, '..', '..', '..', '..')}
 
