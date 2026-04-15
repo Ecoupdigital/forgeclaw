@@ -24,6 +24,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import type { CronJob, CronLog } from "@/lib/types";
+import { useTimezone } from "@/hooks/use-timezone";
 
 interface CronCardProps {
   job: CronJob;
@@ -37,17 +38,6 @@ interface CronCardProps {
   highlighted?: boolean;
 }
 
-function formatTimestamp(ts: number | null): string {
-  if (!ts) return "Never";
-  const d = new Date(ts);
-  return d.toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export function CronCard({
   job,
   logs,
@@ -59,6 +49,7 @@ export function CronCard({
   runningId,
   highlighted = false,
 }: CronCardProps) {
+  const { formatTime } = useTimezone();
   const [showLogs, setShowLogs] = useState(false);
   const [expandedLogIds, setExpandedLogIds] = useState<Set<number>>(new Set());
   const isRunning = runningId === job.id;
@@ -133,7 +124,7 @@ export function CronCard({
           </div>
           <div className="flex items-center gap-2 text-xs">
             <span className="text-text-secondary">Last run:</span>
-            <span className="text-text-body">{formatTimestamp(job.lastRun)}</span>
+            <span className="text-text-body">{job.lastRun ? formatTime(job.lastRun) : "Never"}</span>
           </div>
           <div className="text-xs text-text-secondary">
             <span className="text-text-secondary">Prompt: </span>
@@ -274,7 +265,7 @@ export function CronCard({
               >
                 <div className="mb-1 flex items-center justify-between">
                   <span className="text-text-secondary">
-                    {formatTimestamp(log.startedAt)}
+                    {formatTime(log.startedAt)}
                   </span>
                   <Badge
                     variant="outline"
