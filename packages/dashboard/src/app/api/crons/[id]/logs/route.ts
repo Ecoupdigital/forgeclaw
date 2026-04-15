@@ -22,9 +22,9 @@ export async function GET(
       return Response.json({ logs, source: "core" });
     }
   } catch (err) {
-    console.warn("[api/crons/logs] Core unavailable, using mock data:", err);
+    console.warn("[api/crons/logs] Core unavailable:", err);
   }
 
-  const logs = mockCronLogs.filter((l) => l.jobId === jobId);
-  return Response.json({ logs, source: "mock" });
+  // H1: Never return mock data — return empty array so UI shows empty state
+  return Response.json({ logs: [], source: "empty" });
 }

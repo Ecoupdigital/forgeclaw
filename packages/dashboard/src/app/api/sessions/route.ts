@@ -20,7 +20,7 @@ export async function GET(request: Request) {
       const msgs = core.getMessages(Number(topicId), 100);
       return Response.json({
         messages: msgs ?? [],
-        source: msgs ? "core" : "mock",
+        source: msgs ? "core" : "empty",
       });
     }
 
@@ -62,17 +62,17 @@ export async function GET(request: Request) {
     console.warn("[api/sessions] Core unavailable:", err);
   }
 
-  // Fallback to mock
+  // H1: Never return mock data — return empty arrays so UI shows empty state
   if (topicId) {
     return Response.json({
-      messages: mockMessages.filter((m) => m.topicId === Number(topicId)),
-      source: "mock",
+      messages: [],
+      source: "empty",
     });
   }
 
   return Response.json({
-    sessions: mockSessions,
-    source: "mock",
+    sessions: [],
+    source: "empty",
   });
 }
 

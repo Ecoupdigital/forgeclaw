@@ -171,10 +171,11 @@ export async function GET(request: Request) {
       return Response.json({ jobs, source: "core" });
     }
   } catch (err) {
-    console.warn("[api/crons] Core unavailable, using mock data:", err);
+    console.warn("[api/crons] Core unavailable:", err);
   }
 
-  return Response.json({ jobs: mockCronJobs, source: "mock" });
+  // H1: Never return mock data — return empty array so UI shows empty state
+  return Response.json({ jobs: [], source: "empty" });
 }
 
 // ---------------------------------------------------------------------------
