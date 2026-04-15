@@ -6,7 +6,7 @@ class SessionManager {
   private locks = new Map<string, Promise<void>>();
 
   private buildKey(chatId: number, topicId: number | null): string {
-    return topicId ? `${chatId}:${topicId}` : `${chatId}`;
+    return `${chatId}:${topicId ?? 0}`;
   }
 
   async getOrCreateSession(chatId: number, topicId: number | null, projectDir?: string): Promise<SessionInfo> {
