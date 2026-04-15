@@ -332,7 +332,35 @@ export async function install(options: InstallOptions = {}): Promise<void> {
     log.info(`No projects detected in ${workingDir}`)
   }
 
-  // --- Step 12: Setup system service ---
+  // --- Step 12: Install dependencies ---
+  const depSpinner = spinner()
+  depSpinner.start('Installing dependencies (bun install)...')
+
+  try {
+    const bunInstall = Bun.spawn(['bun', 'install'], {
+      cwd: MONOREPO_ROOT,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    })
+    const [, installStderr] = await Promise.all([
+      new Response(bunInstall.stdout).text(),
+      new Response(bunInstall.stderr).text(),
+    ])
+    await bunInstall.exited
+
+    if (bunInstall.exitCode === 0) {
+      depSpinner.stop('Dependencies installed.')
+    } else {
+      depSpinner.stop('Dependency install had warnings.')
+      log.warn(`bun install stderr: ${installStderr.slice(0, 200)}`)
+    }
+  } catch (err) {
+    depSpinner.stop('Failed to install dependencies.')
+    log.error(`bun install failed: ${err}`)
+    log.warn('Run "bun install" manually in the project root.')
+  }
+
+  // --- Step 13: Setup system service ---
   const shouldSetupService = checkValue(
     await confirm({
       message: 'Set up ForgeClaw as a system service (auto-start on boot)?',
