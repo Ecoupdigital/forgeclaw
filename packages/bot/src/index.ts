@@ -305,8 +305,9 @@ async function main(): Promise<void> {
       .addEntry(`[cron:${status}] ${jobName} → ${outputPreview}`)
       .catch((err) => console.error('[forgeclaw] memory addEntry (cron) failed:', err));
 
-    const statusIcon = status === 'success' ? '[OK]' : '[FAIL]';
-    const message = `${statusIcon} Cron: ${jobName}\n\n${String(output).slice(0, 4000)}`;
+    const statusIcon = status === 'success' ? '\u2705' : '\u274C';
+    const statusLabel = status === 'success' ? 'OK' : 'FALHOU';
+    const message = `${statusIcon} Cron ${statusLabel}: ${jobName}\n\n${String(output).slice(0, 4000)}`;
 
     try {
       if (topicId) {
