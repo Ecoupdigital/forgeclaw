@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { useTimezone } from "@/hooks/use-timezone";
 
 type Tab = "active" | "pending" | "archived" | "retrievals" | "audit";
 type ReviewMode = "auto" | "hybrid" | "review";
@@ -46,12 +48,8 @@ interface AuditEntry {
 
 const KINDS = ["all", "behavior", "user_profile", "fact", "decision", "preference"] as const;
 
-function brtTime(ms: number): string {
-  const d = new Date(ms - 3 * 60 * 60 * 1000);
-  return d.toISOString().replace("T", " ").slice(0, 16);
-}
-
 export function MemoryTab() {
+  const { formatTime } = useTimezone();
   const [activeTab, setActiveTab] = useState<Tab>("active");
   const [kindFilter, setKindFilter] = useState<(typeof KINDS)[number]>("all");
 
@@ -74,6 +72,15 @@ export function MemoryTab() {
   const [newContent, setNewContent] = useState("");
   const [newKind, setNewKind] = useState("fact");
   const [newPinned, setNewPinned] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 50;
+
+  const entriesCountRef = useRef(0);
+  useEffect(() => { entriesCountRef.current = entries.length; }, [entries.length]);
 
   const [loading, setLoading] = useState(true);
 
@@ -293,7 +300,7 @@ export function MemoryTab() {
               </Badge>
             )}
             <span className="text-[10px] text-text-secondary">
-              #{entry.id} · {entry.accessCount} reads · {brtTime(entry.updatedAt)}
+              #{entry.id} · {entry.accessCount} reads · {formatTime(entry.updatedAt)}
             </span>
             {entry.sourceType && (
               <Badge
@@ -671,7 +678,7 @@ export function MemoryTab() {
                       >
                         {r.source}
                       </Badge>
-                      <span className="text-[10px] text-text-secondary">{brtTime(r.at)}</span>
+                      <span className="text-[10px] text-text-secondary">{formatTime(r.at)}</span>
                       <span className="text-[10px] text-text-secondary">{r.hits.length} hit(s)</span>
                     </div>
                     <p className="mt-2 font-mono text-xs text-text-primary">{r.query}</p>
@@ -713,7 +720,7 @@ export function MemoryTab() {
                         {a.action}
                       </Badge>
                       <span className="text-[10px] text-text-secondary">
-                        #{a.memoryId} · {a.actor} · {brtTime(a.at)}
+                        #{a.memoryId} · {a.actor} · {formatTime(a.at)}
                       </span>
                     </div>
                     {a.reason && (
