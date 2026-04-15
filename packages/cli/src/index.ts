@@ -4,6 +4,7 @@ import { install } from './commands/install'
 import { uninstall } from './commands/uninstall'
 import { status } from './commands/status'
 import { logs } from './commands/logs'
+import { exportData } from './commands/export'
 
 const command = process.argv[2]
 
@@ -19,6 +20,7 @@ function showHelp(): void {
     update      Re-run installer preserving existing config
     uninstall   Remove ForgeClaw service and optionally data
     status      Show service and configuration status
+    export      Create backup of all ForgeClaw data (.tar.gz)
     logs        Tail bot logs in real-time
 
   Examples:
@@ -40,6 +42,9 @@ switch (command) {
     break
   case 'status':
     await status()
+    break
+  case 'export':
+    await exportData()
     break
   case 'logs':
     await logs()
