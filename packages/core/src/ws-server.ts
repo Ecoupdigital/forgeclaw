@@ -1,10 +1,20 @@
 import type { ServerWebSocket } from 'bun';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
 import { ClaudeRunner } from './claude-runner';
 import { sessionManager } from './session-manager';
 import { stateStore } from './state-store';
 import { eventBus } from './event-bus';
 import { cronEngine } from './cron-engine';
-import type { StreamEvent, SessionInfo } from './types';
+import { ContextBuilder } from './context-builder';
+import { harnessLoader } from './harness-loader';
+import { getConfig } from './config';
+import { runnerRegistry } from './runners';
+import type { AgentCliRunner } from './runners';
+import type { StreamEvent, SessionInfo, RuntimeName } from './types';
+
+const HARNESS_CLAUDE_MD = join(homedir(), '.forgeclaw', 'harness', 'CLAUDE.md');
 
 const WS_PORT = 4041;
 
@@ -88,7 +98,7 @@ type WsServerMessage =
 type WsSocket = ServerWebSocket<{ id: string }>;
 
 const subscriptions = new Map<WsSocket, Set<string>>();
-const activeRunners = new Map<string, ClaudeRunner>();
+const activeRunners = new Map<string, AgentCliRunner>();
 
 // --- Helpers ---
 
@@ -171,18 +181,40 @@ async function handleSend(ws: WsSocket, msg: WsSendMessage): Promise<void> {
   // Notify processing started
   broadcastToSubscribers(sessionKey, { type: 'status', sessionKey, processing: true });
 
-  const runner = new ClaudeRunner();
+  // Resolve runtime from the topic override (same as text handler)
+  const topicRow =
+    topicId !== null
+      ? stateStore.getTopicByChatAndThread(chatId, topicId)
+      : stateStore.getTopicByChatAndThread(chatId, null);
+  const cfgForRuntime = await getConfig();
+  const requestedRuntime = (topicRow?.runtime ?? cfgForRuntime.defaultRuntime) as RuntimeName | undefined;
+  const allowFallback = topicRow?.runtimeFallback ?? false;
+  const runner = runnerRegistry.get(requestedRuntime, { allowFallback });
+  console.log(`[ws-server] using runtime '${runner.name}' for ${sessionKey}`);
   activeRunners.set(sessionKey, runner);
 
   try {
+    // Build enriched prompt with memory prefetch + stat line + project state.
+    // Same path the Telegram text handler uses, so the dashboard chat gets
+    // the same contextual grounding.
+    let enrichedPrompt = message;
+    try {
+      const config = await getConfig();
+      const builder = new ContextBuilder(config, harnessLoader);
+      enrichedPrompt = await builder.build(message, chatId, topicId ?? 0);
+    } catch (err) {
+      console.warn('[ws-server] ContextBuilder failed, using raw message:', err);
+    }
+
     const runOptions = {
       sessionId: session.claudeSessionId ?? undefined,
       cwd: session.projectDir ?? undefined,
+      ...(existsSync(HARNESS_CLAUDE_MD) ? { appendSystemPromptFile: HARNESS_CLAUDE_MD } : {}),
     };
 
     let accumulatedText = '';
 
-    for await (const event of runner.run(message, runOptions)) {
+    for await (const event of runner.run(enrichedPrompt, runOptions)) {
       // Broadcast each stream event to subscribers
       broadcastToSubscribers(sessionKey, { type: 'stream', sessionKey, event });
 
@@ -268,6 +300,39 @@ function handleListSessions(ws: WsSocket): void {
   send(ws, { type: 'sessions', sessions });
 }
 
+// --- Auth ---
+
+/**
+ * Validate the dashboard token from a WS upgrade request.
+ * Token can come from:
+ *   - query parameter: ws://host:4041/?token=xxx
+ *   - Authorization header: Bearer xxx
+ * Returns true if valid or if no dashboardToken is configured (auth disabled).
+ */
+async function validateWsToken(req: Request): Promise<boolean> {
+  const config = await getConfig();
+  const expected = config.dashboardToken;
+
+  // No token configured = auth disabled (backward compat)
+  if (!expected) return true;
+
+  // Try query parameter first
+  const url = new URL(req.url);
+  const queryToken = url.searchParams.get('token');
+  if (queryToken && queryToken === expected) return true;
+
+  // Try Authorization header
+  const authHeader = req.headers.get('Authorization');
+  if (authHeader) {
+    const parts = authHeader.split(' ');
+    if (parts.length === 2 && parts[0] === 'Bearer' && parts[1] === expected) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 // --- Server ---
 
 let server: ReturnType<typeof Bun.serve> | null = null;
@@ -298,6 +363,11 @@ export function startWSServer(): void {
       // Fire-and-forget semantics: the dashboard doesn't wait for reload to finish,
       // it just signals. Reload is async and reports progress via console logs.
       if (url.pathname === '/cron/reload' && req.method === 'POST') {
+        // IPC from dashboard -- validate token
+        const ipcAuthValid = await validateWsToken(req);
+        if (!ipcAuthValid) {
+          return new Response('Unauthorized', { status: 401 });
+        }
         cronEngine.reload().catch((err) => {
           console.error('[ws-server] cron reload failed:', err);
         });
@@ -315,6 +385,11 @@ export function startWSServer(): void {
       // immediately. The result will show up in cron_logs and lastRun/lastStatus
       // via normal engine flow.
       if (url.pathname === '/cron/run-now' && req.method === 'POST') {
+        // IPC from dashboard -- validate token
+        const ipcAuthValid = await validateWsToken(req);
+        if (!ipcAuthValid) {
+          return new Response('Unauthorized', { status: 401 });
+        }
         try {
           const body = (await req.json()) as { id?: unknown };
           const id = Number(body?.id);
@@ -348,6 +423,12 @@ export function startWSServer(): void {
             { status: 400 }
           );
         }
+      }
+
+      // Validate dashboard token before WebSocket upgrade
+      const wsAuthValid = await validateWsToken(req);
+      if (!wsAuthValid) {
+        return new Response('Unauthorized', { status: 401 });
       }
 
       const upgraded = server.upgrade(req, {
