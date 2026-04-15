@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import cronstrue from "cronstrue";
 import { CronExpressionParser } from "cron-parser";
 import { useModels } from "@/hooks/use-models";
+import { useTimezone, formatInTz } from "@/hooks/use-timezone";
 import {
   Sheet,
   SheetContent,
@@ -52,39 +53,7 @@ interface SchedulePreview {
 // and the host runs in Etc/UTC. If the host TZ ever changes, update this.
 const SERVER_TZ = "Etc/UTC";
 
-// Display timezone — where the USER is. This is what the form shows next to
-// "Next runs:" so the user sees wall-clock times in their own locale,
-// independent of whatever TZ the server happens to run in.
-const DISPLAY_TZ = "America/Sao_Paulo";
-
-// Optional override via browser detection. Currently hard-coded to BRT
-// because the user is in Novo Hamburgo/RS and wants presets to feel like
-// their local time. If this product ever goes multi-user we should read
-// from a profile setting.
-const BROWSER_TZ =
-  typeof Intl !== "undefined"
-    ? Intl.DateTimeFormat().resolvedOptions().timeZone
-    : "local";
-
-const displayFormatter =
-  typeof Intl !== "undefined"
-    ? new Intl.DateTimeFormat("pt-BR", {
-        timeZone: DISPLAY_TZ,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hourCycle: "h23",
-      })
-    : null;
-
-function formatInDisplayTz(d: Date): string {
-  if (displayFormatter) return displayFormatter.format(d);
-  return d.toISOString();
-}
-
-function validateSchedule(expr: string): SchedulePreview {
+function validateSchedule(expr: string, displayTz: string): SchedulePreview {
   const trimmed = expr.trim();
   if (!trimmed) {
     return {
@@ -100,7 +69,8 @@ function validateSchedule(expr: string): SchedulePreview {
     const iter = CronExpressionParser.parse(trimmed, { tz: SERVER_TZ });
     const runs: string[] = [];
     for (let i = 0; i < 3; i++) {
-      runs.push(formatInDisplayTz(iter.next().toDate()));
+      const d = iter.next().toDate();
+      runs.push(formatInTz(d.getTime(), displayTz));
     }
     let human: string | null = null;
     try {
@@ -124,6 +94,7 @@ export function CronFormSheet({
   initialJob,
   onSaved,
 }: CronFormSheetProps) {
+  const { timezone: displayTz } = useTimezone();
   const isEdit = Boolean(initialJob?.id);
 
   // Form state
@@ -208,8 +179,8 @@ export function CronFormSheet({
   const currentSchedule =
     preset === CRON_CUSTOM_SENTINEL ? customSchedule : preset;
   const preview = useMemo(
-    () => validateSchedule(currentSchedule),
-    [currentSchedule]
+    () => validateSchedule(currentSchedule, displayTz),
+    [currentSchedule, displayTz]
   );
 
   const canSave =
@@ -359,8 +330,12 @@ export function CronFormSheet({
               />
             )}
             <p className="text-xs text-text-secondary">
-              Runs on server ({SERVER_TZ}), displayed in {DISPLAY_TZ}
-              {BROWSER_TZ !== DISPLAY_TZ && ` · your browser: ${BROWSER_TZ}`}
+              Runs on server ({SERVER_TZ}), displayed in {displayTz}
+              {typeof Intl !== "undefined" && Intl.DateTimeFormat().resolvedOptions().timeZone !== displayTz && (
+                <span className="ml-1 text-[10px]">
+                  (browser: {Intl.DateTimeFormat().resolvedOptions().timeZone})
+                </span>
+              )}
             </p>
             {preview.error && (
               <p className="text-xs text-red-400">{preview.error}</p>
