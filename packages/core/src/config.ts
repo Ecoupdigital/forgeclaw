@@ -30,6 +30,9 @@ function validateConfig(raw: unknown): ForgeClawConfig {
     }
   }
 
+  const isRuntimeName = (v: unknown): v is import('./types').RuntimeName =>
+    v === 'claude-code' || v === 'codex';
+
   return {
     botToken: obj.botToken,
     allowedUsers: obj.allowedUsers as number[],
@@ -39,11 +42,23 @@ function validateConfig(raw: unknown): ForgeClawConfig {
     voiceProvider: isVoiceProvider(obj.voiceProvider) ? obj.voiceProvider : undefined,
     claudeModel: typeof obj.claudeModel === 'string' ? obj.claudeModel : undefined,
     maxConcurrentSessions: typeof obj.maxConcurrentSessions === 'number' ? obj.maxConcurrentSessions : undefined,
+    defaultRuntime: isRuntimeName(obj.defaultRuntime) ? obj.defaultRuntime : undefined,
+    runtimes: obj.runtimes && typeof obj.runtimes === 'object' ? obj.runtimes as ForgeClawConfig['runtimes'] : undefined,
+    writerRuntime: isRuntimeName(obj.writerRuntime) ? obj.writerRuntime : undefined,
+    writerModel: typeof obj.writerModel === 'string' ? obj.writerModel : undefined,
+    showRuntimeBadge: typeof obj.showRuntimeBadge === 'boolean' ? obj.showRuntimeBadge : undefined,
+    memoryReviewMode: (['auto', 'hybrid', 'review'] as const).includes(obj.memoryReviewMode as any)
+      ? obj.memoryReviewMode as ForgeClawConfig['memoryReviewMode']
+      : undefined,
+    memoryAutoApproveThreshold: typeof obj.memoryAutoApproveThreshold === 'number'
+      ? obj.memoryAutoApproveThreshold
+      : undefined,
+    dashboardToken: typeof obj.dashboardToken === 'string' ? obj.dashboardToken : undefined,
   };
 }
 
-function isVoiceProvider(val: unknown): val is 'openai' | 'google' | 'none' {
-  return val === 'openai' || val === 'google' || val === 'none';
+function isVoiceProvider(val: unknown): val is 'groq' | 'openai' | 'none' {
+  return val === 'groq' || val === 'openai' || val === 'none';
 }
 
 export async function loadConfig(): Promise<ForgeClawConfig> {
