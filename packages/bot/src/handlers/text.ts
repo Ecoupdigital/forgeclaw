@@ -453,10 +453,10 @@ function classifyClaudeError(errorMsg: string): string {
     return `Claude CLI falhou (exit code ${exitMatch[1]}). Verifique os logs com \`forgeclaw logs\`.`;
   }
 
-  // Unknown error — show truncated message (max 200 chars) to avoid
-  // leaking internal details while still being debuggable.
-  const truncated = errorMsg.length > 200 ? errorMsg.slice(0, 200) + '...' : errorMsg;
-  return `Erro ao processar: ${truncated}`;
+  // Unknown error — never forward raw error text to Telegram.
+  // Log the full error server-side for debugging.
+  console.error('[classifyClaudeError] unclassified error:', errorMsg);
+  return 'Erro interno ao processar sua mensagem. Verifique os logs com `forgeclaw logs`.';
 }
 
 /**
