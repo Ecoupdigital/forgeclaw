@@ -207,14 +207,23 @@ async function setupLaunchdService(): Promise<ServiceResult> {
     const agentDir = join(homedir(), 'Library', 'LaunchAgents')
     mkdirSync(agentDir, { recursive: true })
 
+    // --- Bot plist ---
     writeFileSync(LAUNCHD_PATH, getLaunchdPlist())
 
-    const load = await runCommand(['launchctl', 'load', LAUNCHD_PATH])
-    if (load.exitCode !== 0) {
-      return { success: false, message: `Failed to load launchd service: ${load.stderr}` }
+    const loadBot = await runCommand(['launchctl', 'load', LAUNCHD_PATH])
+    if (loadBot.exitCode !== 0) {
+      return { success: false, message: `Failed to load bot launchd service: ${loadBot.stderr}` }
     }
 
-    return { success: true, message: 'Launchd service installed and started.' }
+    // --- Dashboard plist ---
+    writeFileSync(LAUNCHD_DASHBOARD_PATH, getDashboardLaunchdPlist())
+
+    const loadDash = await runCommand(['launchctl', 'load', LAUNCHD_DASHBOARD_PATH])
+    if (loadDash.exitCode !== 0) {
+      return { success: true, message: `Bot service started. Dashboard failed to load: ${loadDash.stderr}` }
+    }
+
+    return { success: true, message: 'Bot and Dashboard services installed and started.' }
   } catch (err) {
     return { success: false, message: `Service setup failed: ${err}` }
   }
@@ -223,16 +232,24 @@ async function setupLaunchdService(): Promise<ServiceResult> {
 export async function startService(): Promise<ServiceResult> {
   const platform = process.platform
   if (platform === 'linux') {
-    const result = await runCommand(['systemctl', 'start', SERVICE_NAME])
+    const botResult = await runCommand(['systemctl', 'start', SERVICE_NAME])
+    if (botResult.exitCode !== 0) {
+      return { success: false, message: `Failed to start bot: ${botResult.stderr}` }
+    }
+    const dashResult = await runCommand(['systemctl', 'start', DASHBOARD_SERVICE_NAME])
     return {
-      success: result.exitCode === 0,
-      message: result.exitCode === 0 ? 'Service started.' : `Failed: ${result.stderr}`,
+      success: true,
+      message: dashResult.exitCode === 0 ? 'Services started.' : `Bot started. Dashboard failed: ${dashResult.stderr}`,
     }
   } else if (platform === 'darwin') {
-    const result = await runCommand(['launchctl', 'start', LAUNCHD_LABEL])
+    const botResult = await runCommand(['launchctl', 'start', LAUNCHD_LABEL])
+    if (botResult.exitCode !== 0) {
+      return { success: false, message: `Failed to start bot: ${botResult.stderr}` }
+    }
+    const dashResult = await runCommand(['launchctl', 'start', LAUNCHD_DASHBOARD_LABEL])
     return {
-      success: result.exitCode === 0,
-      message: result.exitCode === 0 ? 'Service started.' : `Failed: ${result.stderr}`,
+      success: true,
+      message: dashResult.exitCode === 0 ? 'Services started.' : `Bot started. Dashboard failed: ${dashResult.stderr}`,
     }
   }
   return { success: false, message: 'Unsupported platform.' }
@@ -241,16 +258,18 @@ export async function startService(): Promise<ServiceResult> {
 export async function stopService(): Promise<ServiceResult> {
   const platform = process.platform
   if (platform === 'linux') {
+    await runCommand(['systemctl', 'stop', DASHBOARD_SERVICE_NAME])
     const result = await runCommand(['systemctl', 'stop', SERVICE_NAME])
     return {
       success: result.exitCode === 0,
-      message: result.exitCode === 0 ? 'Service stopped.' : `Failed to stop: ${result.stderr}`,
+      message: result.exitCode === 0 ? 'Services stopped.' : `Failed to stop: ${result.stderr}`,
     }
   } else if (platform === 'darwin') {
+    await runCommand(['launchctl', 'stop', LAUNCHD_DASHBOARD_LABEL])
     const result = await runCommand(['launchctl', 'stop', LAUNCHD_LABEL])
     return {
       success: result.exitCode === 0,
-      message: result.exitCode === 0 ? 'Service stopped.' : `Failed to stop: ${result.stderr}`,
+      message: result.exitCode === 0 ? 'Services stopped.' : `Failed to stop: ${result.stderr}`,
     }
   }
   return { success: false, message: 'Unsupported platform.' }
@@ -259,18 +278,30 @@ export async function stopService(): Promise<ServiceResult> {
 export async function removeService(): Promise<ServiceResult> {
   const platform = process.platform
   if (platform === 'linux') {
+    // Dashboard first
+    await runCommand(['systemctl', 'disable', DASHBOARD_SERVICE_NAME])
+    if (existsSync(SYSTEMD_DASHBOARD_PATH)) {
+      unlinkSync(SYSTEMD_DASHBOARD_PATH)
+    }
+    // Bot
     await runCommand(['systemctl', 'disable', SERVICE_NAME])
     if (existsSync(SYSTEMD_PATH)) {
       unlinkSync(SYSTEMD_PATH)
-      await runCommand(['systemctl', 'daemon-reload'])
     }
-    return { success: true, message: 'Systemd service removed.' }
+    await runCommand(['systemctl', 'daemon-reload'])
+    return { success: true, message: 'Bot and Dashboard services removed.' }
   } else if (platform === 'darwin') {
+    // Dashboard
+    if (existsSync(LAUNCHD_DASHBOARD_PATH)) {
+      await runCommand(['launchctl', 'unload', LAUNCHD_DASHBOARD_PATH])
+      unlinkSync(LAUNCHD_DASHBOARD_PATH)
+    }
+    // Bot
     if (existsSync(LAUNCHD_PATH)) {
       await runCommand(['launchctl', 'unload', LAUNCHD_PATH])
       unlinkSync(LAUNCHD_PATH)
     }
-    return { success: true, message: 'Launchd service removed.' }
+    return { success: true, message: 'Bot and Dashboard services removed.' }
   }
   return { success: false, message: 'Unsupported platform.' }
 }
