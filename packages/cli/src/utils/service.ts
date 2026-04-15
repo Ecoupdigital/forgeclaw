@@ -161,24 +161,42 @@ export async function setupService(_config: Record<string, unknown>): Promise<Se
 
 async function setupSystemdService(): Promise<ServiceResult> {
   try {
+    // --- Bot service ---
     writeFileSync(SYSTEMD_PATH, getSystemdUnit())
 
+    // --- Dashboard service ---
+    writeFileSync(SYSTEMD_DASHBOARD_PATH, getSystemdDashboardUnit())
+
+    // --- Reload systemd ---
     const reload = await runCommand(['systemctl', 'daemon-reload'])
     if (reload.exitCode !== 0) {
       return { success: false, message: `Failed to reload systemd: ${reload.stderr}` }
     }
 
-    const enable = await runCommand(['systemctl', 'enable', SERVICE_NAME])
-    if (enable.exitCode !== 0) {
-      return { success: false, message: `Failed to enable service: ${enable.stderr}` }
+    // --- Enable both ---
+    const enableBot = await runCommand(['systemctl', 'enable', SERVICE_NAME])
+    if (enableBot.exitCode !== 0) {
+      return { success: false, message: `Failed to enable bot service: ${enableBot.stderr}` }
     }
 
-    const start = await runCommand(['systemctl', 'start', SERVICE_NAME])
-    if (start.exitCode !== 0) {
-      return { success: false, message: `Failed to start service: ${start.stderr}` }
+    const enableDash = await runCommand(['systemctl', 'enable', DASHBOARD_SERVICE_NAME])
+    if (enableDash.exitCode !== 0) {
+      return { success: false, message: `Failed to enable dashboard service: ${enableDash.stderr}` }
     }
 
-    return { success: true, message: 'Systemd service installed and started.' }
+    // --- Start both (bot first, dashboard depends on it) ---
+    const startBot = await runCommand(['systemctl', 'start', SERVICE_NAME])
+    if (startBot.exitCode !== 0) {
+      return { success: false, message: `Failed to start bot service: ${startBot.stderr}` }
+    }
+
+    const startDash = await runCommand(['systemctl', 'start', DASHBOARD_SERVICE_NAME])
+    if (startDash.exitCode !== 0) {
+      // Bot started fine, dashboard failed -- report partial success
+      return { success: true, message: `Bot service started. Dashboard failed to start: ${startDash.stderr}` }
+    }
+
+    return { success: true, message: 'Bot and Dashboard services installed and started.' }
   } catch (err) {
     return { success: false, message: `Service setup failed: ${err}. Try running with sudo.` }
   }
