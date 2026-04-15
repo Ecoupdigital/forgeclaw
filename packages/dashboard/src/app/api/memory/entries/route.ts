@@ -14,17 +14,41 @@ export async function GET(request: Request) {
       : "approved";
   const includeArchived = url.searchParams.get("archived") === "true";
   const limit = Number(url.searchParams.get("limit") ?? "200");
+  const q = url.searchParams.get("q")?.trim() ?? "";
+  const offset = Number(url.searchParams.get("offset") ?? "0");
+
+  if (q.length >= 2) {
+    const results = core.searchMemoryEntriesV2(q, {
+      reviewStatus,
+      includeArchived,
+      limit,
+      offset,
+    });
+    if (results === null) {
+      return Response.json({ entries: [], source: "empty", total: 0 });
+    }
+    return Response.json({
+      entries: results,
+      source: "core",
+      hasMore: results.length === limit,
+    });
+  }
 
   const entries = core.listMemoryEntriesV2({
     kind,
     reviewStatus,
     includeArchived,
     limit,
+    offset,
   });
   if (entries === null) {
     return Response.json({ entries: [], source: "empty" });
   }
-  return Response.json({ entries, source: "core" });
+  return Response.json({
+    entries,
+    source: "core",
+    hasMore: (entries?.length ?? 0) === limit,
+  });
 }
 
 export async function POST(request: Request) {
