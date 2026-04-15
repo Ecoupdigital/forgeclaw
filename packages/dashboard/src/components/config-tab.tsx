@@ -78,6 +78,84 @@ function SelectField({ label, value, onChange, options, id }: SelectFieldProps) 
   );
 }
 
+interface EditableIdListProps {
+  label: string;
+  ids: number[];
+  onChange: (ids: number[]) => void;
+}
+
+function EditableIdList({ label, ids, onChange }: EditableIdListProps) {
+  const [draft, setDraft] = useState('');
+
+  const handleAdd = () => {
+    const parsed = parseInt(draft, 10);
+    if (Number.isNaN(parsed)) return;
+    if (ids.includes(parsed)) return; // no duplicates
+    onChange([...ids, parsed]);
+    setDraft('');
+  };
+
+  const handleRemove = (id: number) => {
+    onChange(ids.filter((x) => x !== id));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAdd();
+    }
+  };
+
+  return (
+    <div className="py-2">
+      <span className="text-sm text-text-secondary">{label}</span>
+      <div className="mt-2 space-y-1.5">
+        {ids.map((id) => (
+          <div
+            key={id}
+            className="flex items-center justify-between rounded-md border border-violet-dim bg-night-panel px-3 py-1.5"
+          >
+            <span className="font-mono text-sm text-text-body">{id}</span>
+            <button
+              type="button"
+              onClick={() => handleRemove(id)}
+              className="ml-2 text-xs text-red-400 hover:text-red-300"
+              aria-label={`Remove ${id}`}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        {ids.length === 0 && (
+          <span className="text-xs text-text-secondary/60 italic">
+            No IDs configured
+          </span>
+        )}
+        <div className="flex gap-2 pt-1">
+          <Input
+            type="number"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Telegram user/group ID"
+            className="max-w-[220px] border-violet-dim bg-night-panel text-sm font-mono text-text-body focus-visible:ring-violet"
+          />
+          <Button
+            type="button"
+            onClick={handleAdd}
+            disabled={!draft || Number.isNaN(parseInt(draft, 10))}
+            variant="outline"
+            size="sm"
+            className="border-violet-dim text-text-secondary hover:bg-violet/10 hover:text-text-body"
+          >
+            Add
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ConfigTab() {
   const [config, setConfig] = useState<ForgeClawConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -282,27 +360,17 @@ export function ConfigTab() {
               mono
             />
             <Separator className="bg-white/[0.06]" />
-            <div className="flex items-center justify-between py-2">
-              <span className="text-sm text-text-secondary">
-                Allowed Users
-              </span>
-              <span className="font-mono text-sm text-text-body">
-                {config.allowedUsers.join(", ")}
-              </span>
-            </div>
-            {config.allowedGroups && config.allowedGroups.length > 0 && (
-              <>
-                <Separator className="bg-white/[0.06]" />
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-sm text-text-secondary">
-                    Allowed Groups
-                  </span>
-                  <span className="font-mono text-sm text-text-body">
-                    {config.allowedGroups.join(", ")}
-                  </span>
-                </div>
-              </>
-            )}
+            <EditableIdList
+              label="Allowed Users"
+              ids={config.allowedUsers}
+              onChange={(ids) => updateField('allowedUsers', ids)}
+            />
+            <Separator className="bg-white/[0.06]" />
+            <EditableIdList
+              label="Allowed Groups"
+              ids={config.allowedGroups ?? []}
+              onChange={(ids) => updateField('allowedGroups', ids)}
+            />
           </CardContent>
         </Card>
 
