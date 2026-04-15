@@ -29,6 +29,18 @@ async function main(): Promise<void> {
   console.log('[forgeclaw] Loading configuration...');
   const config = await getConfig();
 
+  // M1: Resolve daily log dir from config — the singleton was created with
+  // the safe default (~/.forgeclaw/memory/daily). Now that config is loaded,
+  // update to vault path if configured.
+  {
+    const resolvedDailyDir = process.env.FORGECLAW_DAILY_LOG_DIR
+      ?? (config.vaultPath
+        ? join(config.vaultPath, '05-pessoal', 'daily-log')
+        : join(homedir(), '.forgeclaw', 'memory', 'daily'));
+    memoryManager.setDailyDir(resolvedDailyDir);
+    console.log(`[forgeclaw] daily log dir: ${resolvedDailyDir}`);
+  }
+
   // Check for compiled harness file
   const harnessClaude = join(homedir(), '.forgeclaw', 'harness', 'CLAUDE.md');
   if (!existsSync(harnessClaude)) {
