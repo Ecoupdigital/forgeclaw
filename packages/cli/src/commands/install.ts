@@ -383,5 +383,8 @@ export async function install(options: InstallOptions = {}): Promise<void> {
   Open Telegram and send /start to your bot
   Dashboard: http://localhost:4040
   Status: forgeclaw status
-  Logs: forgeclaw logs`)
+  Logs: forgeclaw logs
+
+  API keys stored in: ~/.forgeclaw/.env
+  Config: ~/.forgeclaw/forgeclaw.config.json`)
 }
