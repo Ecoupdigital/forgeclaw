@@ -189,7 +189,7 @@ export class ClaudeRunner {
   }
 
   private buildArgs(options: ClaudeRunnerOptions): string[] {
-    const claudePath = process.env.CLAUDE_CLI_PATH || '/root/.local/bin/claude';
+    const claudePath = process.env.CLAUDE_CLI_PATH || 'claude';
     const args = [claudePath, '-p', '--verbose', '--output-format', 'stream-json'];
 
     if (options.sessionId) {
