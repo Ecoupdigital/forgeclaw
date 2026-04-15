@@ -19,6 +19,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { convertToHtml, buildContextBar, buildActionKeyboard, truncateForTelegram } from '../utils/formatting';
 import { messageQueue } from '../utils/queue';
+import { detectAndSaveImmediateMemory } from './immediate-memory';
 
 /** Minimum interval between message edits (ms) to respect Telegram rate limits. */
 const EDIT_THROTTLE_MS = 500;
@@ -118,6 +119,13 @@ async function processMessage(
       content: text,
       origin: 'telegram',
       createdAt: userCreatedAt,
+    });
+
+    // H6: Immediate memory save — detect "lembra que X" patterns and persist
+    // to memory_entries before Claude processes the message. Best-effort:
+    // fire-and-forget so it never delays the response.
+    detectAndSaveImmediateMemory(text).catch((err) => {
+      console.error('[text-handler] immediate memory save failed:', err);
     });
 
     // GAP 1: Build enriched prompt with context (harness, memory, vault, state)
