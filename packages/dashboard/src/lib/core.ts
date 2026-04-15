@@ -493,6 +493,7 @@ export function listMemoryEntriesV2(
     reviewStatus?: "approved" | "pending" | "all";
     includeArchived?: boolean;
     limit?: number;
+    offset?: number;
   } = {},
 ): MemoryEntryDTO[] | null {
   const d = getDb();
@@ -512,7 +513,9 @@ export function listMemoryEntriesV2(
     else if (reviewStatus === "pending") parts.push("reviewed = 0");
 
     const limit = opts.limit ?? 200;
+    const offset = opts.offset ?? 0;
     values.push(limit);
+    values.push(offset);
 
     const rows = d
       .prepare(
@@ -520,11 +523,74 @@ export function listMemoryEntriesV2(
                 created_at, updated_at, last_accessed_at, access_count, pinned, archived_at, metadata, reviewed, confidence
          FROM memory_entries
          WHERE ${parts.join(" AND ")}
-         ORDER BY pinned DESC, reviewed DESC, updated_at DESC LIMIT ?`,
+         ORDER BY pinned DESC, reviewed DESC, updated_at DESC LIMIT ? OFFSET ?`,
       )
       .all(...values) as MemoryRow[];
     return rows.map(mapMemRow);
   } catch {
+    return null;
+  }
+}
+
+function sanitizeFtsQuery(query: string): string {
+  if (!query) return "";
+  const tokens = query
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    .filter((t) => t.length >= 2);
+  if (tokens.length === 0) return "";
+  return tokens.map((t) => `"${t}"`).join(" OR ");
+}
+
+/**
+ * FTS5 full-text search across memory entries.
+ * Mirrors stateStore.searchMemoryEntries() but uses better-sqlite3.
+ */
+export function searchMemoryEntriesV2(
+  query: string,
+  opts: {
+    reviewStatus?: "approved" | "pending" | "all";
+    includeArchived?: boolean;
+    limit?: number;
+    offset?: number;
+  } = {},
+): MemoryEntryDTO[] | null {
+  const d = getDb();
+  if (!d) return null;
+
+  const safeQuery = sanitizeFtsQuery(query);
+  if (!safeQuery) return null;
+
+  try {
+    const parts: string[] = [
+      "m.user_id = 'default'",
+      "m.workspace_id = 'default'",
+    ];
+    const reviewStatus = opts.reviewStatus ?? "approved";
+    if (reviewStatus === "approved") parts.push("m.reviewed = 1");
+    else if (reviewStatus === "pending") parts.push("m.reviewed = 0");
+    if (!opts.includeArchived) parts.push("m.archived_at IS NULL");
+
+    const limit = opts.limit ?? 50;
+    const offset = opts.offset ?? 0;
+
+    const rows = d
+      .prepare(
+        `SELECT m.id, m.user_id, m.workspace_id, m.kind, m.content, m.content_hash,
+                m.source_type, m.source_session_id, m.created_at, m.updated_at,
+                m.last_accessed_at, m.access_count, m.pinned, m.archived_at,
+                m.metadata, m.reviewed, m.confidence
+         FROM memory_fts
+         JOIN memory_entries m ON m.id = memory_fts.rowid
+         WHERE memory_fts MATCH ?
+           AND ${parts.join(" AND ")}
+         ORDER BY bm25(memory_fts) LIMIT ? OFFSET ?`,
+      )
+      .all(safeQuery, limit, offset) as MemoryRow[];
+    return rows.map(mapMemRow);
+  } catch (err) {
+    console.warn("[core-wrapper] FTS5 memory search failed:", err);
     return null;
   }
 }
