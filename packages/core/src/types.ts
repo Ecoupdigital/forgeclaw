@@ -42,6 +42,17 @@ export interface ForgeClawConfig {
    * Default: 'America/Sao_Paulo'. Examples: 'Europe/London', 'US/Eastern'.
    */
   timezone?: string;
+  /**
+   * Whether to pass --dangerously-skip-permissions to the Claude CLI.
+   * Default: true (current behavior). Set to false to run in interactive
+   * permission mode — useful for auditing what tools Claude uses.
+   *
+   * SECURITY NOTE: When true, Claude Code runs with full filesystem and
+   * shell access without prompting. This is required for unattended
+   * Telegram bot operation but means the LLM can execute arbitrary
+   * commands in the bot's working directory.
+   */
+  skipPermissions?: boolean;
 }
 
 export interface SessionInfo {
