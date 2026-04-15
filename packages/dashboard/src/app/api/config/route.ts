@@ -12,10 +12,18 @@ export async function GET(request: Request) {
       return Response.json({ config, source: "core" });
     }
   } catch (err) {
-    console.warn("[api/config] Core unavailable, using mock data:", err);
+    console.warn("[api/config] Core unavailable:", err);
   }
 
-  return Response.json({ config: mockConfig, source: "mock" });
+  // Never return mock data — return minimal defaults so UI shows empty state
+  return Response.json({
+    config: {
+      botToken: "",
+      allowedChatIds: [],
+      defaultRuntime: "claude-code",
+    },
+    source: "empty",
+  });
 }
 
 export async function PUT(request: Request) {
@@ -37,12 +45,11 @@ export async function PUT(request: Request) {
       });
     }
 
-    // Fallback
-    return Response.json({
-      success: true,
-      config: body,
-      source: "mock",
-    });
+    // Core unavailable — cannot persist
+    return Response.json(
+      { success: false, error: "Core unavailable, config not saved" },
+      { status: 503 }
+    );
   } catch (err) {
     return Response.json(
       {

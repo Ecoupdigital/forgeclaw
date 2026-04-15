@@ -12,10 +12,11 @@ export async function GET(request: Request) {
       return Response.json({ files, source: "core" });
     }
   } catch (err) {
-    console.warn("[api/harness] Core unavailable, using mock data:", err);
+    console.warn("[api/harness] Core unavailable:", err);
   }
 
-  return Response.json({ files: mockHarnessFiles, source: "mock" });
+  // Never return mock data — return empty array so UI shows empty state
+  return Response.json({ files: [], source: "empty" });
 }
 
 export async function PUT(request: Request) {
@@ -44,13 +45,11 @@ export async function PUT(request: Request) {
       });
     }
 
-    // Fallback
-    return Response.json({
-      success: true,
-      name,
-      lines: content.split("\n").length,
-      source: "mock",
-    });
+    // Core unavailable — cannot persist
+    return Response.json(
+      { success: false, error: "Core unavailable, file not saved" },
+      { status: 503 }
+    );
   } catch (err) {
     return Response.json(
       {

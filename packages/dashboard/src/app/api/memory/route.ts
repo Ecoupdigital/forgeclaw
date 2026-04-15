@@ -18,13 +18,14 @@ export async function GET(request: Request) {
       });
     }
   } catch (err) {
-    console.warn("[api/memory] Core unavailable, using mock data:", err);
+    console.warn("[api/memory] Core unavailable:", err);
   }
 
+  // Never return mock data — return empty values so UI shows empty state
   return Response.json({
-    memory: mockMemoryContent,
-    dailyLogs: mockDailyLogs,
-    source: "mock",
+    memory: "",
+    dailyLogs: [],
+    source: "empty",
   });
 }
 
@@ -46,12 +47,11 @@ export async function PUT(request: Request) {
       });
     }
 
-    // Fallback: pretend it worked
-    return Response.json({
-      success: true,
-      lines: content.split("\n").length,
-      source: "mock",
-    });
+    // Core unavailable — cannot persist
+    return Response.json(
+      { success: false, error: "Core unavailable, memory not saved" },
+      { status: 503 }
+    );
   } catch (err) {
     return Response.json(
       {

@@ -14,10 +14,11 @@ export async function GET(request: Request) {
       return Response.json({ content, source: "core" });
     }
   } catch (err) {
-    console.warn("[api/heartbeat] Core unavailable, using mock data:", err);
+    console.warn("[api/heartbeat] Core unavailable:", err);
   }
 
-  return Response.json({ content: mockHeartbeat, source: "mock" });
+  // Never return mock data — return empty string so UI shows empty state
+  return Response.json({ content: "", source: "empty" });
 }
 
 export async function PUT(request: Request) {
