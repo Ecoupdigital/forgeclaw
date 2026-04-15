@@ -224,8 +224,12 @@ async function main(): Promise<void> {
   console.log('[forgeclaw] Starting cron engine...');
   await cronEngine.start();
 
-  // Schedule the internal compile-daily job (legacy simple compile).
-  memoryManager.startCompileCron();
+  // v1 MemoryManager compile cron DEPRECATED (M2): the v2 memory system
+  // (writer + janitor crons in memoryManagerV2.startCrons()) handles daily
+  // log extraction and distillation. v1 memoryManager singleton is kept
+  // alive for backward-compat addEntry()/getDailyLog() calls from event
+  // listeners below, but its scheduled compile task is removed to prevent
+  // duplicate processing and potential race conditions with v2.
 
   // Initialize the v1.5 memory system: registers the built-in provider,
   // loads the frozen snapshot from SQLite, primes FTS5 search.
@@ -352,7 +356,6 @@ async function main(): Promise<void> {
   const shutdown = async (signal: string) => {
     console.log(`[forgeclaw] Received ${signal}, shutting down...`);
     await cronEngine.stop();
-    memoryManager.stopCompileCron();
     try { await memoryManagerV2.shutdownAll(); } catch {}
     await handle.stop();
     console.log('[forgeclaw] Bot stopped gracefully.');
