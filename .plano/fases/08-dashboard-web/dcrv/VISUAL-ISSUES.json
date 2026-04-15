@@ -1,0 +1,353 @@
+{
+  "meta": {
+    "analyzed": "2026-04-11",
+    "page": "/crons",
+    "phase": "08-dashboard-web",
+    "subrecorte": "DASH-04 (dcrv)",
+    "viewports": ["1440x900", "768x1024", "375x812"],
+    "states_captured": 10,
+    "screenshots_dir": ".plano/fases/08-dashboard-web/dcrv/screenshots/",
+    "design_tokens_source": "packages/dashboard/src/app/globals.css",
+    "score": 6.4,
+    "counts": {
+      "critical": 3,
+      "high": 7,
+      "medium": 6,
+      "low": 3,
+      "total": 19
+    }
+  },
+  "issues": [
+    {
+      "id": "VIS-001",
+      "severity": "critical",
+      "category": "design-tokens",
+      "page": "/crons",
+      "viewport": "all",
+      "state": "list-initial",
+      "title": "Cards nao tem border violet-dim (primitive <Card> usa ring-foreground/10)",
+      "description": "Apesar de cron-card.tsx passar className='border-violet-dim', o primitive ui/card.tsx (linha 15) usa 'ring-1 ring-foreground/10' e nao define border-width. Resultado: border-width computada = 0px. A 'borda' visivel dos cards e o ring branco 10%, nao o token violet do projeto. Consequencia: hover:border-violet-glow e dead code.",
+      "evidence": {
+        "screenshot": "screenshots/01-initial-desktop.png",
+        "css_data": "data-slot=\"card\" computed: border=0px solid rgba(123,108,246,0.2); ring=ring-foreground/10",
+        "source_files": [
+          "packages/dashboard/src/components/ui/card.tsx:15",
+          "packages/dashboard/src/components/cron-card.tsx:50"
+        ]
+      },
+      "expected": "Borda visivel usando --color-violet-dim (rgba(123,108,246,0.2))",
+      "suggested_fix": "(A) Em cron-card.tsx, trocar 'border-violet-dim' por 'ring-violet-dim' e 'hover:border-violet-glow' por 'hover:ring-violet-glow'. (B) OU editar ui/card.tsx para usar 'border border-border' no lugar de 'ring-1 ring-foreground/10' como padrao global, respeitando design token."
+    },
+    {
+      "id": "VIS-002",
+      "severity": "critical",
+      "category": "visual-hierarchy",
+      "page": "/crons",
+      "viewport": "all",
+      "state": "list-initial",
+      "title": "7 botoes outline por card, 5 pixel-identicos (nenhuma hierarquia de acao)",
+      "description": "Cada card tem View logs | Run now | Pause | Edit | Duplicate | Delete em sequencia. CSS computed: fontSize=12px, padding=0 8px, bg=void, border=violet-dim — todos iguais. Apenas Delete tem color red-400 e Run now tem violet. Com 7 jobs na lista = 49 botoes outline na tela. Usuario precisa ler texto para distinguir.",
+      "evidence": {
+        "screenshot": "screenshots/01-initial-desktop.png",
+        "css_data": "css-initial-desktop.json (44 buttons, 42 com mesmo padding/bg/border)",
+        "source_files": ["packages/dashboard/src/components/cron-card.tsx:117-178"]
+      },
+      "expected": "Hierarquia clara: 1 acao primaria (Run now?), acoes secundarias agrupadas",
+      "suggested_fix": "Agrupar Edit/Duplicate/Delete num dropdown '...' (pattern de listas). Destacar Run now como CTA primario do card (variant='default' violet). Usar icones lucide-react alem do label."
+    },
+    {
+      "id": "VIS-003",
+      "severity": "critical",
+      "category": "responsive",
+      "page": "/crons",
+      "viewport": "375x812",
+      "state": "list-initial",
+      "title": "Mobile overflow severo em 375px: header truncado, botoes cortados, badges clipados",
+      "description": "No viewport 375px: (a) '+ New cron' vira '+ New cro...' no header; (b) linha de 7 botoes do card quebra em 2-3 linhas com Delete solto; (c) badge 'success' fica fora do viewport visivel do header do card; (d) '+ Create your first cron' no empty state fica clipado a direita tambem.",
+      "evidence": {
+        "screenshots": [
+          "screenshots/01-initial-mobile.png",
+          "screenshots/10-empty-state-mobile.png"
+        ],
+        "css_data": "header usa 'flex justify-between' sem flex-wrap; action buttons usam 'flex flex-wrap' mas 7 itens nao cabem em 2 linhas limpas"
+      },
+      "expected": "Todos os elementos visiveis e clicaveis em 375px sem truncamento",
+      "suggested_fix": "(A) Header: 'flex flex-col sm:flex-row sm:justify-between gap-2' e abbrevi ar botao para '+ New' em <sm. (B) Card actions: usar 'grid grid-cols-2 sm:grid-cols-4 gap-2'. (C) Badges: 'flex flex-wrap gap-1.5' no container dos badges."
+    },
+    {
+      "id": "VIS-004",
+      "severity": "high",
+      "category": "modality",
+      "page": "/crons",
+      "viewport": "desktop",
+      "state": "delete-dialog",
+      "title": "Dialog overlay com backdrop quase invisivel (10% alpha, sem blur)",
+      "description": "[data-slot=\"dialog-overlay\"] computed: backgroundColor=oklab(0 0 0 / 0.1). Dialog aparece 'flutuando' sem escurecer o resto da UI. Cards atras sao quase totalmente legiveis.",
+      "evidence": {
+        "screenshot": "screenshots/07-delete-dialog-desktop.png",
+        "css_data": "css-delete-dialog.json: overlay bg=oklab(0 0 0 / 0.1), zIndex=50, position=fixed",
+        "source_files": ["packages/dashboard/src/components/ui/dialog.tsx"]
+      },
+      "expected": "Backdrop com bg-black/50 ou mais + blur para foco no dialog",
+      "suggested_fix": "Editar ui/dialog.tsx DialogOverlay para 'bg-black/60 backdrop-blur-sm' (shadcn modern) ou 'bg-void/80 backdrop-blur-sm' usando token do projeto."
+    },
+    {
+      "id": "VIS-005",
+      "severity": "high",
+      "category": "safety-ux",
+      "page": "/crons",
+      "viewport": "375x812",
+      "state": "delete-dialog",
+      "title": "Botoes do delete dialog com ordem invertida no mobile (Delete em cima, Cancel embaixo)",
+      "description": "No mobile o DialogFooter empilha flex-col e mantem ordem do DOM: Cancel vem antes de Delete no markup, mas shadcn usa 'sm:flex-row-reverse', fazendo em mobile Delete aparecer PRIMEIRO (topo). Em acao destrutiva, o primeiro botao acessivel deveria ser o de menor risco.",
+      "evidence": {
+        "screenshot": "screenshots/07-delete-dialog-mobile.png",
+        "source_files": ["packages/dashboard/src/components/delete-cron-dialog.tsx:39-55"]
+      },
+      "expected": "Cancel em primeiro (topo no mobile), Delete secundario em baixo",
+      "suggested_fix": "Usar 'flex flex-col-reverse sm:flex-row gap-2' no DialogFooter, ou inverter a ordem do markup (Delete antes, Cancel depois)."
+    },
+    {
+      "id": "VIS-006",
+      "severity": "high",
+      "category": "ux-information-architecture",
+      "page": "/crons",
+      "viewport": "desktop",
+      "state": "skills-helper",
+      "title": "Skills helper sheet oculta o form sheet (dois Sheets side=right colidem)",
+      "description": "Clicar em 'Skills disponiveis (33)' abre outro <Sheet side='right'>. Ambos coexistem no DOM (x=928 w=512 e x=1056 w=384), mas o skills sheet cobre 75% da largura do form sheet, deixando apenas 128px visiveis. Usuario perde contexto do Prompt que esta escrevendo.",
+      "evidence": {
+        "screenshots": [
+          "screenshots/06-skills-sheet-desktop.png",
+          "screenshots/06b-after-skills-closed-desktop.png"
+        ],
+        "css_data": "Dois [data-slot=sheet-content] no DOM simultaneamente, mesmos zIndex=50",
+        "source_files": ["packages/dashboard/src/components/cron-form-sheet.tsx:435-472"]
+      },
+      "expected": "Skills visiveis SEM esconder o prompt que o usuario esta escrevendo",
+      "suggested_fix": "(A) Trocar por <Popover> ancorado no link 'Skills disponiveis'. (B) Secao expansivel inline abaixo do textarea do Prompt. (C) Sheet do lado esquerdo (side='left'). Melhor: autocomplete/chips direto no textarea."
+    },
+    {
+      "id": "VIS-007",
+      "severity": "high",
+      "category": "consistency",
+      "page": "/crons",
+      "viewport": "all",
+      "state": "form-sheet",
+      "title": "Checkbox 'Enabled' usa estilo nativo do browser (destoa do dark theme)",
+      "description": "cron-form-sheet.tsx:391 usa <input type=checkbox className='h-4 w-4 accent-violet'>. 'accent-violet' so afeta o estado checked. O box unchecked usa default do Chrome (fundo branco, borda cinza), criando um ponto visualmente fora do theme escuro violet.",
+      "evidence": {
+        "screenshot": "screenshots/03-form-sheet-empty-desktop.png",
+        "source_files": ["packages/dashboard/src/components/cron-form-sheet.tsx:391-404"]
+      },
+      "expected": "Checkbox com visual dark theme + violet check",
+      "suggested_fix": "Instalar shadcn Checkbox (bunx shadcn@latest add checkbox) e usar <Checkbox id='cron-enabled' checked={enabled} onCheckedChange={setEnabled}>. OU usar um Switch (mais adequado para 'Enabled'). OU toggle custom estilizado."
+    },
+    {
+      "id": "VIS-008",
+      "severity": "high",
+      "category": "contrast-a11y",
+      "page": "/crons",
+      "viewport": "all",
+      "state": "form-sheet",
+      "title": "'Timezone: UTC' (10px) com contraste 3.89:1 - FAIL WCAG AA",
+      "description": "cron-form-sheet.tsx:307 usa 'text-[10px] text-text-secondary/70'. Sobre bg-deep-space (rgb 12,13,24): rgba(155,155,184,0.7) = contraste 3.89:1. WCAG AA exige 4.5:1 para texto normal. Fonte e 10px, fora do threshold de large text.",
+      "evidence": {
+        "screenshot": "screenshots/03-form-sheet-empty-desktop.png",
+        "source_files": ["packages/dashboard/src/components/cron-form-sheet.tsx:307-309"]
+      },
+      "expected": "Contraste >= 4.5:1",
+      "suggested_fix": "Usar 'text-xs text-text-secondary' (12px sem /70) — fica 7.16:1. Ou 'text-[11px] text-text-secondary'."
+    },
+    {
+      "id": "VIS-009",
+      "severity": "high",
+      "category": "contrast-a11y",
+      "page": "/crons",
+      "viewport": "all",
+      "state": "form-sheet",
+      "title": "'Template vars: {today}...' e 'N chars' com contraste 3.00:1 - FAIL WCAG AA",
+      "description": "cron-form-sheet.tsx:351 e :355 usam 'text-[10px] text-text-secondary/60'. Contraste 3.00:1 em deep-space — falha texto normal.",
+      "evidence": {
+        "screenshot": "screenshots/05-form-valid-custom-filled-desktop.png",
+        "source_files": ["packages/dashboard/src/components/cron-form-sheet.tsx:351,355"]
+      },
+      "expected": "Contraste >= 4.5:1",
+      "suggested_fix": "Trocar '/60' por '/80' (4.58:1) ou sem modifier (7.16:1). Aumentar fonte para 11px-12px."
+    },
+    {
+      "id": "VIS-010",
+      "severity": "high",
+      "category": "contrast-a11y",
+      "page": "/crons",
+      "viewport": "all",
+      "state": "empty-state",
+      "title": "Copy do empty state 'Schedule a prompt...' com contraste 3.00:1 - FAIL WCAG AA",
+      "description": "crons-tab.tsx:289 usa 'text-xs text-text-secondary/60'. Contraste 3.00:1 sobre deep-space. E o unico texto descritivo do empty state, precisa ser legivel.",
+      "evidence": {
+        "screenshot": "screenshots/10-empty-state-desktop.png",
+        "source_files": ["packages/dashboard/src/components/crons-tab.tsx:288-291"]
+      },
+      "expected": "Texto descritivo legivel com contraste >= 4.5:1",
+      "suggested_fix": "Trocar por 'text-xs text-text-secondary' ou 'text-sm text-text-body'. Empty state deve guiar, nao sussurrar."
+    },
+    {
+      "id": "VIS-011",
+      "severity": "medium",
+      "category": "visual-consistency",
+      "page": "/crons",
+      "viewport": "all",
+      "state": "empty-state",
+      "title": "Emoji '⏰' renderiza colorido (OS emoji font) destoando do dark theme",
+      "description": "crons-tab.tsx:285 usa <div className='text-5xl'>⏰</div>. Chrome renderiza com fonte de emoji colorida (vermelho/branco). Quebra a paleta violet monocromatica.",
+      "evidence": {
+        "screenshot": "screenshots/10-empty-state-desktop.png",
+        "source_files": ["packages/dashboard/src/components/crons-tab.tsx:283-286"]
+      },
+      "expected": "Icone monocromatico respeitando tokens",
+      "suggested_fix": "Trocar por <AlarmClock className='h-14 w-14 text-violet/60' /> do lucide-react (ja usado em outros pontos do projeto)."
+    },
+    {
+      "id": "VIS-012",
+      "severity": "medium",
+      "category": "hierarchy",
+      "page": "/crons",
+      "viewport": "all",
+      "state": "list-initial",
+      "title": "Titulo da pagina e titulo de card ambos 14px (sem ancora visual)",
+      "description": "h2 'Cron Jobs (N active)' e 14px/600. CardTitle e 14px/500 (forcado por className='text-sm'). Diferenca de weight e sutil demais — ao fazer scroll nao ha indicacao clara de header da pagina vs header do item.",
+      "evidence": {
+        "screenshot": "screenshots/01-initial-desktop.png",
+        "css_data": "h2: 14px/600 text-primary | card-title: 14px/500 text-primary",
+        "source_files": ["packages/dashboard/src/components/crons-tab.tsx:256", "packages/dashboard/src/components/cron-card.tsx:56"]
+      },
+      "expected": "Titulo da pagina 16-18px semibold, cards 14px medium",
+      "suggested_fix": "Em crons-tab.tsx:256 trocar 'text-sm' por 'text-base font-semibold'. Opcional: adicionar underline sutil ou separator mais grosso."
+    },
+    {
+      "id": "VIS-013",
+      "severity": "medium",
+      "category": "density",
+      "page": "/crons",
+      "viewport": "all",
+      "state": "list-initial",
+      "title": "3 badges por card (FILE/Active/success) competem com titulo",
+      "description": "Header do card tem CardTitle a esquerda e 3 badges lineares a direita (origin + enabled + lastStatus). Em tablet ja aperta; em mobile o ultimo badge sai do viewport.",
+      "evidence": {
+        "screenshots": ["screenshots/01-initial-desktop.png", "screenshots/01-initial-tablet.png"],
+        "source_files": ["packages/dashboard/src/components/cron-card.tsx:54-96"]
+      },
+      "expected": "Metadados distinguiveis sem dominar o titulo",
+      "suggested_fix": "Origin pode virar dot-indicator (bullet colorido) em vez de badge. 'Active/Paused' pode virar opacity no card inteiro (paused=opacity-60). Manter so lastStatus como badge real."
+    },
+    {
+      "id": "VIS-014",
+      "severity": "medium",
+      "category": "feedback",
+      "page": "/crons",
+      "viewport": "desktop",
+      "state": "run-now",
+      "title": "Status de 'Run now' so aparece no botao clicado (sem feedback global)",
+      "description": "Ao clicar Run now, o botao vira 'Running' com spinner inline. Nao ha toast global. Se usuario clicar e dar scroll, perde o feedback.",
+      "evidence": {
+        "source_files": ["packages/dashboard/src/components/cron-card.tsx:132-141", "packages/dashboard/src/components/crons-tab.tsx:102-123"]
+      },
+      "expected": "Feedback visivel mesmo se usuario scrollar",
+      "suggested_fix": "Chamar showToast('Cron X iniciada', 'success') imediatamente dentro de handleRunNow, antes do timeout. Ja existe infra pronta."
+    },
+    {
+      "id": "VIS-015",
+      "severity": "medium",
+      "category": "responsive",
+      "page": "/crons",
+      "viewport": "mobile",
+      "state": "header",
+      "title": "Header usa h-10 fixo (pode comprimir conteudo em mobile)",
+      "description": "crons-tab.tsx:255 usa 'flex h-10 items-center justify-between'. Com 2 botoes + titulo em 375px, o titulo ja fica no limite. 'h-10' fixa altura e pode comprimir se conteudo precisar de mais.",
+      "evidence": {
+        "source_files": ["packages/dashboard/src/components/crons-tab.tsx:255"]
+      },
+      "expected": "Header com altura minima mas crescivel",
+      "suggested_fix": "Trocar 'h-10' por 'min-h-10'."
+    },
+    {
+      "id": "VIS-016",
+      "severity": "medium",
+      "category": "ux-tooltips",
+      "page": "/crons",
+      "viewport": "all",
+      "state": "disabled-buttons",
+      "title": "Tooltips usam atributo 'title' nativo do browser (delay, styling OS, falha em disabled)",
+      "description": "cron-card.tsx:155,164,174 usa title='Edit in HEARTBEAT.md' para explicar porque Edit/Delete estao disabled em jobs file-origin. Tooltip nativo tem 1-2s delay, styling do OS (nao do theme), e em muitos browsers nao aparece em botoes disabled (nao disparam mouseenter).",
+      "evidence": {
+        "source_files": ["packages/dashboard/src/components/cron-card.tsx:155,164,174"]
+      },
+      "expected": "Tooltip custom com styling consistente, aparece em disabled",
+      "suggested_fix": "Adicionar shadcn Tooltip (bunx shadcn add tooltip). Wrap botoes disabled em <span> para permitir hover events. Alternativamente: exibir texto de ajuda sutil abaixo do botao."
+    },
+    {
+      "id": "VIS-017",
+      "severity": "low",
+      "category": "navigation",
+      "page": "/crons",
+      "viewport": "all",
+      "state": "all",
+      "title": "/crons nao tem nav shell (consistente com /memory, /harness, /config)",
+      "description": "app/crons/page.tsx renderiza <CronsTab> em <div className='h-screen'> sem DashboardShell. A rota root / USA DashboardShell com tabs. Se usuario bookmarkar /crons, nao tem como navegar para outras secoes sem digitar URL. Este e um padrao de projeto — todas as sub-rotas seguem o mesmo. Fora do escopo DASH-04.",
+      "evidence": {
+        "screenshot_comparison": [
+          "screenshots/99-dashboard-root-for-comparison-desktop.png",
+          "screenshots/01-initial-desktop.png"
+        ],
+        "source_files": [
+          "packages/dashboard/src/app/crons/page.tsx",
+          "packages/dashboard/src/app/page.tsx",
+          "packages/dashboard/src/app/memory/page.tsx",
+          "packages/dashboard/src/app/harness/page.tsx"
+        ]
+      },
+      "expected": "Nav reutilizavel em todas as rotas",
+      "suggested_fix": "Extrair um AppLayout em app/layout.tsx (ou um route group (dashboard)/layout.tsx) que renderiza DashboardShell header com nav tabs. Escopo: projeto todo, fora de DASH-04."
+    },
+    {
+      "id": "VIS-018",
+      "severity": "low",
+      "category": "dev-environment",
+      "page": "/crons",
+      "viewport": "mobile",
+      "state": "all",
+      "title": "Next.js devtools indicator ('N' floating) sobrepoe conteudo em mobile",
+      "description": "Next 16 mostra um indicador circular 'N' em baixo-esquerda da pagina durante dev. Em mobile (375px) ele sobrepoe o canto inferior esquerdo dos cards e do empty state.",
+      "evidence": {
+        "screenshots": [
+          "screenshots/01-initial-mobile.png",
+          "screenshots/07-delete-dialog-mobile.png",
+          "screenshots/10-empty-state-mobile.png"
+        ]
+      },
+      "expected": "Apenas em producao nao aparece — cosmetico em dev",
+      "suggested_fix": "Nao agir. Opcional: desabilitar devIndicators no next.config para screenshots de QA mais limpos."
+    },
+    {
+      "id": "VIS-019",
+      "severity": "low",
+      "category": "design-tokens",
+      "page": "/crons",
+      "viewport": "all",
+      "state": "form-sheet",
+      "title": "Tamanhos text-[10px] e text-[11px] ad-hoc no form sheet fora da escala",
+      "description": "cron-form-sheet.tsx usa text-[10px] (linhas 307, 351, 355) e text-[11px] (linhas 316, 347). Mistura tamanhos fora da escala padrao Tailwind (12/14/16/18). Diferenca entre 'Timezone: UTC' (10px) e 'Next runs' (11px) sem razao semantica clara.",
+      "evidence": {
+        "source_files": [
+          "packages/dashboard/src/components/cron-form-sheet.tsx:307",
+          "packages/dashboard/src/components/cron-form-sheet.tsx:316",
+          "packages/dashboard/src/components/cron-form-sheet.tsx:347",
+          "packages/dashboard/src/components/cron-form-sheet.tsx:351",
+          "packages/dashboard/src/components/cron-form-sheet.tsx:355"
+        ]
+      },
+      "expected": "Uso consistente da escala (text-xs = 12px para meta, text-[11px] se precisar meta-meta)",
+      "suggested_fix": "Padronizar todos em 'text-xs' (12px) ou definir um token 'text-meta' no theme para algo menor que 12."
+    }
+  ]
+}

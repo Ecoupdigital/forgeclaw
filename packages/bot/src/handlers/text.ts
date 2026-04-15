@@ -1,7 +1,19 @@
 import type { Context } from 'grammy';
 import { InputFile, InlineKeyboard } from 'grammy';
-import { ClaudeRunner, sessionManager, stateStore, upDetector, fileHandler, ContextBuilder, harnessLoader, memoryManager, eventBus } from '@forgeclaw/core';
-import type { StreamEvent, ForgeClawConfig } from '@forgeclaw/core';
+import {
+  ClaudeRunner,
+  sessionManager,
+  stateStore,
+  upDetector,
+  fileHandler,
+  ContextBuilder,
+  harnessLoader,
+  memoryManager,
+  eventBus,
+  runnerRegistry,
+  type AgentCliRunner,
+} from '@forgeclaw/core';
+import type { StreamEvent, ForgeClawConfig, RuntimeName } from '@forgeclaw/core';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -18,9 +30,9 @@ const THINKING_KEYWORDS = ['pense', 'raciocine', 'think', 'analise profundamente
 const HARNESS_CLAUDE_MD = join(homedir(), '.forgeclaw', 'harness', 'CLAUDE.md');
 
 /** Active runners keyed by session key, for abort support. */
-const activeRunners = new Map<string, ClaudeRunner>();
+const activeRunners = new Map<string, AgentCliRunner>();
 
-export function getActiveRunners(): Map<string, ClaudeRunner> {
+export function getActiveRunners(): Map<string, AgentCliRunner> {
   return activeRunners;
 }
 
@@ -110,13 +122,17 @@ async function processMessage(
 
     // GAP 1: Build enriched prompt with context (harness, memory, vault, state)
     const contextBuilder = new ContextBuilder(config, harnessLoader);
-    const enrichedPrompt = await contextBuilder.build(text, chatId, topicId ?? 0);
+    const enrichedPrompt = await contextBuilder.build(text, chatId, topicId ?? 0, session.claudeSessionId);
 
     // GAP 5: Detect thinking keywords
     const shouldThink = THINKING_KEYWORDS.some(k => text.toLowerCase().includes(k));
 
-    // Create runner and stream
-    const runner = new ClaudeRunner();
+    // Resolve runtime: topic override → config default → claude-code
+    const topicRow = stateStore.getTopicByChatAndThread(chatId, topicId);
+    const requestedRuntime = (topicRow?.runtime ?? config.defaultRuntime) as RuntimeName | undefined;
+    const allowFallback = topicRow?.runtimeFallback ?? false;
+    const runner = runnerRegistry.get(requestedRuntime, { allowFallback });
+    console.log(`[text-handler] using runtime '${runner.name}' for ${sessionKey}`);
     activeRunners.set(sessionKey, runner);
 
     let accumulatedText = '';
@@ -128,9 +144,11 @@ async function processMessage(
         sessionId: session.claudeSessionId ?? undefined,
         cwd: session.projectDir ?? config.workingDir,
         model: config.claudeModel,
-        // GAP 2: Append harness CLAUDE.md as system prompt if it exists
-        ...(existsSync(HARNESS_CLAUDE_MD) ? { appendSystemPrompt: HARNESS_CLAUDE_MD } : {}),
-        // GAP 5: If thinking keywords detected, instruct extended thinking via system prompt
+        // Inject harness as a file path — runner adapts per-CLI:
+        //   claude-code: --append-system-prompt-file
+        //   codex: writes to AGENTS.md in cwd, restores after
+        ...(existsSync(HARNESS_CLAUDE_MD) ? { appendSystemPromptFile: HARNESS_CLAUDE_MD } : {}),
+        // GAP 5: If thinking keywords detected, instruct extended thinking
         ...(shouldThink ? { systemPrompt: 'Use extended thinking. Think deeply and step-by-step before responding. Show your reasoning process.' } : {}),
       };
 
@@ -342,10 +360,24 @@ async function safeEditText(
       ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
     });
   } catch (err) {
-    // Telegram returns error if message content hasn't changed — ignore
     const msg = err instanceof Error ? err.message : '';
-    if (!msg.includes('message is not modified')) {
-      console.error('[text-handler] Edit failed:', msg);
+    if (msg.includes('message is not modified')) return;
+
+    // If HTML parse failed, retry as plain text so the user isn't stuck on "Processing..."
+    if (parseMode === 'HTML' && msg.includes("can't parse entities")) {
+      console.warn('[text-handler] HTML parse failed, retrying as plain text');
+      try {
+        // Strip HTML tags for plain text fallback
+        const plain = text.replace(/<[^>]+>/g, '');
+        await ctx.api.editMessageText(chatId, messageId, plain, {
+          ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+        });
+        return;
+      } catch (retryErr) {
+        console.error('[text-handler] Plain text retry also failed:', retryErr);
+      }
     }
+
+    console.error('[text-handler] Edit failed:', msg);
   }
 }

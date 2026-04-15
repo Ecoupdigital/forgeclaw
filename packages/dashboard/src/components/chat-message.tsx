@@ -32,7 +32,6 @@ function formatTime(ts: number): string {
 }
 
 function renderContent(content: string) {
-  // Split by code blocks
   const parts = content.split(/(```[\s\S]*?```)/g);
 
   return parts.map((part, i) => {
@@ -44,11 +43,11 @@ function renderContent(content: string) {
       return (
         <pre
           key={i}
-          className="my-2 overflow-x-auto rounded-md bg-night-panel p-3 font-mono text-xs leading-relaxed text-text-body"
+          className="my-2 overflow-x-auto rounded-md bg-void/60 border border-white/[0.06] p-3 font-mono text-xs leading-relaxed text-text-body"
         >
           {lang && (
-            <div className="mb-1.5 text-[10px] uppercase tracking-wider text-text-secondary">
-              {lang}
+            <div className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-text-disabled">
+              // {lang}
             </div>
           )}
           <code>{code}</code>
@@ -56,7 +55,6 @@ function renderContent(content: string) {
       );
     }
 
-    // Inline code
     const inlineParts = part.split(/(`[^`]+`)/g);
     return (
       <span key={i}>
@@ -65,7 +63,7 @@ function renderContent(content: string) {
             return (
               <code
                 key={j}
-                className="rounded bg-night-panel px-1 py-0.5 font-mono text-xs text-violet"
+                className="rounded bg-violet/10 px-1 py-0.5 font-mono text-xs text-violet"
               >
                 {ip.slice(1, -1)}
               </code>
@@ -80,38 +78,40 @@ function renderContent(content: string) {
 
 export function ChatMessage({ message, streaming = false, tools: streamTools }: ChatMessageProps) {
   const isUser = message.role === "user";
-  // Use streaming tools if provided, otherwise detect from content
   const tools = streamTools && streamTools.length > 0
     ? streamTools
     : !isUser
     ? detectTools(message.content)
     : [];
 
-  return (
-    <div
-      className={`group flex gap-3 px-4 py-3 transition-colors hover:bg-night-panel/30 ${
-        isUser ? "" : ""
-      }`}
-    >
-      {/* Avatar */}
-      <div
-        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-bold ${
-          isUser
-            ? "bg-violet/20 text-violet"
-            : "bg-emerald-500/20 text-emerald-400"
-        }`}
-        aria-hidden="true"
-      >
-        {isUser ? "U" : "C"}
+  if (isUser) {
+    return (
+      <div className="group flex justify-end px-4 py-2">
+        <div className="max-w-[70%]">
+          <div className="rounded-2xl rounded-br-md bg-violet/15 border border-violet/20 px-4 py-2.5">
+            <div className="text-sm leading-relaxed text-text-body whitespace-pre-wrap">
+              {renderContent(message.content)}
+            </div>
+          </div>
+          <div className="mt-1 flex justify-end px-1">
+            <span className="font-mono text-[10px] text-text-disabled">
+              {formatTime(message.createdAt)}
+            </span>
+          </div>
+        </div>
       </div>
+    );
+  }
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="mb-1 flex items-center gap-2">
-          <span className="text-xs font-medium text-text-primary">
-            {isUser ? "You" : "Claude"}
-          </span>
-          <span className="text-[10px] text-text-secondary font-mono">
+  return (
+    <div className="group px-4 py-3">
+      <div className="max-w-[85%]">
+        {/* Header */}
+        <div className="mb-1.5 flex items-center gap-2">
+          <div className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500/15">
+            <span className="font-mono text-[10px] font-semibold text-emerald-400">C</span>
+          </div>
+          <span className="font-mono text-[10px] text-text-secondary">
             {formatTime(message.createdAt)}
           </span>
           {tools.length > 0 && (
@@ -120,7 +120,7 @@ export function ChatMessage({ message, streaming = false, tools: streamTools }: 
                 <Badge
                   key={tool}
                   variant="outline"
-                  className="h-4 border-violet-dim bg-violet/10 px-1.5 text-[10px] text-violet"
+                  className="h-4 border-white/[0.06] bg-white/[0.03] px-1.5 text-[10px] text-text-secondary"
                 >
                   {tool}
                 </Badge>
@@ -128,16 +128,16 @@ export function ChatMessage({ message, streaming = false, tools: streamTools }: 
             </div>
           )}
           {streaming && (
-            <span className="text-[10px] text-emerald-400 font-mono animate-pulse">
-              streaming
+            <span className="font-mono text-[10px] text-emerald-400 animate-pulse">
+              ▸ streaming
             </span>
           )}
         </div>
+        {/* Body */}
         <div className="text-sm leading-relaxed text-text-body whitespace-pre-wrap">
           {renderContent(message.content)}
-          {/* Blinking cursor for streaming messages */}
           {streaming && (
-            <span className="inline-block w-2 h-4 ml-0.5 bg-emerald-400 animate-pulse rounded-sm" />
+            <span className="inline-block w-1.5 h-4 ml-0.5 bg-violet animate-pulse rounded-sm" />
           )}
         </div>
       </div>

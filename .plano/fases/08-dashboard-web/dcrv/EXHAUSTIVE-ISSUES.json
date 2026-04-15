@@ -1,0 +1,256 @@
+{
+  "meta": {
+    "tested": "2026-04-11",
+    "target": "/crons",
+    "phase": "08-dashboard-web (DASH-04 dcrv)",
+    "methodology": "API-level exhaustive + static source audit (no Playwright MCP browser tools available in session)",
+    "total_elements_audited": 47,
+    "passed": 29,
+    "failed": 18,
+    "critical": 2,
+    "high": 9,
+    "medium": 6,
+    "low": 1
+  },
+  "issues": [
+    {
+      "id": "BACKEND-013",
+      "severity": "critical",
+      "type": "data_loss",
+      "page": "/crons",
+      "element": "Advanced sheet → Textarea HEARTBEAT.md + Save button (or direct PUT /api/heartbeat)",
+      "category": "validation / destructive",
+      "title": "PUT /api/heartbeat with empty string destroys HEARTBEAT.md",
+      "description": "Sending {content:\"\"} to PUT /api/heartbeat writes zero bytes to /root/.forgeclaw/HEARTBEAT.md. The toast reports 'HEARTBEAT.md saved' and the server returns {success:true,lines:1,source:'core'}. All file-origin cron jobs will disappear on next fs.watch hot-reload. This was actually triggered during testing and the file had to be reconstructed from screenshot evidence.",
+      "reproduction": "curl -X PUT http://localhost:4040/api/heartbeat -H 'Content-Type: application/json' -d '{\"content\":\"\"}'",
+      "evidence": {
+        "before_size_bytes": 741,
+        "after_size_bytes": 0,
+        "server_response": {"success": true, "lines": 1, "source": "core"},
+        "restored_from": ".plano/fases/08-dashboard-web/dcrv/screenshots/08-advanced-sheet-desktop.png"
+      },
+      "diagnosis_hints": "Edit packages/dashboard/src/app/api/heartbeat/route.ts PUT handler. Add: if (typeof content !== 'string' || content.trim().length < 10) return 400. Also core.writeHeartbeat should write-tmp-then-rename and create a .bak. Frontend: handleSaveHeartbeat in crons-tab.tsx should show a confirm dialog when heartbeat.trim() === '' before calling PUT."
+    },
+    {
+      "id": "BACKEND-004",
+      "severity": "critical",
+      "type": "validation_gap",
+      "page": "/crons",
+      "element": "Form sheet Save button (POST /api/crons) and PUT action=update",
+      "category": "validation",
+      "title": "Backend accepts arbitrary invalid cron expression",
+      "description": "POST /api/crons with schedule:'foo bar baz' (or any garbage string) returns success:true and persists. The cron engine will throw on parse every run. Frontend validateSchedule blocks this via canSave, but the backend has NO validation so any direct API call / retry / automation can insert a broken cron.",
+      "reproduction": "curl -X POST http://localhost:4040/api/crons -H 'Content-Type: application/json' -d '{\"name\":\"bad\",\"schedule\":\"foo bar baz\",\"prompt\":\"x\",\"targetTopicId\":null,\"enabled\":true,\"origin\":\"db\"}'",
+      "evidence": {
+        "response": {"success": true, "job": {"id": 22, "schedule": "foo bar baz"}, "source": "core"}
+      },
+      "diagnosis_hints": "In packages/dashboard/src/app/api/crons/route.ts POST handler, import CronExpressionParser from 'cron-parser' and call parser.parse(schedule.trim()) inside try/catch, return 400 on failure. Same for PUT action='update'."
+    },
+    {
+      "id": "BACKEND-001",
+      "severity": "high",
+      "type": "integrity",
+      "page": "/crons",
+      "element": "Pause / Resume button on file-origin cron cards",
+      "category": "missing_guard",
+      "title": "action=toggle on file-origin jobs succeeds without origin guard",
+      "description": "The PUT handler's action==='toggle' branch (route.ts lines 140-150) has no origin check, unlike action==='update' which correctly returns 403 for file-origin. Toggling a file-origin cron updates the SQLite row, but on next HEARTBEAT.md fs.watch reload the file-origin cron is re-parsed and the pause is lost. State drift.",
+      "reproduction": "curl -X PUT http://localhost:4040/api/crons -H 'Content-Type: application/json' -d '{\"id\":3,\"action\":\"toggle\",\"enabled\":false}' → {success:true}",
+      "evidence": {
+        "guarded_branches": ["update (line 153)", "DELETE (line 109)"],
+        "unguarded_branch": "toggle (line 140)"
+      },
+      "diagnosis_hints": "Add: if (core.getCronJob(id)?.origin === 'file') return 403 inside the toggle branch. Also see FRONTEND-006."
+    },
+    {
+      "id": "FRONTEND-006",
+      "severity": "high",
+      "type": "missing_disabled",
+      "page": "/crons",
+      "element": "Pause / Resume button in cron-card.tsx (lines 142-149)",
+      "category": "UX / consistency",
+      "title": "Pause/Resume button not disabled for file-origin cards",
+      "description": "Edit (line 154) and Delete (line 173) buttons correctly set disabled={isFileOrigin} with title tooltip. The Pause/Resume button does NOT — so users can click it, see an optimistic state change, and think it worked. Combined with BACKEND-001 this lets a bad state persist until next fs.watch reload.",
+      "diagnosis_hints": "In cron-card.tsx, add disabled={isFileOrigin} and title={isFileOrigin ? fileTooltip : (job.enabled ? 'Pause this cron' : 'Resume this cron')} to the toggle Button. Remove if you decide db-level toggle of file-origin is intentional — in which case document it in the tooltip."
+    },
+    {
+      "id": "BACKEND-003",
+      "severity": "high",
+      "type": "validation_gap",
+      "page": "/crons",
+      "element": "Form Save (POST /api/crons)",
+      "category": "validation",
+      "title": "POST accepts empty name",
+      "description": "POST with name:'' returns success:true. Card renders with empty title — user cannot identify it to delete via UI. Frontend canSave blocks but backend doesn't.",
+      "reproduction": "POST /api/crons with {\"name\":\"\",\"schedule\":\"0 9 * * *\",\"prompt\":\"test\",...} → success",
+      "diagnosis_hints": "Add name.trim().length validation to POST + PUT action=update in route.ts."
+    },
+    {
+      "id": "BACKEND-005",
+      "severity": "high",
+      "type": "validation_gap",
+      "page": "/crons",
+      "element": "Form Save (POST /api/crons)",
+      "category": "validation",
+      "title": "POST accepts empty prompt",
+      "description": "POST with prompt:'' returns success:true. Empty-prompt cron has nothing to execute. Frontend blocks but backend doesn't.",
+      "diagnosis_hints": "Same place as BACKEND-003; add prompt.trim().length > 0 check."
+    },
+    {
+      "id": "BACKEND-009",
+      "severity": "high",
+      "type": "silent_success",
+      "page": "/crons",
+      "element": "Form Save in edit mode (PUT action=update)",
+      "category": "error_masking",
+      "title": "PUT action=update on nonexistent id returns success:true",
+      "description": "When core.updateCronJob returns falsy for a nonexistent id, the route falls through to the catch-all {success:true,source:'mock'} on line 190. Indistinguishable from a real update. Silent data loss if the id is wrong.",
+      "reproduction": "curl -X PUT /api/crons -d '{\"id\":999999,\"action\":\"update\",\"name\":\"x\"}' → {success:true}",
+      "diagnosis_hints": "Check updated truthiness before returning success; return 404 when core returns falsy. Also consider removing the broad catch-all at line 190."
+    },
+    {
+      "id": "BACKEND-010",
+      "severity": "high",
+      "type": "silent_success",
+      "page": "/crons",
+      "element": "Pause/Resume button",
+      "category": "error_masking",
+      "title": "PUT action=toggle on nonexistent id returns success:true",
+      "description": "Same root cause as BACKEND-009 — final catch-all returns success regardless.",
+      "reproduction": "curl -X PUT /api/crons -d '{\"id\":999999,\"action\":\"toggle\",\"enabled\":false}' → {success:true}",
+      "diagnosis_hints": "Same fix as BACKEND-009."
+    },
+    {
+      "id": "BACKEND-011",
+      "severity": "high",
+      "type": "silent_success",
+      "page": "/crons",
+      "element": "Form Save in create mode",
+      "category": "error_masking",
+      "title": "POST with empty body returns success:true with fake timestamp id",
+      "description": "POST /api/crons with {} returns {success:true,job:{id:1775910853083,origin:'db'},source:'mock'}. The core.createCronJob failed (NOT NULL violation on required columns) but the route falls through to Date.now() mock id. Frontend handleSubmit cannot distinguish from real success; it shows 'Cron created' toast and refetches — but the job doesn't exist.",
+      "reproduction": "curl -X POST /api/crons -H 'Content-Type: application/json' -d '{}' → success with fake id 1775910853083",
+      "diagnosis_hints": "Remove the mock-fallback branch in POST (lines 71-80). Validate required fields at the top and return 400."
+    },
+    {
+      "id": "BACKEND-016",
+      "severity": "high",
+      "type": "security",
+      "page": "/crons",
+      "element": "Form Save (POST /api/crons) — accepts origin from body",
+      "category": "input_trust",
+      "title": "POST accepts origin:'file' from request body, creating undeletable jobs",
+      "description": "POST with {origin:'file',sourceFile:'/tmp/fake.md',...} creates a file-origin cron via the dashboard API. DELETE then refuses with 'Cannot delete file-origin jobs'. The cron becomes permanent until direct SQLite cleanup. This is how the DCRV-TEST-as-file pollution from the visual testing phase was produced.",
+      "reproduction": "curl -X POST /api/crons -d '{\"name\":\"evil\",\"schedule\":\"0 9 * * *\",\"prompt\":\"x\",\"targetTopicId\":null,\"enabled\":true,\"origin\":\"file\",\"sourceFile\":\"/tmp/fake.md\"}' → undeletable job id 29",
+      "evidence": {
+        "proof_of_injection": "id=29 created with origin=file",
+        "proof_of_undeletability": "DELETE id=29 returned {success:false,error:'Cannot delete file-origin jobs from dashboard'}",
+        "cleanup_required": "direct better-sqlite3 DELETE FROM cron_jobs WHERE id=29"
+      },
+      "diagnosis_hints": "Remove origin and sourceFile from the destructured body in route.ts POST. Hard-code: origin:'db', sourceFile:null. File-origin crons must only be created by the HEARTBEAT.md parser in the core process, never via HTTP."
+    },
+    {
+      "id": "BACKEND-006",
+      "severity": "high",
+      "type": "silent_success",
+      "page": "/crons",
+      "element": "Form Save (POST /api/crons)",
+      "category": "error_masking",
+      "title": "POST with schedule:null or prompt:null returns fake mock id",
+      "description": "Sending null values triggers NOT NULL constraint in core.createCronJob which returns null; route falls through to Date.now() mock id. Fake success again.",
+      "reproduction": "POST with {schedule:null,prompt:null,...} → {success:true, job:{id:1775910809471,...},source:'mock'}; id not in subsequent GET",
+      "diagnosis_hints": "Same fix as BACKEND-011."
+    },
+    {
+      "id": "FRONTEND-005",
+      "severity": "high",
+      "type": "missing_error_handling",
+      "page": "/crons",
+      "element": "Pause/Resume button → handleToggle in crons-tab.tsx:125-136",
+      "category": "feedback / consistency",
+      "title": "handleToggle has no failure handling and no rollback",
+      "description": "The handler does an optimistic setJobs, then fire-and-forget fetch. No res.ok check, no state rollback on failure, no toast. If the server returns 500 or the network drops, the UI shows a state that doesn't match the DB until the next fetchJobs (which only runs on save/delete/heartbeat-save, NOT on toggle).",
+      "diagnosis_hints": "Wrap fetch in try/catch/res.ok, and on failure setJobs back (invert enabled) + showToast('Toggle failed','error'). See BACKEND-001/010 which amplify this on the error side."
+    },
+    {
+      "id": "BACKEND-002",
+      "severity": "medium",
+      "type": "validation_gap",
+      "page": "/crons",
+      "element": "Form Name input + POST /api/crons",
+      "category": "length_limit",
+      "title": "No length limit on name or prompt",
+      "description": "POST with 512-char name persists. Card CardTitle has no 'truncate' class, so visual breakage is guaranteed for long names. No input maxLength on the frontend either.",
+      "reproduction": "POST with name of 512 A characters → persisted at full length",
+      "diagnosis_hints": "Add maxLength on Input in cron-form-sheet.tsx AND server-side cap (suggest name <=100, prompt <=5000) in route.ts."
+    },
+    {
+      "id": "BACKEND-007",
+      "severity": "medium",
+      "type": "silent_success",
+      "page": "/crons",
+      "element": "PUT /api/crons",
+      "category": "error_masking",
+      "title": "PUT with unknown action returns success:true",
+      "description": "PUT with action:'explode' returns {success:true,action:'explode',source:'mock'}. Silently swallows typos and forward-compat attempts.",
+      "diagnosis_hints": "After known actions (toggle/update/run_now), return 400 'Unknown action' instead of the mock fallback."
+    },
+    {
+      "id": "BACKEND-008",
+      "severity": "medium",
+      "type": "silent_success",
+      "page": "/crons",
+      "element": "PUT /api/crons",
+      "category": "error_masking",
+      "title": "PUT with missing action returns success:true",
+      "description": "Same catch-all root cause.",
+      "diagnosis_hints": "Validate action at top of PUT handler."
+    },
+    {
+      "id": "BACKEND-012",
+      "severity": "medium",
+      "type": "error_leak",
+      "page": "/crons",
+      "element": "PUT /api/heartbeat",
+      "category": "validation",
+      "title": "PUT /api/heartbeat without content leaks JS error",
+      "description": "PUT with {} returns {success:false, error:\"Cannot read properties of undefined (reading 'split')\"}. Exposes internal implementation detail. Fix is a one-line typeof guard.",
+      "reproduction": "curl -X PUT /api/heartbeat -d '{}'",
+      "diagnosis_hints": "Top of PUT: if (typeof content !== 'string') return 400 'content must be a string'."
+    },
+    {
+      "id": "BACKEND-014",
+      "severity": "medium",
+      "type": "resource_limit",
+      "page": "/crons",
+      "element": "PUT /api/heartbeat",
+      "category": "dos / disk",
+      "title": "PUT /api/heartbeat accepts unbounded payload",
+      "description": "1MB payload of 'x' accepted and written to HEARTBEAT.md. No size cap. Disk-fill vector.",
+      "reproduction": "1MB JSON payload accepted",
+      "diagnosis_hints": "Check content.length <= 64*1024 in PUT handler (or whatever sensible cap)."
+    },
+    {
+      "id": "FRONTEND-004",
+      "severity": "medium",
+      "type": "missing_feedback",
+      "page": "/crons",
+      "element": "Run now button success path",
+      "category": "feedback",
+      "title": "Run now has no toast on success path",
+      "description": "handleRunNow only shows a toast on !data.success. Today 100% of calls fail (known limitation — bot process required), so a toast always fires. But the success branch is empty. Once the bot-side fix is wired, success will be silent and scrolling will lose the visual feedback. Matches VIS-014.",
+      "diagnosis_hints": "In handleRunNow, show an immediate showToast('Triggering cron...') on click regardless of server response. Or show toast in the else-branch after data.success."
+    },
+    {
+      "id": "BACKEND-015",
+      "severity": "low",
+      "type": "ambiguous_response",
+      "page": "/crons",
+      "element": "GET /api/crons/{id}/logs",
+      "category": "api_ergonomics",
+      "title": "GET /api/crons/0/logs returns empty instead of error",
+      "description": "id=0 passes isNaN check and returns {logs:[],source:'core'} — indistinguishable from 'valid job with no logs'. Minor.",
+      "diagnosis_hints": "Add if (jobId <= 0) return 400 to the logs route."
+    }
+  ]
+}

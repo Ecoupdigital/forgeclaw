@@ -1,6 +1,6 @@
 import type { Context } from 'grammy';
-import { sessionManager, stateStore } from '@forgeclaw/core';
-import type { ForgeClawConfig } from '@forgeclaw/core';
+import { sessionManager, stateStore, runnerRegistry } from '@forgeclaw/core';
+import type { ForgeClawConfig, RuntimeName } from '@forgeclaw/core';
 import { InlineKeyboard } from 'grammy';
 import { buildContextBar } from '../utils/formatting';
 import { messageQueue } from '../utils/queue';
@@ -401,6 +401,102 @@ export function registerCommands(config: ForgeClawConfig) {
         parse_mode: 'HTML',
         ...(topicId ? { message_thread_id: topicId } : {}),
       });
+    },
+
+    runtime: async (ctx: Context): Promise<void> => {
+      const chatId = ctx.chat?.id;
+      if (!chatId) return;
+      const topicId = ctx.message?.message_thread_id ?? null;
+      const replyOpts = topicId ? { message_thread_id: topicId } : {};
+
+      // Parse arg (everything after /runtime)
+      const text = ctx.message?.text ?? '';
+      const arg = text.replace(/^\/runtime(@\w+)?\s*/, '').trim().toLowerCase();
+
+      const topic = stateStore.getTopicByChatAndThread(chatId, topicId);
+
+      // No arg → show current state + available runtimes
+      if (!arg) {
+        const currentOverride = topic?.runtime ?? null;
+        const defaultRuntime = config.defaultRuntime ?? 'claude-code';
+        const effective = currentOverride ?? defaultRuntime;
+        const health = runnerRegistry.listHealth();
+        const healthLines = health
+          .map((h) =>
+            h.available
+              ? `  ✅ ${h.name} v${h.version}`
+              : `  ❌ ${h.name} (${h.error ?? 'unavailable'})`,
+          )
+          .join('\n');
+        const msg =
+          `<b>Runtime deste topic</b>\n\n` +
+          `Efetivo: <code>${effective}</code>\n` +
+          `Override: ${currentOverride ? `<code>${currentOverride}</code>` : '<i>nenhum</i>'}\n` +
+          `Default: <code>${defaultRuntime}</code>\n` +
+          `Fallback: ${topic?.runtimeFallback ? '<code>on</code>' : '<code>off</code>'}\n\n` +
+          `<b>Disponíveis</b>\n${healthLines}\n\n` +
+          `<b>Uso</b>\n` +
+          `<code>/runtime claude-code</code> — usar Claude Code\n` +
+          `<code>/runtime codex</code> — usar Codex\n` +
+          `<code>/runtime default</code> — remover override\n` +
+          `<code>/runtime fallback on|off</code> — ligar/desligar fallback`;
+        await ctx.reply(msg, { parse_mode: 'HTML', ...replyOpts });
+        return;
+      }
+
+      if (!topic) {
+        await ctx.reply(
+          'Nenhum topic encontrado pra esse chat. Envie uma mensagem primeiro pra criar o topic.',
+          replyOpts,
+        );
+        return;
+      }
+
+      // Handle `/runtime fallback on|off`
+      if (arg.startsWith('fallback')) {
+        const flag = arg.replace(/^fallback\s*/, '');
+        const enable = flag === 'on' || flag === 'true' || flag === '1';
+        stateStore.updateTopicRuntime(topic.id, topic.runtime ?? null, enable);
+        await ctx.reply(
+          `Fallback automático: <code>${enable ? 'on' : 'off'}</code>`,
+          { parse_mode: 'HTML', ...replyOpts },
+        );
+        return;
+      }
+
+      // Clear override
+      if (arg === 'default' || arg === 'none' || arg === '-') {
+        stateStore.updateTopicRuntime(topic.id, null);
+        await ctx.reply(
+          `Runtime override removido. Topic usa o default: <code>${config.defaultRuntime ?? 'claude-code'}</code>`,
+          { parse_mode: 'HTML', ...replyOpts },
+        );
+        return;
+      }
+
+      // Set a specific runtime
+      const valid: RuntimeName[] = ['claude-code', 'codex'];
+      if (!valid.includes(arg as RuntimeName)) {
+        await ctx.reply(
+          `Runtime inválido: <code>${arg}</code>. Opções: ${valid.map((r) => `<code>${r}</code>`).join(', ')}, <code>default</code>`,
+          { parse_mode: 'HTML', ...replyOpts },
+        );
+        return;
+      }
+
+      if (!runnerRegistry.isAvailable(arg as RuntimeName)) {
+        await ctx.reply(
+          `Runtime <code>${arg}</code> não está disponível neste servidor. Use <code>/runtime</code> pra ver o status de todos.`,
+          { parse_mode: 'HTML', ...replyOpts },
+        );
+        return;
+      }
+
+      stateStore.updateTopicRuntime(topic.id, arg);
+      await ctx.reply(
+        `Runtime deste topic: <code>${arg}</code>. Próxima mensagem vai rodar nele.`,
+        { parse_mode: 'HTML', ...replyOpts },
+      );
     },
 
     up: async (ctx: Context): Promise<void> => {

@@ -20,11 +20,13 @@ class FileHandler {
    * Download a file from Telegram via bot API.
    * Returns the local file path.
    */
-  async downloadTelegramFile(bot: any, fileId: string): Promise<string> {
+  async downloadTelegramFile(ctx: any, fileId: string): Promise<string> {
     await mkdir(TEMP_DIR, { recursive: true });
 
-    const file = await bot.api.getFile(fileId);
-    const fileUrl = `https://api.telegram.org/file/bot${bot.token}/${file.file_path}`;
+    const api = ctx.api ?? ctx;
+    const file = await api.getFile(fileId);
+    const token = api.token ?? ctx.token;
+    const fileUrl = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
 
     const response = await fetch(fileUrl);
     if (!response.ok) {

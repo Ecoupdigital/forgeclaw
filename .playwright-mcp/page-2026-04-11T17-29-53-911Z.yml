@@ -1,0 +1,54 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - heading "FORGECLAW" [level=1] [ref=e5]
+        - generic [ref=e6]: v0.1.0
+      - tablist "Dashboard navigation" [ref=e7]:
+        - tab "Sessions" [selected] [ref=e8]
+        - tab "Crons" [ref=e9]
+        - tab "Memory" [ref=e10]
+        - tab "Config" [ref=e11]
+        - tab "Harness" [ref=e12]
+      - generic [ref=e16]: Online
+    - tabpanel "sessions tab content" [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - heading "Topics" [level=2] [ref=e21]
+          - separator [ref=e22]
+          - generic [ref=e24]:
+            - button "Active session FG - Bot · Topic 12" [ref=e25]:
+              - generic "Active session" [ref=e26]
+              - generic [ref=e27]: FG - Bot · Topic 12
+            - button "Active session FG - Bot · Topic 70" [ref=e28]:
+              - generic "Active session" [ref=e29]
+              - generic [ref=e30]: FG - Bot · Topic 70
+            - button "Active session Jonathan" [ref=e31]:
+              - generic "Active session" [ref=e32]
+              - generic [ref=e33]: Jonathan
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - generic [ref=e36]:
+              - generic [ref=e37]:
+                - generic [ref=e38]: FG - Bot · Topic 12
+                - generic [ref=e39]:
+                  - generic [ref=e40]: "Context:"
+                  - generic [ref=e41]:
+                    - generic [ref=e42]: 0%
+                    - 'progressbar "Context usage: 0%" [ref=e43]'
+                - generic [ref=e44]: "Session: 60h 51m"
+              - generic [ref=e47]: WS
+            - generic [ref=e48]:
+              - button "Chat" [ref=e49]
+              - button "Kanban" [ref=e50]
+          - generic [ref=e53]:
+            - generic [ref=e54]: /
+            - paragraph [ref=e55]: No messages in this session
+            - paragraph [ref=e56]: Send a message to start a conversation
+          - generic [ref=e58]:
+            - textbox "Message input" [ref=e59]:
+              - /placeholder: Type a message...
+            - button "Send message" [disabled]: Send
+  - button "Open Next.js Dev Tools" [ref=e65] [cursor=pointer]:
+    - img [ref=e66]
+  - alert [ref=e69]

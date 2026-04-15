@@ -1,0 +1,237 @@
+{
+  "meta": {
+    "analyzed": "2026-04-11",
+    "cycle": 2,
+    "page": "/crons",
+    "phase": "08-dashboard-web",
+    "subrecorte": "DASH-04 (dcrv)",
+    "previous_cycle_score": 6.4,
+    "current_score": 8.7,
+    "viewports": ["1440x900", "768x1024", "375x812"],
+    "screenshots_dir": ".plano/fases/08-dashboard-web/dcrv/screenshots-cycle2/",
+    "verified_issues": 11,
+    "pass_count": 11,
+    "fail_count": 0,
+    "notes": "All 11 re-audited visual issues PASS. Empty-state issues (VIS-010, VIS-011) verified via source inspection because all live crons are file-origin and undeletable."
+  },
+  "verifications": [
+    {
+      "id": "VIS-001",
+      "title": "Cards sem border violet-dim",
+      "previous_severity": "critical",
+      "status": "PASS",
+      "category": "design-tokens",
+      "evidence": {
+        "screenshot": "screenshots-cycle2/01-list-desktop.png",
+        "css_data": {
+          "borderTopWidth": "1px",
+          "borderTopColor": "rgba(123, 108, 246, 0.2)",
+          "borderTopStyle": "solid",
+          "className_includes": "border border-violet-dim bg-deep-space transition-all hover:border-violet-glow"
+        }
+      },
+      "notes": "Card primitive agora usa border border-border por padrao. Override border-violet-dim aplica rgba(123,108,246,0.2) como esperado. hover:border-violet-glow nao e mais dead code."
+    },
+    {
+      "id": "VIS-002",
+      "title": "7 botoes sem hierarquia por card",
+      "previous_severity": "critical",
+      "status": "PASS",
+      "category": "visual-hierarchy",
+      "evidence": {
+        "screenshot": "screenshots-cycle2/01-list-desktop.png",
+        "data": "8 cards inspecionados, todos com exatamente 4 botoes visiveis: [Run now, Pause/Resume, Logs, More]"
+      },
+      "notes": "Run now destacado (primario violet solid), Pause/Resume/Logs como secundarios, Edit/Duplicate/Delete colapsados no dropdown More. Reducao de 49 para 32 botoes na lista com 8 cards."
+    },
+    {
+      "id": "VIS-003",
+      "title": "Mobile overflow severo 375px",
+      "previous_severity": "critical",
+      "status": "PASS",
+      "category": "responsive",
+      "evidence": {
+        "screenshot": "screenshots-cycle2/03-list-mobile.png",
+        "data": {
+          "viewport_width": 375,
+          "document_scroll_width": 375,
+          "body_scroll_overflow": false,
+          "header_buttons": [
+            { "text": "+ New", "x": 16, "right": 78, "truncated": false, "outOfViewport": false },
+            { "text": "Advanced", "x": 86, "right": 170, "truncated": false, "outOfViewport": false }
+          ],
+          "cards_with_overflow": 0,
+          "total_cards_inspected": 8
+        }
+      },
+      "notes": "Header usa flex-wrap, botao abrevia '+ New cron' -> '+ New' em mobile. Actions em grid 2x2 (Run now/Pause, Logs/More). Badges wrapping. Zero overflow horizontal."
+    },
+    {
+      "id": "VIS-004",
+      "title": "Dialog overlay quase invisivel (10% alpha)",
+      "previous_severity": "high",
+      "status": "PASS",
+      "category": "modality",
+      "evidence": {
+        "screenshot": "screenshots-cycle2/06-delete-dialog-desktop.png",
+        "css_data": {
+          "backgroundColor": "oklab(0 0 0 / 0.6)",
+          "backdropFilter": "blur(8px)",
+          "zIndex": 50,
+          "rect": { "x": 0, "y": 0, "w": 1440, "h": 900 }
+        }
+      },
+      "notes": "Overlay cobre viewport inteiro, bg preto 60% + blur 8px. Cards atras visivelmente borrados no screenshot."
+    },
+    {
+      "id": "VIS-005",
+      "title": "Delete dialog button order invertido no mobile",
+      "previous_severity": "high",
+      "status": "PASS",
+      "category": "safety-ux",
+      "evidence": {
+        "screenshot": "screenshots-cycle2/07-delete-dialog-mobile.png",
+        "css_data": {
+          "footerDisplay": "flex",
+          "footerFlexDirection": "column",
+          "footerClassName_includes": "flex-col-reverse sm:flex-row !flex-col",
+          "buttons": [
+            { "text": "Cancel", "x": 33, "y": 419, "width": 309, "height": 32 },
+            { "text": "Delete", "x": 33, "y": 459, "width": 309, "height": 32 }
+          ]
+        }
+      },
+      "notes": "Cancel em y=419 (acima), Delete em y=459 (abaixo). Diferenca 40px. Ordem safety-first respeitada."
+    },
+    {
+      "id": "VIS-006",
+      "title": "Skills sheet colide com form sheet",
+      "previous_severity": "high",
+      "status": "PASS",
+      "category": "ux-information-architecture",
+      "evidence": {
+        "screenshot": "screenshots-cycle2/05-form-skills-open-desktop.png",
+        "css_data": {
+          "sheetCount": 1,
+          "sheetRect": { "x": 1056, "w": 384, "h": 900 },
+          "popoverCount": 1,
+          "popoverRect": { "x": 681, "y": 9, "w": 384, "h": 540 }
+        }
+      },
+      "notes": "Um unico Sheet (form) em x=1056..1440. Popover separado em x=681..1065 (a esquerda do form, sem colisao). Form permanece 100% visivel. Migrado de Sheet aninhado para Popover."
+    },
+    {
+      "id": "VIS-007",
+      "title": "Checkbox 'Enabled' nativo destoa do theme",
+      "previous_severity": "high",
+      "status": "PASS",
+      "category": "consistency",
+      "evidence": {
+        "screenshot": "screenshots-cycle2/04-form-sheet-desktop.png",
+        "css_data": {
+          "visible_widget": {
+            "tag": "span",
+            "role": "switch",
+            "dataSlot": "switch",
+            "backgroundColor": "rgb(123, 108, 246)",
+            "borderRadius": "full",
+            "width": "36px",
+            "height": "20px"
+          },
+          "native_input": {
+            "width": "1px",
+            "height": "1px",
+            "note": "hidden accessibility input from radix Switch primitive — expected"
+          }
+        }
+      },
+      "notes": "Switch shadcn/radix instalado. Background violet (rgb 123,108,246), pill-shaped. Input checkbox subjacente e apenas a11y (1x1px, hidden). Screenshot confirma visual violet pill alinhado com tema."
+    },
+    {
+      "id": "VIS-008",
+      "title": "'Timezone: UTC' contraste 3.89:1 FAIL WCAG AA",
+      "previous_severity": "high",
+      "status": "PASS",
+      "category": "contrast-a11y",
+      "evidence": {
+        "data": {
+          "text": "Timezone: UTC",
+          "fontSize": "12px",
+          "color": "rgb(155, 155, 184)",
+          "contrast": 7.16,
+          "passAA": true
+        }
+      },
+      "notes": "'/70' modifier removido. fontSize subiu de 10px para 12px. Contraste 7.16:1 passa AA normal e AAA."
+    },
+    {
+      "id": "VIS-009",
+      "title": "Template vars e 'N chars' contraste 3.00:1",
+      "previous_severity": "high",
+      "status": "PASS",
+      "category": "contrast-a11y",
+      "evidence": {
+        "data": [
+          { "text": "Template vars: {today} {yesterday} {now}", "fontSize": "12px", "color": "rgb(155, 155, 184)", "contrast": 7.16, "passAA": true },
+          { "text": "0 chars", "fontSize": "12px", "color": "rgb(155, 155, 184)", "contrast": 7.16, "passAA": true }
+        ]
+      },
+      "notes": "Ambos os textos afetados agora usam text-text-secondary puro (sem /60). Contraste 7.16:1. Font 12px (text-xs)."
+    },
+    {
+      "id": "VIS-010",
+      "title": "Empty state 'Schedule a prompt' contraste 3.00:1",
+      "previous_severity": "high",
+      "status": "PASS (source-verified)",
+      "category": "contrast-a11y",
+      "evidence": {
+        "source_file": "packages/dashboard/src/components/crons-tab.tsx",
+        "snippet": "<p className=\"max-w-xs text-sm text-text-body\">Schedule a prompt to run automatically. You can call any of your Claude skills.</p>",
+        "grep_slash_modifiers": "nenhum text-text-secondary/60 ou /70 restante no arquivo",
+        "computed_contrast_expected": "text-text-body (#E8E8F0) sobre deep-space = 15.86:1"
+      },
+      "notes": "Verificado por source inspection pois todos os 7 crons live sao file-origin (undeletable). Classe agora e text-text-body (quase branco), nao text-text-secondary/60. Contraste 15.86:1 — excede AA e AAA."
+    },
+    {
+      "id": "VIS-011",
+      "title": "Emoji clock colorido no empty state",
+      "previous_severity": "medium",
+      "status": "PASS (source-verified)",
+      "category": "visual-consistency",
+      "evidence": {
+        "source_file": "packages/dashboard/src/components/crons-tab.tsx",
+        "grep_clock_emoji": false,
+        "grep_alarm_clock_import": true
+      },
+      "notes": "Emoji nao existe mais no arquivo. Import AlarmClock do lucide-react presente. Icone sera renderizado monocromatico alinhado ao tema violet."
+    }
+  ],
+  "deferred": [
+    { "id": "VIS-012", "reason": "hierarchy polish — no UX harm" },
+    { "id": "VIS-013", "reason": "badge density — partially addressed by G6 refactor" },
+    { "id": "VIS-015", "reason": "header h-10 — addressed by G5 responsive refactor" },
+    { "id": "VIS-016", "reason": "native tooltips — shadcn Tooltip is its own feature" },
+    { "id": "VIS-017", "reason": "nav shell — project-wide pattern, out of scope" },
+    { "id": "VIS-018", "reason": "Next devtools indicator — dev-only" },
+    { "id": "VIS-019", "reason": "ad-hoc text sizes — polish" }
+  ],
+  "new_issues_found": [
+    {
+      "id": "VIS-CYCLE2-001",
+      "severity": "medium",
+      "category": "contrast-a11y",
+      "title": "'Create cron' primary button ainda com contraste 3.95:1 (white on violet #7B6CF6)",
+      "description": "Texto 'Create cron' (14px/500) sobre fundo bg-violet tem contraste 3.95:1. Falha AA para texto normal (exige 4.5:1). Passa AA large text apenas para >=18.66px ou >=14px bold — o botao usa 14px/500 (medium), nao se qualifica formalmente como large.",
+      "evidence": {
+        "text": "Create cron",
+        "fontSize": "14px",
+        "color": "rgb(255, 255, 255) (white)",
+        "bg": "rgb(123, 108, 246) (violet)",
+        "contrast": 3.95,
+        "passAA": false
+      },
+      "impact": "Mesmo issue ja listado no ciclo 1 na tabela WCAG geral (linha 'White on + New cron violet btn' = 3.95). Nao foi endereçado porque esta fora dos fixes groups G1-G15.",
+      "suggested_fix": "Opcoes: (A) escurecer --color-violet para ~#6552E0 (contraste ~4.5:1 com white); (B) usar texto preto/dark (bg violet + text preto = 5.88:1); (C) subir fontWeight para 700 e manter 14px para qualificar como AA large; (D) engrossar para text-[15px] font-semibold. Aplicar em todos os botoes variant default (bg-violet text-white)."
+    }
+  ]
+}

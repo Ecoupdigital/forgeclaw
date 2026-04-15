@@ -1,7 +1,6 @@
 "use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import type { TopicInfo, SessionInfo } from "@/lib/types";
 
 interface SessionSidebarProps {
@@ -22,18 +21,17 @@ export function SessionSidebar({
   );
 
   return (
-    <div className="flex h-full w-64 shrink-0 flex-col border-r border-violet-dim bg-deep-space">
+    <div className="flex h-full w-56 shrink-0 flex-col border-r border-white/[0.06] bg-deep-space">
       <div className="flex h-10 items-center px-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-          Topics
-        </h2>
+        <span className="font-mono text-[10px] uppercase tracking-widest text-text-secondary">
+          // topics
+        </span>
       </div>
-      <Separator className="bg-violet-dim" />
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-0.5 p-1.5">
           {topics.length === 0 && (
-            <div className="px-3 py-8 text-center text-sm text-text-secondary">
-              No topics yet
+            <div className="px-3 py-8 text-center text-xs text-text-disabled">
+              no topics yet
             </div>
           )}
           {topics.map((topic) => {
@@ -44,21 +42,22 @@ export function SessionSidebar({
               <button
                 key={topic.id}
                 onClick={() => onSelectTopic(topic.id)}
-                className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet focus-visible:ring-offset-2 focus-visible:ring-offset-deep-space ${
+                className={`group flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet ${
                   isSelected
-                    ? "bg-violet/15 text-text-primary"
-                    : "text-text-body hover:bg-night-panel hover:text-text-primary"
+                    ? "bg-violet/10 text-text-primary border border-violet-dim"
+                    : "text-text-body border border-transparent hover:bg-white/[0.03] hover:text-text-primary"
                 }`}
                 aria-current={isSelected ? "true" : undefined}
               >
                 <span
-                  className={`inline-block h-2 w-2 shrink-0 rounded-full ${
-                    isActive ? "bg-emerald-500" : "bg-text-secondary/40"
+                  className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${
+                    isActive
+                      ? "bg-emerald-500 shadow-[0_0_4px_rgba(74,222,128,0.4)]"
+                      : "bg-text-disabled"
                   }`}
-                  aria-label={isActive ? "Active session" : "Inactive"}
                 />
-                <span className="truncate">
-                  {topic.name ?? `Topic #${topic.id}`}
+                <span className="truncate text-xs">
+                  {topic.name ?? `topic #${topic.id}`}
                 </span>
               </button>
             );

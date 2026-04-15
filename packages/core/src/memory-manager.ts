@@ -1,35 +1,49 @@
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
+import { Cron } from 'croner';
 
 export class MemoryManager {
   private memoryDir: string;
   private dailyDir: string;
   private harnessDir: string;
   private memoryFilePath: string;
+  private compileCron: Cron | null = null;
 
   constructor(
     memoryDir = join(homedir(), '.forgeclaw', 'memory'),
     harnessDir = join(homedir(), '.forgeclaw', 'harness'),
+    dailyDir = process.env.FORGECLAW_DAILY_LOG_DIR ?? '/home/vault/05-pessoal/daily-log',
   ) {
     this.memoryDir = memoryDir;
-    this.dailyDir = join(memoryDir, 'DAILY');
+    // Daily log lives inside the Obsidian vault so ForgeClaw and the Claude
+    // Code CLI (via SessionStart / UserPromptSubmit hooks) share a single
+    // source of truth. Falls back to the legacy path via env var override.
+    this.dailyDir = dailyDir;
     this.harnessDir = harnessDir;
     this.memoryFilePath = join(harnessDir, 'MEMORY.md');
   }
 
+  // Jonathan is in BRT (UTC-3). The server runs UTC. We format dates/times
+  // in BRT so the daily log matches his wall clock and the "day boundary"
+  // happens at midnight BRT instead of midnight UTC.
+  private brtNow(): Date {
+    // Shift UTC clock by -3h so we can use UTC getters as if they were BRT.
+    return new Date(Date.now() - 3 * 60 * 60 * 1000);
+  }
+
   private todayDate(): string {
-    return new Date().toISOString().slice(0, 10);
+    return this.brtNow().toISOString().slice(0, 10);
   }
 
   private yesterdayDate(): string {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
+    const d = this.brtNow();
+    d.setUTCDate(d.getUTCDate() - 1);
     return d.toISOString().slice(0, 10);
   }
 
   private timeStamp(): string {
-    return new Date().toTimeString().slice(0, 5);
+    return this.brtNow().toISOString().slice(11, 16);
   }
 
   private dailyPath(date: string): string {
@@ -136,6 +150,39 @@ export class MemoryManager {
 
     const separator = existing.length > 0 && !existing.endsWith('\n') ? '\n' : '';
     await writeFile(this.memoryFilePath, existing + separator + formatted + '\n', 'utf-8');
+  }
+
+  /**
+   * Schedules compileDaily() to run at 23:55 local time every day.
+   * Idempotent — stops any previous schedule first. Called at bot startup.
+   */
+  startCompileCron(schedule: string = '55 23 * * *'): void {
+    if (this.compileCron) {
+      this.compileCron.stop();
+      this.compileCron = null;
+    }
+
+    try {
+      this.compileCron = new Cron(schedule, async () => {
+        console.log('[memory-manager] Firing compileDaily via internal cron');
+        try {
+          await this.compileDaily();
+          console.log('[memory-manager] compileDaily finished');
+        } catch (err) {
+          console.error('[memory-manager] compileDaily failed:', err);
+        }
+      });
+      console.log(`[memory-manager] compileDaily cron scheduled: ${schedule}`);
+    } catch (err) {
+      console.error('[memory-manager] Failed to schedule compile cron:', err);
+    }
+  }
+
+  stopCompileCron(): void {
+    if (this.compileCron) {
+      this.compileCron.stop();
+      this.compileCron = null;
+    }
   }
 
   /**

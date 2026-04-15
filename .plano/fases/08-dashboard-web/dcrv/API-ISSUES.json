@@ -1,0 +1,227 @@
+{
+  "metadata": {
+    "phase": "08-dashboard-web",
+    "subrecorte": "DCRV",
+    "tested_at": "2026-04-11T12:40:00Z",
+    "base_url": "http://localhost:4040",
+    "routes_tested": 8,
+    "total_tests": 42,
+    "passed": 30,
+    "failed": 12,
+    "pass_rate_pct": 71,
+    "severity_counts": {
+      "critical": 1,
+      "high": 5,
+      "medium": 5,
+      "low": 1
+    }
+  },
+  "issues": [
+    {
+      "id": "DCRV-API-001",
+      "severity": "critical",
+      "type": "authz_bypass",
+      "route": "PUT /api/crons",
+      "category": "authorization",
+      "title": "action=toggle permite alterar jobs file-origin (bypass da protecao 08-01)",
+      "description": "O branch 'action === \"toggle\"' nao verifica origin antes de mutar. Jobs com origin='file' (vindos de HEARTBEAT.md) sao silenciosamente alteraveis via dashboard. Provado no teste P11: PUT {id:7,action:'toggle'} retornou 200 e persistiu enabled=true->false no DB. Mesmo behavior afetou os jobs 2,3,4,5,6,7 durante a bateria (todos restaurados manualmente apos os testes via UPDATE direto).",
+      "file": "packages/dashboard/src/app/api/crons/route.ts",
+      "code_location": "lines 131-151 (PUT handler, branch action === 'toggle')",
+      "request": {
+        "method": "PUT",
+        "url": "/api/crons",
+        "body": {"id": 7, "action": "toggle"}
+      },
+      "response": {
+        "status": 200,
+        "body": {"success": true, "id": 7, "action": "toggle", "enabled": true, "source": "core"}
+      },
+      "expected_status": 403,
+      "expected_body_match": "file-origin",
+      "impact": "Jobs file-origin sao a fonte de verdade via HEARTBEAT.md. Alterar enabled via API causa dessincronia: DB fica com enabled=false enquanto HEARTBEAT.md continua listando o job como ativo. O reconciliador do 08-03 (HEARTBEAT parser) vai conflitar.",
+      "suggested_fix": "Mover checagem de origin para antes dos branches. Ex: const existing = core.getCronJob(id); if (!existing) return 404; if (existing.origin === 'file') return 403. Aplicar para toggle E update (atualmente so update tem a checagem)."
+    },
+    {
+      "id": "DCRV-API-002",
+      "severity": "high",
+      "type": "missing_validation",
+      "route": "POST /api/crons",
+      "category": "validation",
+      "title": "Aceita payload sem campo name",
+      "request": {"method": "POST", "url": "/api/crons", "body": {"schedule": "*/5 * * * *", "prompt": "echo hi", "enabled": true}},
+      "response": {"status": 200, "body": {"success": true, "job": {"id": "N", "name": null}}},
+      "expected_status": 400,
+      "suggested_fix": "Validar com zod antes de chamar core.createCronJob: z.object({name: z.string().min(1), schedule: z.string().min(1), prompt: z.string().min(1), ...}). Retornar 400 com erros detalhados."
+    },
+    {
+      "id": "DCRV-API-003",
+      "severity": "high",
+      "type": "missing_validation",
+      "route": "POST /api/crons",
+      "category": "validation",
+      "title": "Aceita payload sem campo schedule",
+      "request": {"method": "POST", "body": {"name": "X", "prompt": "echo hi"}},
+      "response": {"status": 200},
+      "expected_status": 400,
+      "suggested_fix": "Mesmo schema zod do DCRV-API-002."
+    },
+    {
+      "id": "DCRV-API-004",
+      "severity": "high",
+      "type": "missing_validation",
+      "route": "POST /api/crons",
+      "category": "validation",
+      "title": "Aceita schedule invalido como 'foo bar'",
+      "description": "Qualquer string passa na validacao. O engine silenciosamente nunca executa o job.",
+      "request": {"method": "POST", "body": {"name": "X", "schedule": "foo bar", "prompt": "x"}},
+      "response": {"status": 200},
+      "expected_status": 400,
+      "suggested_fix": "Usar cron-parser (ja presente em @forgeclaw/core provavelmente) para validar: try { cronParser.parseExpression(schedule) } catch { return 400 'Invalid cron schedule' }."
+    },
+    {
+      "id": "DCRV-API-005",
+      "severity": "high",
+      "type": "missing_validation",
+      "route": "POST /api/crons",
+      "category": "validation",
+      "title": "Aceita payload sem campo prompt",
+      "request": {"method": "POST", "body": {"name": "X", "schedule": "*/5 * * * *"}},
+      "response": {"status": 200},
+      "expected_status": 400,
+      "suggested_fix": "Schema zod."
+    },
+    {
+      "id": "DCRV-API-006",
+      "severity": "high",
+      "type": "authz_bypass",
+      "route": "POST /api/crons",
+      "category": "authorization",
+      "title": "Permite criar job com origin='file' via API (bypass de 08-01)",
+      "description": "O handler le 'origin' diretamente do body e persiste. Jobs criados assim ficam imutaveis pelo dashboard (protegidos pelo check file-origin em DELETE/update). Criei 'DCRV-TEST-as-file' com origin='file', sourceFile='HEARTBEAT.md' e o row ficou no DB sem forma de remover via API — precisei limpar via better-sqlite3 direto.",
+      "request": {
+        "method": "POST",
+        "body": {"name": "DCRV-TEST-as-file", "schedule": "*/5 * * * *", "prompt": "echo hi", "origin": "file", "sourceFile": "HEARTBEAT.md"}
+      },
+      "response": {"status": 200, "body": {"success": true, "job": {"id": 13, "origin": "file"}}},
+      "expected_status": 400,
+      "suggested_fix": "No POST handler, ignorar os campos origin/sourceFile do body do dashboard: forcar origin: 'db' e sourceFile: null na chamada a core.createCronJob. Se a fase 08-03 precisa de uma API para importar file-origin, criar rota separada (ex: POST /api/crons/import-from-heartbeat) chamada apenas pelo parser interno."
+    },
+    {
+      "id": "DCRV-API-007",
+      "severity": "medium",
+      "type": "missing_validation",
+      "route": "POST /api/crons",
+      "category": "validation",
+      "title": "Aceita body como array em vez de objeto",
+      "request": {"method": "POST", "body": [1, 2, 3]},
+      "response": {"status": 200, "body": {"success": true, "job": {"name": null, "schedule": null, "prompt": null}}},
+      "expected_status": 400,
+      "suggested_fix": "if (!body || typeof body !== 'object' || Array.isArray(body)) return 400. Ou schema zod que so aceita objeto."
+    },
+    {
+      "id": "DCRV-API-008",
+      "severity": "medium",
+      "type": "missing_validation",
+      "route": "POST /api/crons",
+      "category": "content_type",
+      "title": "Aceita Content-Type: text/plain com body JSON",
+      "description": "request.json() consegue parsear qualquer body JSON-shaped independente do Content-Type. Nao e uma vulnerabilidade real (sem auth, sem CSRF relevante), mas viola REST sanity.",
+      "request": {"method": "POST", "headers": {"Content-Type": "text/plain"}, "body": "(JSON valido)"},
+      "response": {"status": 200},
+      "expected_status": 415,
+      "suggested_fix": "if (!request.headers.get('content-type')?.includes('application/json')) return 415. Baixa prioridade."
+    },
+    {
+      "id": "DCRV-API-009",
+      "severity": "medium",
+      "type": "silent_success",
+      "route": "PUT /api/crons",
+      "category": "validation",
+      "title": "PUT action=toggle com id inexistente retorna 200 success",
+      "description": "core.getCronJob(999999) retorna null, o ?.enabled vira undefined, !undefined e true, entao updateCronJob e chamado com id 999999 e UPDATE ... WHERE id=999999 (0 rows) nao lanca erro. Handler retorna 200 {success:true,enabled:true}.",
+      "request": {"method": "PUT", "body": {"id": 999999, "action": "toggle"}},
+      "response": {"status": 200, "body": {"success": true, "id": 999999, "action": "toggle", "enabled": true, "source": "core"}},
+      "expected_status": 404,
+      "suggested_fix": "const existing = core.getCronJob(id); if (!existing) return 404. Colocar essa checagem antes dos branches de action."
+    },
+    {
+      "id": "DCRV-API-010",
+      "severity": "medium",
+      "type": "silent_success",
+      "route": "PUT /api/crons",
+      "category": "validation",
+      "title": "PUT com action desconhecido cai no fallback {success:true,source:'mock'}",
+      "request": {"method": "PUT", "body": {"id": 10, "action": "nuke_everything"}},
+      "response": {"status": 200, "body": {"success": true, "id": 10, "action": "nuke_everything", "source": "mock"}},
+      "expected_status": 400,
+      "suggested_fix": "Remover a ultima linha 'return Response.json({success:true,...source:\"mock\"})' do PUT e substituir por 'return 400 Unknown action'. O fallback mock foi util durante desenvolvimento mas agora esconde bugs."
+    },
+    {
+      "id": "DCRV-API-011",
+      "severity": "medium",
+      "type": "missing_validation",
+      "route": "POST /api/crons",
+      "category": "validation",
+      "title": "Aceita targetTopicId apontando para topic inexistente",
+      "description": "Nao ha FK no schema SQLite nem checagem na camada de API. O job e criado e o engine vai tentar postar em topic fantasma no runtime.",
+      "request": {"method": "POST", "body": {"name": "X", "schedule": "*/5 * * * *", "prompt": "x", "targetTopicId": 999999}},
+      "response": {"status": 200},
+      "expected_status": 400,
+      "suggested_fix": "if (targetTopicId != null && !core.getTopic(targetTopicId)) return 400 'Topic not found'. Ou adicionar FK + ON DELETE SET NULL no schema."
+    },
+    {
+      "id": "DCRV-API-012",
+      "severity": "low",
+      "type": "silent_success",
+      "route": "PUT /api/crons",
+      "category": "validation",
+      "title": "PUT sem id no body retorna 200",
+      "request": {"method": "PUT", "body": {"action": "toggle"}},
+      "response": {"status": 200, "body": {"success": true, "id": null, "action": "toggle", "enabled": true, "source": "core"}},
+      "expected_status": 400,
+      "suggested_fix": "Primeira linha do handler: if (typeof body?.id !== 'number') return 400 'Missing or invalid id'."
+    }
+  ],
+  "positive_findings": [
+    {
+      "route": "DELETE /api/crons",
+      "note": "Handler esta bem construido: valida id, retorna 404/400/403 com mensagens claras, 100% pass rate (4/4)."
+    },
+    {
+      "route": "GET /api/crons/:id/logs",
+      "note": "Valida id nao numerico (400), retorna array vazio para id inexistente (200, aceitavel)."
+    },
+    {
+      "route": "GET /api/heartbeat + PUT /api/heartbeat",
+      "note": "Valida tipo de content (string obrigatoria). Path traversal tentado via body nao afeta — handler so escreve no HEARTBEAT_PATH fixo."
+    },
+    {
+      "route": "GET /api/skills",
+      "note": "Cache TTL funciona (segundo hit retorna source:'cache'). Todas as ~40 skills tem name+description validos."
+    },
+    {
+      "note": "SQL injection em POST /api/crons name foi testado — better-sqlite3 usa bind params, a string e gravada literalmente, sem efeito colateral no schema."
+    }
+  ],
+  "side_effects_detected": [
+    {
+      "description": "Durante P11, jobs file-origin 2-7 tiveram enabled=true -> false via bug DCRV-API-001.",
+      "repair": "UPDATE cron_jobs SET enabled=1 WHERE id IN (2,3,4,5,6,7) AND origin='file' (via better-sqlite3 direto). Estado restaurado conforme snapshot C01."
+    },
+    {
+      "description": "Job DCRV-TEST-as-file (id 13, origin=file) criado via DCRV-API-006 nao podia ser deletado pela API.",
+      "repair": "DELETE FROM cron_jobs WHERE name='DCRV-TEST-as-file' AND origin='file' via better-sqlite3."
+    },
+    {
+      "description": "HEARTBEAT.md foi acidentalmente sobrescrito 2x durante testes (1x com 5MB de X, 1x com conteudo vazio) devido a bugs no shell script de teste, nao nas rotas.",
+      "repair": "Conteudo recuperado do snapshot capturado em H10 (741 chars) e reescrito via PUT /api/heartbeat. Arquivo final: 780 bytes, 23 linhas, identico ao original."
+    }
+  ],
+  "cleanup_verification": {
+    "dcrv_test_jobs_remaining": 0,
+    "cron_jobs_total": 11,
+    "file_origin_jobs_restored": true,
+    "heartbeat_size_bytes": 780,
+    "heartbeat_lines": 23
+  }
+}

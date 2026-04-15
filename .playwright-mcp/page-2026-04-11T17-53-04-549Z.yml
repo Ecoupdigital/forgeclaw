@@ -1,0 +1,275 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e15]:
+      - heading "Cron Jobs (7 active)" [level=2] [ref=e16]
+      - generic [ref=e17]:
+        - button "+ New cron" [ref=e18]:
+          - generic [ref=e19]: + New cron
+        - button "Advanced" [ref=e20]
+    - separator [ref=e21]
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - generic [ref=e26]:
+          - generic [ref=e27]: Relatório Financeiro
+          - generic [ref=e28]:
+            - generic "Created via dashboard (stored in DB)" [ref=e29]: db
+            - generic [ref=e30]: Active
+            - generic [ref=e31]: success
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - generic [ref=e34]:
+              - generic [ref=e35]: "Schedule:"
+              - generic [ref=e36]: 0 * * * *
+            - generic [ref=e37]:
+              - generic [ref=e38]: "Last run:"
+              - generic [ref=e39]: 11/04, 17:02
+            - generic [ref=e40]:
+              - text: "Prompt:"
+              - generic [ref=e41]: use a skill do assas-api e me de um panorama financeiro. Quero saber saldo o que...
+          - generic [ref=e42]:
+            - button "Run now" [ref=e43]:
+              - generic [ref=e44]:
+                - img
+                - text: Run now
+            - button "Pause" [ref=e45]:
+              - generic [ref=e46]:
+                - img
+                - text: Pause
+            - button "Logs" [ref=e47]:
+              - generic [ref=e48]:
+                - img
+                - text: Logs
+            - button "More actions" [ref=e49]:
+              - generic [ref=e50]:
+                - img
+      - generic [ref=e51]:
+        - generic [ref=e53]:
+          - generic [ref=e54]: Toda hora
+          - generic [ref=e55]:
+            - generic "Declared in HEARTBEAT.md" [ref=e56]: file
+            - generic [ref=e57]: Active
+            - generic [ref=e58]: success
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - generic [ref=e61]:
+              - generic [ref=e62]: "Schedule:"
+              - generic [ref=e63]: 0 * * * *
+            - generic [ref=e64]:
+              - generic [ref=e65]: "Last run:"
+              - generic [ref=e66]: 11/04, 17:00
+            - generic [ref=e67]:
+              - text: "Prompt:"
+              - generic [ref=e68]: Verificar containers Docker parados no prod VPS Se encontrar, alertar com nome d...
+          - generic [ref=e69]:
+            - button "Run now" [ref=e70]:
+              - generic [ref=e71]:
+                - img
+                - text: Run now
+            - button "Pause" [disabled]:
+              - generic:
+                - img
+                - text: Pause
+            - button "Logs" [ref=e72]:
+              - generic [ref=e73]:
+                - img
+                - text: Logs
+            - button "More actions" [ref=e74]:
+              - generic [ref=e75]:
+                - img
+      - generic [ref=e76]:
+        - generic [ref=e78]:
+          - generic [ref=e79]: Todo dia às 23h
+          - generic [ref=e80]:
+            - generic "Declared in HEARTBEAT.md" [ref=e81]: file
+            - generic [ref=e82]: Active
+            - generic [ref=e83]: success
+        - generic [ref=e84]:
+          - generic [ref=e85]:
+            - generic [ref=e86]:
+              - generic [ref=e87]: "Schedule:"
+              - generic [ref=e88]: 0 23 * * *
+            - generic [ref=e89]:
+              - generic [ref=e90]: "Last run:"
+              - generic [ref=e91]: 10/04, 23:02
+            - generic [ref=e92]:
+              - text: "Prompt:"
+              - generic [ref=e93]: "Memory compiler: ler transcrições do dia, extrair decisões e lições Salvar em da..."
+          - generic [ref=e94]:
+            - button "Run now" [ref=e95]:
+              - generic [ref=e96]:
+                - img
+                - text: Run now
+            - button "Pause" [disabled]:
+              - generic:
+                - img
+                - text: Pause
+            - button "Logs" [ref=e97]:
+              - generic [ref=e98]:
+                - img
+                - text: Logs
+            - button "More actions" [ref=e99]:
+              - generic [ref=e100]:
+                - img
+      - generic [ref=e101]:
+        - generic [ref=e103]:
+          - generic [ref=e104]: Todo dia às 23h30
+          - generic [ref=e105]:
+            - generic "Declared in HEARTBEAT.md" [ref=e106]: file
+            - generic [ref=e107]: Active
+            - generic [ref=e108]: success
+        - generic [ref=e109]:
+          - generic [ref=e110]:
+            - generic [ref=e111]:
+              - generic [ref=e112]: "Schedule:"
+              - generic [ref=e113]: 30 23 * * *
+            - generic [ref=e114]:
+              - generic [ref=e115]: "Last run:"
+              - generic [ref=e116]: 10/04, 23:32
+            - generic [ref=e117]: "Prompt: Dreaming noturno: consolidar memórias do dia Enviar resumo"
+          - generic [ref=e118]:
+            - button "Run now" [ref=e119]:
+              - generic [ref=e120]:
+                - img
+                - text: Run now
+            - button "Pause" [disabled]:
+              - generic:
+                - img
+                - text: Pause
+            - button "Logs" [ref=e121]:
+              - generic [ref=e122]:
+                - img
+                - text: Logs
+            - button "More actions" [ref=e123]:
+              - generic [ref=e124]:
+                - img
+      - generic [ref=e125]:
+        - generic [ref=e127]:
+          - generic [ref=e128]: Todo dia às 8h
+          - generic [ref=e129]:
+            - generic "Declared in HEARTBEAT.md" [ref=e130]: file
+            - generic [ref=e131]: Active
+            - generic [ref=e132]: success
+        - generic [ref=e133]:
+          - generic [ref=e134]:
+            - generic [ref=e135]:
+              - generic [ref=e136]: "Schedule:"
+              - generic [ref=e137]: 0 8 * * *
+            - generic [ref=e138]:
+              - generic [ref=e139]: "Last run:"
+              - generic [ref=e140]: 11/04, 08:00
+            - generic [ref=e141]:
+              - text: "Prompt:"
+              - generic [ref=e142]: Resumo dos projetos ativos (ler .plano/STATE.md de cada projeto) Próximos passos...
+          - generic [ref=e143]:
+            - button "Run now" [ref=e144]:
+              - generic [ref=e145]:
+                - img
+                - text: Run now
+            - button "Pause" [disabled]:
+              - generic:
+                - img
+                - text: Pause
+            - button "Logs" [ref=e146]:
+              - generic [ref=e147]:
+                - img
+                - text: Logs
+            - button "More actions" [ref=e148]:
+              - generic [ref=e149]:
+                - img
+      - generic [ref=e150]:
+        - generic [ref=e152]:
+          - generic [ref=e153]: Toda segunda às 8h
+          - generic [ref=e154]:
+            - generic "Declared in HEARTBEAT.md" [ref=e155]: file
+            - generic [ref=e156]: Active
+        - generic [ref=e157]:
+          - generic [ref=e158]:
+            - generic [ref=e159]:
+              - generic [ref=e160]: "Schedule:"
+              - generic [ref=e161]: 0 8 * * 1
+            - generic [ref=e162]:
+              - generic [ref=e163]: "Last run:"
+              - generic [ref=e164]: Never
+            - generic [ref=e165]: "Prompt: Relatório semanal: commits, fases concluídas, próximas m"
+          - generic [ref=e166]:
+            - button "Run now" [ref=e167]:
+              - generic [ref=e168]:
+                - img
+                - text: Run now
+            - button "Pause" [disabled]:
+              - generic:
+                - img
+                - text: Pause
+            - button "Logs" [ref=e169]:
+              - generic [ref=e170]:
+                - img
+                - text: Logs
+            - button "More actions" [ref=e171]:
+              - generic [ref=e172]:
+                - img
+      - generic [ref=e173]:
+        - generic [ref=e175]:
+          - generic [ref=e176]: Toda terça e quinta às 9h
+          - generic [ref=e177]:
+            - generic "Declared in HEARTBEAT.md" [ref=e178]: file
+            - generic [ref=e179]: Active
+            - generic [ref=e180]: success
+        - generic [ref=e181]:
+          - generic [ref=e182]:
+            - generic [ref=e183]:
+              - generic [ref=e184]: "Schedule:"
+              - generic [ref=e185]: 0 9 * * 2,4
+            - generic [ref=e186]:
+              - generic [ref=e187]: "Last run:"
+              - generic [ref=e188]: 09/04, 09:00
+            - generic [ref=e189]: "Prompt: Gerar sugestões de posts para Instagram Baseado no que foi construído recentem"
+          - generic [ref=e190]:
+            - button "Run now" [ref=e191]:
+              - generic [ref=e192]:
+                - img
+                - text: Run now
+            - button "Pause" [disabled]:
+              - generic:
+                - img
+                - text: Pause
+            - button "Logs" [ref=e193]:
+              - generic [ref=e194]:
+                - img
+                - text: Logs
+            - button "More actions" [ref=e195]:
+              - generic [ref=e196]:
+                - img
+      - generic [ref=e197]:
+        - generic [ref=e199]:
+          - generic [ref=e200]: Test cron
+          - generic [ref=e201]:
+            - generic "Declared in HEARTBEAT.md" [ref=e202]: file
+            - generic [ref=e203]: Paused
+        - generic [ref=e204]:
+          - generic [ref=e205]:
+            - generic [ref=e206]:
+              - generic [ref=e207]: "Schedule:"
+              - generic [ref=e208]: 0 8 * * *
+            - generic [ref=e209]:
+              - generic [ref=e210]: "Last run:"
+              - generic [ref=e211]: Never
+            - generic [ref=e212]: "Prompt: test"
+          - generic [ref=e213]:
+            - button "Run now" [ref=e214]:
+              - generic [ref=e215]:
+                - img
+                - text: Run now
+            - button "Resume" [disabled]:
+              - generic:
+                - img
+                - text: Resume
+            - button "Logs" [ref=e216]:
+              - generic [ref=e217]:
+                - img
+                - text: Logs
+            - button "More actions" [ref=e218]:
+              - generic [ref=e219]:
+                - img
+  - button "Open Next.js Dev Tools" [ref=e10] [cursor=pointer]:
+    - img [ref=e11]
+  - alert [ref=e14]

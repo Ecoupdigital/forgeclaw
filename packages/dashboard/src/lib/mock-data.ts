@@ -302,9 +302,13 @@ export const mockConfig: ForgeClawConfig = {
   allowedUsers: [123456789],
   workingDir: "/home/projects/ForgeClaw",
   vaultPath: "/home/vault",
-  voiceProvider: "none",
-  claudeModel: "claude-opus-4-20250514",
+  voiceProvider: "groq",
+  claudeModel: "claude-sonnet-4-20250514",
   maxConcurrentSessions: 3,
+  defaultRuntime: "claude-code",
+  showRuntimeBadge: false,
+  memoryReviewMode: "hybrid",
+  memoryAutoApproveThreshold: 85,
 };
 
 export const mockHeartbeat = `# HEARTBEAT.md

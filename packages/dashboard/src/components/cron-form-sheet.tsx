@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import cronstrue from "cronstrue";
 import { CronExpressionParser } from "cron-parser";
+import { useModels } from "@/hooks/use-models";
 import {
   Sheet,
   SheetContent,
@@ -132,6 +133,11 @@ export function CronFormSheet({
   const [prompt, setPrompt] = useState("");
   const [targetTopicId, setTargetTopicId] = useState<number | null>(null);
   const [enabled, setEnabled] = useState(true);
+  const [runtime, setRuntime] = useState<"default" | "claude-code" | "codex">(
+    "default"
+  );
+  const [model, setModel] = useState("");
+  const { models } = useModels();
 
   // External data
   const [topics, setTopics] = useState<TopicSlim[]>([]);
@@ -159,6 +165,8 @@ export function CronFormSheet({
       setPrompt(initialJob.prompt);
       setTargetTopicId(initialJob.targetTopicId);
       setEnabled(initialJob.enabled);
+      setRuntime((initialJob.runtime as "claude-code" | "codex" | null) ?? "default");
+      setModel(initialJob.model ?? "");
     } else {
       setName("");
       setPreset(CRON_PRESETS[0].value);
@@ -166,6 +174,8 @@ export function CronFormSheet({
       setPrompt("");
       setTargetTopicId(null);
       setEnabled(true);
+      setRuntime("default");
+      setModel("");
     }
     setSubmitError(null);
   }, [open, initialJob]);
@@ -226,6 +236,8 @@ export function CronFormSheet({
             prompt: prompt.trim(),
             targetTopicId,
             enabled,
+            runtime: runtime === "default" ? null : runtime,
+            model: model.trim() || null,
           }),
         });
       } else {
@@ -238,6 +250,8 @@ export function CronFormSheet({
             prompt: prompt.trim(),
             targetTopicId,
             enabled,
+            runtime: runtime === "default" ? null : runtime,
+            model: model.trim() || null,
           }),
         });
       }
@@ -460,6 +474,51 @@ export function CronFormSheet({
               {topics.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name} (chat {t.chatId})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Runtime */}
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="cron-runtime"
+              className="text-xs font-medium text-text-secondary"
+            >
+              Runtime
+            </label>
+            <select
+              id="cron-runtime"
+              value={runtime}
+              onChange={(e) =>
+                setRuntime(e.target.value as "default" | "claude-code" | "codex")
+              }
+              className="rounded-md border border-violet-dim bg-night-panel px-3 py-2 text-sm text-text-body focus:outline-none focus:ring-2 focus:ring-violet"
+            >
+              <option value="default">Default (config global)</option>
+              <option value="claude-code">Claude Code</option>
+              <option value="codex">Codex</option>
+            </select>
+          </div>
+
+          {/* Model override */}
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="cron-model"
+              className="text-xs font-medium text-text-secondary"
+            >
+              Model (opcional)
+            </label>
+            <select
+              id="cron-model"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              className="rounded-md border border-white/[0.06] bg-night-panel px-3 py-2 text-sm text-text-body focus:outline-none focus:ring-2 focus:ring-violet"
+            >
+              <option value="">default (usa config global)</option>
+              {models.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label} — {m.id}
                 </option>
               ))}
             </select>

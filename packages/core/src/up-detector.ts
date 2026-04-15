@@ -41,9 +41,14 @@ class UPDetector {
 
   /**
    * Extract numbered options (1. Option text) from text.
+   * Only returns options when the text signals a choice (e.g. "escolha",
+   * "selecione", "qual prefere", "options"). Descriptive lists like
+   * "1. Did X  2. Did Y" are ignored.
    * Returns up to 10 options.
    */
   extractNumberedOptions(text: string): NumberedOption[] {
+    if (!this.looksLikeChoicePrompt(text)) return [];
+
     const regex = /^(\d+)\.\s+(.+)$/gm;
     const options: NumberedOption[] = [];
     let match: RegExpExecArray | null;
@@ -56,6 +61,23 @@ class UPDetector {
     }
 
     return options;
+  }
+
+  /**
+   * Check if text contains signals that the numbered list is a choice prompt.
+   */
+  private looksLikeChoicePrompt(text: string): boolean {
+    const lower = text.toLowerCase();
+    const signals = [
+      'escolha', 'selecione', 'qual prefere', 'qual delas',
+      'qual opção', 'qual opcao', 'qual você', 'qual voce',
+      'opções:', 'opcoes:', 'options:', 'choose',
+      'select one', 'pick one', 'which one',
+      'o que prefere', 'o que deseja', 'como prefere',
+      'quer que eu', 'deseja que eu', 'posso:',
+      'alternativas:', 'caminhos:',
+    ];
+    return signals.some((s) => lower.includes(s));
   }
 
   /**

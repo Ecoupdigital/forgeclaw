@@ -7,9 +7,7 @@ import { SessionSidebar } from "./session-sidebar";
 import { ContextBar } from "./context-bar";
 import { ChatMessage } from "./chat-message";
 import { ChatInput } from "./chat-input";
-import { KanbanBoard } from "./kanban-board";
 import { useWebSocket, useChatSession } from "@/lib/ws-client";
-import { mockPlans } from "@/lib/mock-data";
 import type { Message } from "@/lib/types";
 
 interface SessionData {
@@ -38,13 +36,13 @@ interface TopicData {
   sessionId: string | null;
 }
 
-type ViewMode = "chat" | "kanban";
+type ViewMode = "chat";
 
 export function SessionsTab() {
   const [sessions, setSessions] = useState<SessionData[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("chat");
+  const [viewMode] = useState<ViewMode>("chat");
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -223,7 +221,7 @@ export function SessionsTab() {
       <div className="flex flex-1 flex-col overflow-hidden">
         {selectedSession ? (
           <>
-            <div className="flex items-center justify-between border-b border-violet-dim bg-deep-space px-4">
+            <div className="flex items-center justify-between border-b border-white/[0.06] bg-deep-space/80 backdrop-blur-sm px-4">
               <div className="flex items-center gap-3">
                 <ContextBar
                   topicName={
@@ -248,80 +246,48 @@ export function SessionsTab() {
                   </span>
                 </div>
               </div>
-              <div className="flex items-center gap-1 pr-2">
-                <Button
-                  variant={viewMode === "chat" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("chat")}
-                  className={
-                    viewMode === "chat"
-                      ? "bg-violet text-white"
-                      : "text-text-secondary hover:text-text-body"
-                  }
-                >
-                  Chat
-                </Button>
-                <Button
-                  variant={viewMode === "kanban" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("kanban")}
-                  className={
-                    viewMode === "kanban"
-                      ? "bg-violet text-white"
-                      : "text-text-secondary hover:text-text-body"
-                  }
-                >
-                  Kanban
-                </Button>
-              </div>
             </div>
 
-            {viewMode === "chat" ? (
-              <>
-                <div className="flex-1 overflow-y-auto">
-                  <div className="flex flex-col">
-                    {allMessages.length === 0 && !chat.streamingMessage && (
-                      <div className="flex flex-col items-center justify-center py-16 text-center">
-                        <div className="mb-3 text-3xl text-text-secondary/30">/</div>
-                        <p className="text-sm text-text-secondary">
-                          No messages in this session
-                        </p>
-                        <p className="mt-1 text-xs text-text-secondary/60">
-                          Send a message to start a conversation
-                        </p>
-                      </div>
-                    )}
-                    {allMessages.map((msg) => (
-                      <ChatMessage key={msg.id} message={msg} />
-                    ))}
-                    {chat.streamingMessage && !chat.streamingMessage.done && (
-                      <ChatMessage
-                        message={{
-                          id: -1,
-                          topicId: selectedSession.topicId ?? 0,
-                          role: "assistant",
-                          content:
-                            chat.streamingMessage.content ||
-                            (chat.streamingMessage.thinking ? "Thinking..." : ""),
-                          createdAt: chat.streamingMessage.createdAt,
-                        }}
-                        streaming={true}
-                        tools={chat.streamingMessage.tools}
-                      />
-                    )}
-                    <div ref={scrollRef} />
+            <div className="flex-1 overflow-y-auto">
+              <div className="flex flex-col">
+                {allMessages.length === 0 && !chat.streamingMessage && (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="mb-3 text-3xl text-text-secondary/30">/</div>
+                    <p className="text-sm text-text-secondary">
+                      No messages in this session
+                    </p>
+                    <p className="mt-1 text-xs text-text-secondary/60">
+                      Send a message to start a conversation
+                    </p>
                   </div>
-                </div>
-                <ChatInput
-                  onSend={handleSend}
-                  loading={chat.streaming}
-                  disabled={!chat.connected}
-                  onAbort={chat.abort}
-                />
-              </>
-            ) : (
-              <KanbanBoard plans={mockPlans} />
-            )}
+                )}
+                {allMessages.map((msg) => (
+                  <ChatMessage key={msg.id} message={msg} />
+                ))}
+                {chat.streamingMessage && !chat.streamingMessage.done && (
+                  <ChatMessage
+                    message={{
+                      id: -1,
+                      topicId: selectedSession.topicId ?? 0,
+                      role: "assistant",
+                      content:
+                        chat.streamingMessage.content ||
+                        (chat.streamingMessage.thinking ? "Thinking..." : ""),
+                      createdAt: chat.streamingMessage.createdAt,
+                    }}
+                    streaming={true}
+                    tools={chat.streamingMessage.tools}
+                  />
+                )}
+                <div ref={scrollRef} />
+              </div>
+            </div>
+            <ChatInput
+              onSend={handleSend}
+              loading={chat.streaming}
+              disabled={!chat.connected}
+              onAbort={chat.abort}
+            />
           </>
         ) : (
           <div className="flex flex-1 items-center justify-center">

@@ -7,7 +7,8 @@ import { ClaudeRunner } from './claude-runner';
 import { getConfig } from './config';
 import { stateStore } from './state-store';
 import { eventBus } from './event-bus';
-import type { CronJob, CronLog } from './types';
+import { runnerRegistry } from './runners';
+import type { CronJob, CronLog, RuntimeName } from './types';
 
 const DEFAULT_HEARTBEAT_PATH = join(homedir(), '.forgeclaw', 'HEARTBEAT.md');
 
@@ -366,11 +367,21 @@ class CronEngine {
       }
 
       try {
-        const runner = new ClaudeRunner();
-        const collected: string[] = [];
         const config = await getConfig();
 
-        for await (const event of runner.run(expandedPrompt, { cwd: config.workingDir })) {
+        // Resolve runtime for this cron: job-level override → config default
+        const jobRuntime = (job.runtime ?? config.defaultRuntime) as RuntimeName | undefined;
+        const runner = runnerRegistry.get(jobRuntime, { allowFallback: true });
+        console.log(
+          `[cron-engine] runtime '${runner.name}' for job ${job.id} (${job.name})`,
+        );
+
+        const collected: string[] = [];
+
+        for await (const event of runner.run(expandedPrompt, {
+          cwd: config.workingDir,
+          model: job.model ?? undefined,
+        })) {
           if (event.type === 'text' && typeof event.data.text === 'string') {
             collected.push(event.data.text);
           }

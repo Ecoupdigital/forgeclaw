@@ -1,31 +1,94 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { HarnessEditor } from "./harness-editor";
-import { mockHarnessFiles } from "@/lib/mock-data";
+import type { HarnessFile } from "@/lib/types";
 
 export function HarnessTab() {
-  const handleSave = useCallback(async (name: string, content: string) => {
-    // Simulate saving
-    await new Promise((r) => setTimeout(r, 800));
-    console.log(`Saved ${name}:`, content.length, "chars");
+  const [files, setFiles] = useState<HarnessFile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [source, setSource] = useState<"core" | "mock" | null>(null);
+
+  const fetchFiles = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const res = await fetch("/api/harness", { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as {
+        files: HarnessFile[];
+        source: "core" | "mock";
+      };
+      setFiles(data.files);
+      setSource(data.source);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Failed to load harness");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void fetchFiles();
+  }, [fetchFiles]);
+
+  const handleSave = useCallback(
+    async (name: string, content: string) => {
+      const res = await fetch("/api/harness", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, content }),
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const data = (await res.json()) as { success: boolean; error?: string };
+      if (!data.success) {
+        throw new Error(data.error ?? "Save failed");
+      }
+      // Refresh so subsequent edits see the new saved content as baseline
+      setFiles((prev) =>
+        prev.map((f) => (f.name === name ? { ...f, content } : f))
+      );
+    },
+    []
+  );
 
   return (
     <ScrollArea className="h-full">
       <div className="mx-auto max-w-4xl space-y-4 p-6">
-        <div className="mb-2">
-          <h2 className="text-lg font-semibold text-text-primary">
-            Harness Files
-          </h2>
-          <p className="mt-1 text-sm text-text-secondary">
-            System prompt files that define ForgeClaw personality and context.
-            Changes are applied immediately.
-          </p>
+        <div className="mb-2 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-text-primary">
+              Harness Files
+            </h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              System prompt files that define ForgeClaw personality and context.
+              Changes are applied immediately.
+            </p>
+          </div>
+          {source === "mock" && (
+            <span className="rounded bg-amber-500/20 px-2 py-1 text-[10px] text-amber-400">
+              Mock data — core unavailable
+            </span>
+          )}
         </div>
 
-        {mockHarnessFiles.length === 0 && (
+        {loading && (
+          <div className="py-16 text-center">
+            <p className="text-sm text-text-secondary">Loading harness files...</p>
+          </div>
+        )}
+
+        {loadError && !loading && (
+          <div className="py-16 text-center">
+            <p className="text-sm text-red-400">Error: {loadError}</p>
+          </div>
+        )}
+
+        {!loading && !loadError && files.length === 0 && (
           <div className="py-16 text-center">
             <p className="text-sm text-text-secondary">
               No harness files found
@@ -36,9 +99,15 @@ export function HarnessTab() {
           </div>
         )}
 
-        {mockHarnessFiles.map((file) => (
-          <HarnessEditor key={file.name} file={file} onSave={handleSave} />
-        ))}
+        {!loading &&
+          !loadError &&
+          files.map((file) => (
+            <HarnessEditor
+              key={`${file.name}:${file.content.length}`}
+              file={file}
+              onSave={handleSave}
+            />
+          ))}
       </div>
     </ScrollArea>
   );
