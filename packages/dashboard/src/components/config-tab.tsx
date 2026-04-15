@@ -82,9 +82,10 @@ interface EditableIdListProps {
   label: string;
   ids: number[];
   onChange: (ids: number[]) => void;
+  minItems?: number;
 }
 
-function EditableIdList({ label, ids, onChange }: EditableIdListProps) {
+function EditableIdList({ label, ids, onChange, minItems }: EditableIdListProps) {
   const [draft, setDraft] = useState('');
 
   const handleAdd = () => {
@@ -119,7 +120,12 @@ function EditableIdList({ label, ids, onChange }: EditableIdListProps) {
             <button
               type="button"
               onClick={() => handleRemove(id)}
-              className="ml-2 text-xs text-red-400 hover:text-red-300"
+              disabled={minItems !== undefined && ids.length <= minItems}
+              className={`ml-2 text-xs ${
+                minItems !== undefined && ids.length <= minItems
+                  ? 'text-text-secondary/30 cursor-not-allowed'
+                  : 'text-red-400 hover:text-red-300'
+              }`}
               aria-label={`Remove ${id}`}
             >
               Remove
@@ -363,7 +369,11 @@ export function ConfigTab() {
             <EditableIdList
               label="Allowed Users"
               ids={config.allowedUsers}
-              onChange={(ids) => updateField('allowedUsers', ids)}
+              onChange={(ids) => {
+                if (ids.length === 0) return; // prevent lockout — at least 1 user required
+                updateField('allowedUsers', ids);
+              }}
+              minItems={1}
             />
             <Separator className="bg-white/[0.06]" />
             <EditableIdList
