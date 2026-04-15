@@ -37,6 +37,11 @@ export interface ForgeClawConfig {
   memoryAutoApproveThreshold?: number;
   /** Random token for dashboard authentication. Generated during install. */
   dashboardToken?: string;
+  /**
+   * IANA timezone for display purposes (dashboard, cron preview, memory timestamps).
+   * Default: 'America/Sao_Paulo'. Examples: 'Europe/London', 'US/Eastern'.
+   */
+  timezone?: string;
 }
 
 export interface SessionInfo {
