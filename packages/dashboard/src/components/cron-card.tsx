@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import {
+  ChevronDown,
+  ChevronRight,
   Pause,
   Play,
   RefreshCw,
@@ -58,8 +60,18 @@ export function CronCard({
   highlighted = false,
 }: CronCardProps) {
   const [showLogs, setShowLogs] = useState(false);
+  const [expandedLogIds, setExpandedLogIds] = useState<Set<number>>(new Set());
   const isRunning = runningId === job.id;
   const isFileOrigin = job.origin === "file";
+
+  const toggleLogExpand = (logId: number) => {
+    setExpandedLogIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(logId)) next.delete(logId);
+      else next.add(logId);
+      return next;
+    });
+  };
 
   return (
     <Card
@@ -278,9 +290,31 @@ export function CronCard({
                   </Badge>
                 </div>
                 {log.output && (
-                  <p className="text-text-body whitespace-pre-wrap font-mono text-[11px] leading-relaxed">
-                    {log.output}
-                  </p>
+                  <div className="mt-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleLogExpand(log.id)}
+                      className="flex items-center gap-1 text-[10px] text-violet hover:text-violet/80"
+                      aria-label={expandedLogIds.has(log.id) ? "Collapse output" : "Expand output"}
+                    >
+                      {expandedLogIds.has(log.id) ? (
+                        <ChevronDown className="h-3 w-3" />
+                      ) : (
+                        <ChevronRight className="h-3 w-3" />
+                      )}
+                      output ({log.output.length} chars)
+                    </button>
+                    {expandedLogIds.has(log.id) && (
+                      <pre className="mt-1 max-h-64 overflow-auto rounded bg-black/30 p-2 text-text-body whitespace-pre-wrap font-mono text-[11px] leading-relaxed">
+                        {log.output}
+                      </pre>
+                    )}
+                    {!expandedLogIds.has(log.id) && (
+                      <p className="mt-1 text-text-secondary font-mono text-[10px] truncate">
+                        {log.output.slice(0, 120)}{log.output.length > 120 ? "..." : ""}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             ))}
