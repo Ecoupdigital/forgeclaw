@@ -1,4 +1,5 @@
 import type { StreamEvent, ClaudeRunnerOptions } from './types';
+import { getConfig } from './config';
 
 const MAX_RETRIES = 3;
 const KILL_TIMEOUT_MS = 5000;
@@ -60,7 +61,7 @@ export class ClaudeRunner {
   }
 
   private async *spawnAndStream(prompt: string, options: ClaudeRunnerOptions): AsyncGenerator<StreamEvent> {
-    const args = this.buildArgs(options);
+    const args = await this.buildArgs(options);
     args.push(prompt);
 
     console.log('[claude-runner] Spawning:', args.slice(0, 8).join(' '));
@@ -188,7 +189,7 @@ export class ClaudeRunner {
     }
   }
 
-  private buildArgs(options: ClaudeRunnerOptions): string[] {
+  private async buildArgs(options: ClaudeRunnerOptions): Promise<string[]> {
     const claudePath = process.env.CLAUDE_CLI_PATH || 'claude';
     const args = [claudePath, '-p', '--verbose', '--output-format', 'stream-json'];
 
@@ -221,7 +222,20 @@ export class ClaudeRunner {
       }
     }
 
-    args.push('--dangerously-skip-permissions');
+    // SECURITY: --dangerously-skip-permissions allows Claude Code to execute
+    // any tool (Read, Write, Bash, etc.) without interactive approval. Required
+    // for unattended bot operation. Disable via config skipPermissions: false
+    // to audit tool usage in development/testing.
+    try {
+      const config = await getConfig();
+      if (config.skipPermissions !== false) {
+        args.push('--dangerously-skip-permissions');
+      }
+    } catch {
+      // Config unavailable (e.g. during tests) — default to skip permissions
+      // to preserve existing behavior.
+      args.push('--dangerously-skip-permissions');
+    }
 
     return args;
   }
