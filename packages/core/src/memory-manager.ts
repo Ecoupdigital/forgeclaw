@@ -13,15 +13,22 @@ export class MemoryManager {
   constructor(
     memoryDir = join(homedir(), '.forgeclaw', 'memory'),
     harnessDir = join(homedir(), '.forgeclaw', 'harness'),
-    dailyDir = process.env.FORGECLAW_DAILY_LOG_DIR ?? '/home/vault/05-pessoal/daily-log',
+    dailyDir?: string,
   ) {
     this.memoryDir = memoryDir;
-    // Daily log lives inside the Obsidian vault so ForgeClaw and the Claude
-    // Code CLI (via SessionStart / UserPromptSubmit hooks) share a single
-    // source of truth. Falls back to the legacy path via env var override.
-    this.dailyDir = dailyDir;
+    // Daily log resolution: env var > config vaultPath > ~/.forgeclaw/memory/daily
+    // Note: config is loaded async, so we resolve synchronously with env/default
+    // and the bot can override via the dailyDir param after loading config.
+    this.dailyDir = dailyDir
+      ?? process.env.FORGECLAW_DAILY_LOG_DIR
+      ?? join(homedir(), '.forgeclaw', 'memory', 'daily');
     this.harnessDir = harnessDir;
     this.memoryFilePath = join(harnessDir, 'MEMORY.md');
+  }
+
+  /** Update daily dir after config is loaded (bot startup). */
+  setDailyDir(dir: string): void {
+    this.dailyDir = dir;
   }
 
   // Jonathan is in BRT (UTC-3). The server runs UTC. We format dates/times

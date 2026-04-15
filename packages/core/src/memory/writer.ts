@@ -17,9 +17,19 @@ import { stateStore } from '../state-store';
 import { ClaudeRunner } from '../claude-runner';
 import type { Message, TopicInfo } from '../types';
 import { scanMemoryContent } from './security-scanner';
+import { homedir } from 'node:os';
+import { getConfig } from '../config';
 
-const DEFAULT_DAILY_DIR =
-  process.env.FORGECLAW_DAILY_LOG_DIR ?? '/home/vault/05-pessoal/daily-log';
+async function resolveDailyDir(): Promise<string> {
+  if (process.env.FORGECLAW_DAILY_LOG_DIR) return process.env.FORGECLAW_DAILY_LOG_DIR;
+  try {
+    const config = await getConfig();
+    if (config.vaultPath) return join(config.vaultPath, '05-pessoal', 'daily-log');
+  } catch {
+    // Config unavailable — use safe default
+  }
+  return join(homedir(), '.forgeclaw', 'memory', 'daily');
+}
 const STATE_FILE = '.writer-state.json';
 
 // Use cheap model for extraction — configurable via env var.
@@ -164,7 +174,7 @@ function formatSessionForPrompt(c: SessionCandidate): string {
  * Returns number of bullets written.
  */
 export async function runWriter(opts: { dailyDir?: string; maxSessions?: number } = {}): Promise<number> {
-  const dailyDir = opts.dailyDir ?? DEFAULT_DAILY_DIR;
+  const dailyDir = opts.dailyDir ?? await resolveDailyDir();
   const maxSessions = opts.maxSessions ?? 20;
 
   await mkdir(dailyDir, { recursive: true });

@@ -1,6 +1,7 @@
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
 import type { ForgeClawConfig } from './types';
 import type { HarnessLoader } from './harness-loader';
 import { stateStore } from './state-store';
@@ -69,8 +70,10 @@ export class ContextBuilder {
    */
   private async buildStatLine(): Promise<string> {
     try {
-      const dailyDir =
-        process.env.FORGECLAW_DAILY_LOG_DIR ?? '/home/vault/05-pessoal/daily-log';
+      const dailyDir = process.env.FORGECLAW_DAILY_LOG_DIR
+        ?? (this.config.vaultPath
+          ? path.join(this.config.vaultPath, '05-pessoal', 'daily-log')
+          : path.join(homedir(), '.forgeclaw', 'memory', 'daily'));
       const today = this.isoDate(new Date());
       const path = `${dailyDir}/${today}.md`;
 

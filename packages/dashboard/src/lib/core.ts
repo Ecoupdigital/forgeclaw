@@ -32,9 +32,19 @@ const DB_PATH = join(FORGECLAW_DIR, "db", "forgeclaw.db");
 const CONFIG_PATH = join(FORGECLAW_DIR, "forgeclaw.config.json");
 const HARNESS_DIR = join(FORGECLAW_DIR, "harness");
 const HEARTBEAT_PATH = join(FORGECLAW_DIR, "HEARTBEAT.md");
-// Daily log lives in the Obsidian vault so ForgeClaw and Claude Code CLI share it.
-const DAILY_DIR =
-  process.env.FORGECLAW_DAILY_LOG_DIR ?? "/home/vault/05-pessoal/daily-log";
+// Daily log dir: resolved at call time, not module load time (config may not be loaded yet).
+async function resolveDailyDir(): Promise<string> {
+  if (process.env.FORGECLAW_DAILY_LOG_DIR) return process.env.FORGECLAW_DAILY_LOG_DIR;
+  try {
+    const config = await getConfig();
+    if (config && typeof config.vaultPath === "string") {
+      return join(config.vaultPath, "05-pessoal", "daily-log");
+    }
+  } catch {
+    // fall through
+  }
+  return join(homedir(), ".forgeclaw", "memory", "daily");
+}
 const MEMORY_FILE = join(HARNESS_DIR, "MEMORY.md");
 
 // --- SQLite (lazy, singleton) ---
@@ -852,7 +862,8 @@ export function listMemoryAuditV2(memoryId?: number, limit: number = 50): Array<
 export async function readDailyLog(date: string): Promise<string | null> {
   try {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
-    const filePath = join(DAILY_DIR, `${date}.md`);
+    const dailyDir = await resolveDailyDir();
+    const filePath = join(dailyDir, `${date}.md`);
     if (!existsSync(filePath)) return null;
     return await readFile(filePath, "utf-8");
   } catch {
@@ -862,14 +873,15 @@ export async function readDailyLog(date: string): Promise<string | null> {
 
 export async function listDailyLogs(): Promise<DailyLog[] | null> {
   try {
-    if (!existsSync(DAILY_DIR)) return null;
-    const files = await readdir(DAILY_DIR);
+    const dailyDir = await resolveDailyDir();
+    if (!existsSync(dailyDir)) return null;
+    const files = await readdir(dailyDir);
     const logs: DailyLog[] = [];
 
     for (const file of files) {
       if (!file.endsWith(".md")) continue;
       const date = file.replace(".md", "");
-      const fullPath = join(DAILY_DIR, file);
+      const fullPath = join(dailyDir, file);
 
       try {
         const content = await readFile(fullPath, "utf-8");

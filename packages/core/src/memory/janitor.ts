@@ -20,13 +20,22 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { stateStore } from '../state-store';
 import { ClaudeRunner } from '../claude-runner';
+import { homedir } from 'node:os';
 import { getConfig } from '../config';
 import { BuiltinMemoryStore } from './builtin-store';
 import { scanMemoryContent } from './security-scanner';
 import type { MemoryEntryKind } from '../types';
 
-const DEFAULT_DAILY_DIR =
-  process.env.FORGECLAW_DAILY_LOG_DIR ?? '/home/vault/05-pessoal/daily-log';
+async function resolveDailyDir(): Promise<string> {
+  if (process.env.FORGECLAW_DAILY_LOG_DIR) return process.env.FORGECLAW_DAILY_LOG_DIR;
+  try {
+    const config = await getConfig();
+    if (config.vaultPath) return join(config.vaultPath, '05-pessoal', 'daily-log');
+  } catch {
+    // Config unavailable — use safe default
+  }
+  return join(homedir(), '.forgeclaw', 'memory', 'daily');
+}
 const JANITOR_MODEL = process.env.FORGECLAW_JANITOR_MODEL ?? 'claude-haiku-4-5-20251001';
 
 interface JanitorReport {
@@ -487,7 +496,7 @@ async function backupHarness(harnessDir = join(process.env.HOME ?? '/root', '.fo
 export async function runJanitor(
   opts: { dailyDir?: string; store?: BuiltinMemoryStore } = {},
 ): Promise<JanitorReport> {
-  const dailyDir = opts.dailyDir ?? DEFAULT_DAILY_DIR;
+  const dailyDir = opts.dailyDir ?? await resolveDailyDir();
   const store = opts.store ?? new BuiltinMemoryStore();
   store.loadSnapshot(); // ensure latest state
 
