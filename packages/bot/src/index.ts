@@ -1,8 +1,20 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
 import { Bot, GrammyError, HttpError } from 'grammy';
 import { run } from '@grammyjs/runner';
 import { autoRetry } from '@grammyjs/auto-retry';
 import { sequentialize } from '@grammyjs/runner';
-import { getConfig, cronEngine, eventBus, stateStore, startWSServer } from '@forgeclaw/core';
+import {
+  getConfig,
+  cronEngine,
+  eventBus,
+  stateStore,
+  startWSServer,
+  memoryManager,
+  memoryManagerV2,
+  runnerRegistry,
+} from '@forgeclaw/core';
 import { createAuthMiddleware } from './middleware/auth';
 import { getSessionKey } from './middleware/sequentialize';
 import { createTextHandler } from './handlers/text';
@@ -16,6 +28,16 @@ import { bootstrapTopicsFromSessions } from './bootstrap-topics';
 async function main(): Promise<void> {
   console.log('[forgeclaw] Loading configuration...');
   const config = await getConfig();
+
+  // Check for compiled harness file
+  const harnessClaude = join(homedir(), '.forgeclaw', 'harness', 'CLAUDE.md');
+  if (!existsSync(harnessClaude)) {
+    console.warn('[forgeclaw] WARNING: ~/.forgeclaw/harness/CLAUDE.md not found.');
+    console.warn('[forgeclaw] Bot will run without personality/context harness.');
+    console.warn('[forgeclaw] Run "npx forgeclaw install --update" or call compileHarness() to generate it.');
+  } else {
+    console.log('[forgeclaw] Harness CLAUDE.md loaded.');
+  }
 
   console.log('[forgeclaw] Creating bot instance...');
   const bot = new Bot(config.botToken);
@@ -41,6 +63,7 @@ async function main(): Promise<void> {
   bot.command('help', commands.help);
   bot.command('project', commands.project);
   bot.command('up', commands.up);
+  bot.command('runtime', commands.runtime);
   bot.command('topic_create', commands.topicCreate);
   bot.command('topic_rename', commands.topicRename);
   bot.command('topic_link', commands.topicLink);
@@ -152,6 +175,7 @@ async function main(): Promise<void> {
     { command: 'sessions_close', description: 'Fechar uma sessão' },
     { command: 'sessions_rename', description: 'Renomear sessão: /sessions_rename nome' },
     { command: 'up', description: 'Grid de comandos UP' },
+    { command: 'runtime', description: 'Runtime deste topic (claude-code|codex)' },
     { command: 'up_progresso', description: 'UP: status do projeto' },
     { command: 'up_planejar', description: 'UP: planejar fase' },
     { command: 'up_executar', description: 'UP: executar fase' },
@@ -178,9 +202,33 @@ async function main(): Promise<void> {
     console.error('[forgeclaw] bootstrap-topics failed (non-fatal):', err);
   }
 
+  // Initialize the agent runner registry (discovers claude-code + codex
+  // and runs health checks). Runners are selected per topic/cron by the
+  // text handler and cron engine via runnerRegistry.get(runtime).
+  console.log('[forgeclaw] Initializing runner registry...');
+  await runnerRegistry.initialize(config);
+
   // Start cron engine (HEARTBEAT.md scheduler)
   console.log('[forgeclaw] Starting cron engine...');
   await cronEngine.start();
+
+  // Schedule the internal compile-daily job (legacy simple compile).
+  memoryManager.startCompileCron();
+
+  // Initialize the v1.5 memory system: registers the built-in provider,
+  // loads the frozen snapshot from SQLite, primes FTS5 search.
+  try {
+    await memoryManagerV2.initializeAll({
+      userId: 'default',
+      workspaceId: 'default',
+      platform: 'telegram',
+      agentContext: 'primary',
+    });
+    memoryManagerV2.startCrons();
+    console.log('[forgeclaw] memory v1.5 initialized + crons started');
+  } catch (err) {
+    console.error('[forgeclaw] memory v1.5 init failed:', err);
+  }
 
   // Mirror chat messages that originated OUTSIDE Telegram (currently only the
   // dashboard) into the corresponding Telegram chat+thread. This gives the
@@ -212,6 +260,9 @@ async function main(): Promise<void> {
       await bot.api.sendMessage(chatId, text, {
         ...(topicId ? { message_thread_id: topicId } : {}),
       });
+      console.log(
+        `[forgeclaw] mirrored ${kind} from ${origin} → chat=${chatId} thread=${topicId ?? 'dm'} len=${content.length}`
+      );
     } catch (err) {
       console.error(
         `[forgeclaw] Failed to mirror ${kind} message from ${origin} to Telegram:`,
@@ -222,6 +273,16 @@ async function main(): Promise<void> {
 
   eventBus.on('message:incoming', (data) => {
     mirrorToTelegram(data, 'incoming');
+    // Log every incoming user message to today's daily log so the memory
+    // pipeline has real data to compile at 23:55. Keeps the entry short.
+    const content = (data as Record<string, unknown>).content;
+    const origin = (data as Record<string, unknown>).origin;
+    if (typeof content === 'string' && content.length > 0) {
+      const preview = content.replace(/\s+/g, ' ').slice(0, 140);
+      memoryManager
+        .addEntry(`[${origin ?? 'unknown'}→user] ${preview}`)
+        .catch((err) => console.error('[forgeclaw] memory addEntry (incoming) failed:', err));
+    }
   });
   eventBus.on('message:outgoing', (data) => {
     mirrorToTelegram(data, 'outgoing');
@@ -236,6 +297,13 @@ async function main(): Promise<void> {
       output: string;
       status: string;
     };
+
+    // Log cron executions to daily memory log — this is a major source of
+    // decisions/activity that should persist across days.
+    const outputPreview = String(output ?? '').replace(/\s+/g, ' ').slice(0, 200);
+    memoryManager
+      .addEntry(`[cron:${status}] ${jobName} → ${outputPreview}`)
+      .catch((err) => console.error('[forgeclaw] memory addEntry (cron) failed:', err));
 
     const statusIcon = status === 'success' ? '[OK]' : '[FAIL]';
     const message = `${statusIcon} Cron: ${jobName}\n\n${String(output).slice(0, 4000)}`;
@@ -271,6 +339,8 @@ async function main(): Promise<void> {
   const shutdown = async (signal: string) => {
     console.log(`[forgeclaw] Received ${signal}, shutting down...`);
     await cronEngine.stop();
+    memoryManager.stopCompileCron();
+    try { await memoryManagerV2.shutdownAll(); } catch {}
     await handle.stop();
     console.log('[forgeclaw] Bot stopped gracefully.');
     process.exit(0);
