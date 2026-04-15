@@ -1,5 +1,5 @@
 import { intro, spinner, outro, log } from '@clack/prompts'
-import { existsSync, statSync } from 'node:fs'
+import { existsSync, statSync, chmodSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 
@@ -20,12 +20,13 @@ export async function exportData(): Promise<void> {
     process.exit(1)
   }
 
+  // Secrets (.env) are excluded by default — they contain API keys in
+  // plaintext and should never be in a portable backup file.
   const items = [
     'db/forgeclaw.db',
     'forgeclaw.config.json',
     'harness',
     'memory',
-    '.env',
   ]
 
   const existingItems = items.filter(item => existsSync(join(FORGECLAW_DIR, item)))
@@ -59,6 +60,9 @@ export async function exportData(): Promise<void> {
     log.error(`tar failed: ${stderr}`)
     process.exit(1)
   }
+
+  // Restrict permissions: backup may contain sensitive config values
+  chmodSync(outputFile, 0o600)
 
   const fileSize = statSync(outputFile).size
   const sizeMB = (fileSize / (1024 * 1024)).toFixed(2)
