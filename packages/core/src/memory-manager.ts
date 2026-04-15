@@ -107,9 +107,11 @@ export class MemoryManager {
   }
 
   /**
+   * @deprecated v1 compile replaced by v2 janitor distillation.
+   * Kept for backward compatibility.
+   *
    * Compiles today's daily log into MEMORY.md.
    * Extracts decision/lesson entries and appends them.
-   * Designed to be called by the 23h cron job.
    */
   async compileDaily(): Promise<void> {
     const log = await this.getDailyLog();
@@ -160,8 +162,8 @@ export class MemoryManager {
   }
 
   /**
-   * Schedules compileDaily() to run at 23:55 local time every day.
-   * Idempotent — stops any previous schedule first. Called at bot startup.
+   * @deprecated v1 compile cron replaced by v2 writer+janitor system.
+   * Kept for backward compatibility. Do not call in new code.
    */
   startCompileCron(schedule: string = '55 23 * * *'): void {
     if (this.compileCron) {
@@ -185,6 +187,9 @@ export class MemoryManager {
     }
   }
 
+  /**
+   * @deprecated v1 compile cron replaced by v2 writer+janitor system.
+   */
   stopCompileCron(): void {
     if (this.compileCron) {
       this.compileCron.stop();
