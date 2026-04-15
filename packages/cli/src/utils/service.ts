@@ -12,8 +12,16 @@ const SYSTEMD_PATH = `/etc/systemd/system/${SERVICE_NAME}.service`
 const LAUNCHD_LABEL = 'com.forgeclaw.bot'
 const LAUNCHD_PATH = join(homedir(), 'Library', 'LaunchAgents', `${LAUNCHD_LABEL}.plist`)
 
+const DASHBOARD_SERVICE_NAME = 'forgeclaw-dashboard'
+const SYSTEMD_DASHBOARD_PATH = `/etc/systemd/system/${DASHBOARD_SERVICE_NAME}.service`
+const LAUNCHD_DASHBOARD_LABEL = 'com.forgeclaw.dashboard'
+const LAUNCHD_DASHBOARD_PATH = join(homedir(), 'Library', 'LaunchAgents', `${LAUNCHD_DASHBOARD_LABEL}.plist`)
+
+const ENV_FILE_PATH = join(homedir(), '.forgeclaw', '.env')
+
 // Resolve path to the bot entry point relative to CLI package
 const BOT_ENTRY = resolve(__dirname, '..', '..', '..', 'bot', 'src', 'index.ts')
+const DASHBOARD_DIR = resolve(__dirname, '..', '..', '..', 'dashboard')
 
 function getSystemdUnit(): string {
   return `[Unit]
