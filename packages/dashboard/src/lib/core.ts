@@ -876,13 +876,20 @@ export async function writeConfig(
       // No existing config
     }
 
-    // If the incoming botToken looks masked, preserve original
-    const incoming = config as Record<string, unknown>;
-    if (
-      typeof incoming.botToken === "string" &&
-      incoming.botToken.includes("***hidden***")
-    ) {
-      incoming.botToken = existing.botToken;
+    // Strip ANY field that contains the mask pattern — prevents masked
+    // tokens (botToken, dashboardToken, or future secrets) from being
+    // persisted back to disk.
+    const MASK = "***hidden***";
+    const incoming = { ...config };
+    for (const key of Object.keys(incoming)) {
+      if (typeof incoming[key] === "string" && (incoming[key] as string).includes(MASK)) {
+        // Preserve original value from disk, or delete entirely if no original exists
+        if (key in existing) {
+          incoming[key] = existing[key];
+        } else {
+          delete incoming[key];
+        }
+      }
     }
 
     await writeFile(CONFIG_PATH, JSON.stringify(incoming, null, 2), "utf-8");
