@@ -9,7 +9,7 @@ import {
   isCancel,
 } from '@clack/prompts'
 import { existsSync, mkdirSync, writeFileSync, chmodSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { homedir } from 'node:os'
 import { soulTemplate } from '../templates/soul'
 import { userTemplate } from '../templates/user'
@@ -17,7 +17,7 @@ import { agentsTemplate } from '../templates/agents'
 import { toolsTemplate } from '../templates/tools'
 import { memoryTemplate } from '../templates/memory'
 import { styleTemplate } from '../templates/style'
-import { setupService } from '../utils/service'
+import { setupService, writeEnvFile } from '../utils/service'
 
 interface InstallOptions {
   update?: boolean
@@ -25,6 +25,7 @@ interface InstallOptions {
 
 const FORGECLAW_DIR = join(homedir(), '.forgeclaw')
 const CONFIG_PATH = join(FORGECLAW_DIR, 'forgeclaw.config.json')
+const MONOREPO_ROOT = resolve(__dirname, '..', '..', '..', '..')
 
 function cancelled(): never {
   log.warn('Installation cancelled.')
