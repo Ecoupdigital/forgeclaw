@@ -58,6 +58,20 @@ function readdirSyncSafe(dir: string): string[] {
   }
 }
 
+/**
+ * Compare two semver strings. Returns negative if a < b, 0 if equal, positive if a > b.
+ * Only handles major.minor.patch (no pre-release tags).
+ */
+function compareSemver(a: string, b: string): number {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    const diff = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
+
 export async function install(options: InstallOptions = {}): Promise<void> {
   const isUpdate = options.update ?? false
 
@@ -84,7 +98,24 @@ export async function install(options: InstallOptions = {}): Promise<void> {
   s.stop('Dependency check complete.')
 
   if (hasBun) {
-    log.success('bun: installed')
+    // M8: Check minimum bun version (1.1.0)
+    let bunVersion = 'unknown';
+    try {
+      const versionProc = Bun.spawn(['bun', '--version'], { stdout: 'pipe', stderr: 'pipe' });
+      const versionOutput = await new Response(versionProc.stdout).text();
+      await versionProc.exited;
+      bunVersion = versionOutput.trim(); // e.g. "1.2.3"
+    } catch {
+      // version check failed, continue anyway
+    }
+
+    const MIN_BUN_VERSION = '1.1.0';
+    if (bunVersion !== 'unknown' && compareSemver(bunVersion, MIN_BUN_VERSION) < 0) {
+      log.warn(`bun: version ${bunVersion} detected, minimum recommended is ${MIN_BUN_VERSION}`);
+      log.warn('Some features may not work correctly. Update with: bun upgrade');
+    } else {
+      log.success(`bun: installed (${bunVersion})`);
+    }
   } else {
     log.error('bun: not found. Install from https://bun.sh')
     process.exit(1)
