@@ -1,7 +1,11 @@
 import * as core from "@/lib/core";
 import { mockHarnessFiles } from "@/lib/mock-data";
+import { requireApiAuth } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const auth = await requireApiAuth(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const files = await core.listHarnessFiles();
     if (files) {
@@ -15,6 +19,9 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const auth = await requireApiAuth(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     const { name, content } = body as { name: string; content: string };

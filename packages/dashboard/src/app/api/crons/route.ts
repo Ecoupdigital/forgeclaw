@@ -3,6 +3,7 @@ import { mockCronJobs } from "@/lib/mock-data";
 import type { CronJob } from "@/lib/types";
 import { CronExpressionParser } from "cron-parser";
 import { z } from "zod";
+import { requireApiAuth } from "@/lib/auth";
 
 // ---------------------------------------------------------------------------
 // IPC → bot process
@@ -95,6 +96,8 @@ const createCronSchema = z
       .max(5000, "Prompt too long (max 5000 chars)"),
     targetTopicId: z.number().int().positive().nullable().optional(),
     enabled: z.boolean().optional().default(true),
+    runtime: z.enum(["claude-code", "codex"]).nullable().optional(),
+    model: z.string().trim().max(100).nullable().optional(),
   })
   .strict();
 
@@ -117,6 +120,8 @@ const updateCronSchema = z
       .optional(),
     targetTopicId: z.number().int().positive().nullable().optional(),
     enabled: z.boolean().optional(),
+    runtime: z.enum(["claude-code", "codex"]).nullable().optional(),
+    model: z.string().trim().max(100).nullable().optional(),
   })
   .strict();
 
@@ -142,7 +147,10 @@ function validateScheduleString(schedule: string): string | null {
 // GET
 // ---------------------------------------------------------------------------
 
-export async function GET() {
+export async function GET(request: Request) {
+  const auth = await requireApiAuth(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const jobs = core.listCronJobs();
     if (jobs) {
@@ -160,6 +168,9 @@ export async function GET() {
 // ---------------------------------------------------------------------------
 
 export async function POST(request: Request) {
+  const auth = await requireApiAuth(request);
+  if (!auth.ok) return auth.response;
+
   // 1. Parse JSON defensively.
   let body: unknown;
   try {
@@ -207,6 +218,8 @@ export async function POST(request: Request) {
     lastStatus: null,
     origin: "db",
     sourceFile: null,
+    runtime: data.runtime ?? null,
+    model: data.model ?? null,
   });
 
   // 7. NO mock-id fallback. A null from core means the DB actually failed.
@@ -247,6 +260,9 @@ export async function POST(request: Request) {
 // ---------------------------------------------------------------------------
 
 export async function DELETE(request: Request) {
+  const auth = await requireApiAuth(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const url = new URL(request.url);
     const id = Number(url.searchParams.get("id"));
@@ -291,6 +307,9 @@ export async function DELETE(request: Request) {
 // ---------------------------------------------------------------------------
 
 export async function PUT(request: Request) {
+  const auth = await requireApiAuth(request);
+  if (!auth.ok) return auth.response;
+
   // 1. Parse body.
   let body: unknown;
   try {

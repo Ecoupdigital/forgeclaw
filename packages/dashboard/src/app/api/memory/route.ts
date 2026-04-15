@@ -1,7 +1,11 @@
 import * as core from "@/lib/core";
 import { mockMemoryContent, mockDailyLogs } from "@/lib/mock-data";
+import { requireApiAuth } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const auth = await requireApiAuth(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const memory = await core.getMemoryContent();
     const dailyLogs = await core.listDailyLogs();
@@ -25,6 +29,9 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const auth = await requireApiAuth(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     const { content } = body as { content: string };

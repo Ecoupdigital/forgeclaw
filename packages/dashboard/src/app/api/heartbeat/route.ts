@@ -1,9 +1,13 @@
 import * as core from "@/lib/core";
 import { mockHeartbeat } from "@/lib/mock-data";
+import { requireApiAuth } from "@/lib/auth";
 
 const MAX_HEARTBEAT_BYTES = 64 * 1024; // 64 KiB
 
-export async function GET() {
+export async function GET(request: Request) {
+  const auth = await requireApiAuth(request);
+  if (!auth.ok) return auth.response;
+
   try {
     const content = await core.getHeartbeat();
     if (content !== null) {
@@ -17,6 +21,9 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const auth = await requireApiAuth(request);
+  if (!auth.ok) return auth.response;
+
   // 1. Defensive JSON parse.
   let body: unknown;
   try {

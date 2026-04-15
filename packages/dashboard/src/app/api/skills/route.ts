@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import { existsSync } from "node:fs";
 import type { SkillInfo } from "@/lib/types";
+import { requireApiAuth } from "@/lib/auth";
 
 const SKILLS_DIR = join(homedir(), ".claude", "skills");
 const CACHE_TTL_MS = 30_000;
@@ -90,7 +91,10 @@ async function loadSkills(): Promise<SkillInfo[]> {
   return result;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const auth = await requireApiAuth(request);
+  if (!auth.ok) return auth.response;
+
   const now = Date.now();
   if (cache && now - cache.at < CACHE_TTL_MS) {
     return Response.json({ skills: cache.data, source: "cache" });

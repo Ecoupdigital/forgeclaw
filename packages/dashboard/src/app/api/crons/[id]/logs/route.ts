@@ -1,10 +1,14 @@
 import * as core from "@/lib/core";
 import { mockCronLogs } from "@/lib/mock-data";
+import { requireApiAuth } from "@/lib/auth";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireApiAuth(request);
+  if (!auth.ok) return auth.response;
+
   const { id } = await params;
   const jobId = parseInt(id);
 

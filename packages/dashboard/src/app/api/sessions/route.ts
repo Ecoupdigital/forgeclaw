@@ -5,8 +5,12 @@ import {
   mockTopics,
 } from "@/lib/mock-data";
 import type { TopicInfo } from "@/lib/types";
+import { requireApiAuth } from "@/lib/auth";
 
 export async function GET(request: Request) {
+  const auth = await requireApiAuth(request);
+  if (!auth.ok) return auth.response;
+
   const url = new URL(request.url);
   const topicId = url.searchParams.get("topicId");
 
@@ -72,7 +76,10 @@ export async function GET(request: Request) {
   });
 }
 
-export async function POST() {
+export async function POST(request: Request) {
+  const auth = await requireApiAuth(request);
+  if (!auth.ok) return auth.response;
+
   return Response.json(
     {
       error: "Use WebSocket on port 4041 for chat",
