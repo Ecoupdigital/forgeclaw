@@ -18,6 +18,7 @@ import { toolsTemplate } from '../templates/tools'
 import { memoryTemplate } from '../templates/memory'
 import { styleTemplate } from '../templates/style'
 import { setupService, writeEnvFile } from '../utils/service'
+import { compileHarness } from '@forgeclaw/core'
 
 interface InstallOptions {
   update?: boolean
@@ -299,6 +300,14 @@ export async function install(options: InstallOptions = {}): Promise<void> {
     } else {
       log.info(`Skipped ${file.name} (already exists)`)
     }
+  }
+
+  // --- Step 10.5: Compile CLAUDE.md from individual harness files ---
+  const compileResult = compileHarness()
+  if (compileResult.success) {
+    log.success(`CLAUDE.md compiled (${compileResult.includedFiles.length} files)`)
+  } else {
+    log.warn('CLAUDE.md compilation failed — harness will not be injected into Claude prompts')
   }
 
   // --- Step 11: Detect projects ---
