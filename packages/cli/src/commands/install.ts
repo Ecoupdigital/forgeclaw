@@ -249,7 +249,6 @@ export async function install(options: InstallOptions = {}): Promise<void> {
     workingDir,
     vaultPath,
     voiceProvider,
-    openaiApiKey,
     userName,
     company,
     role,
@@ -274,6 +273,9 @@ export async function install(options: InstallOptions = {}): Promise<void> {
   // Write config with restrictive permissions
   writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2))
   chmodSync(CONFIG_PATH, 0o600)
+
+  // Write API keys to env file (not in config JSON for security)
+  writeEnvFile({ openaiApiKey, groqApiKey })
 
   s.stop('Configuration saved.')
 
