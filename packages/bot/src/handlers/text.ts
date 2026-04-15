@@ -316,11 +316,15 @@ async function processMessage(
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       console.error(`[text-handler] Error processing message:`, err);
+
+      // M10: Translate common Claude CLI errors to friendly messages
+      // instead of forwarding raw error text to Telegram.
+      const friendlyMsg = classifyClaudeError(errorMsg);
       await safeEditText(
         ctx,
         chatId,
         placeholder.message_id,
-        `Error: ${errorMsg}`,
+        friendlyMsg,
       );
     } finally {
       clearInterval(typingInterval);
@@ -366,6 +370,93 @@ async function handleInterrupt(
     messageQueue.setProcessing(sessionKey, false);
     await processMessage(ctx, chatId, topicId, sessionKey, command, config);
   }
+}
+
+/**
+ * Detect common Claude CLI error patterns and return a user-friendly
+ * message in Portuguese. Falls back to a generic message for unknown errors.
+ *
+ * Known patterns:
+ * - Auth expired/invalid: "not authenticated", "auth", "unauthorized", "401"
+ * - Rate limited: "rate limit", "429", "too many requests", "overloaded"
+ * - CLI not found: "ENOENT", "not found", "command not found"
+ * - Context window: "context window", "context_length", "too long"
+ * - Session expired: "No conversation found", "session"
+ * - Network: "ECONNREFUSED", "ETIMEDOUT", "fetch failed"
+ * - Generic CLI failure: "exited with code"
+ */
+function classifyClaudeError(errorMsg: string): string {
+  const lower = errorMsg.toLowerCase();
+
+  // Auth issues
+  if (
+    lower.includes('not authenticated') ||
+    lower.includes('unauthorized') ||
+    lower.includes('401') ||
+    lower.includes('invalid api key') ||
+    lower.includes('invalid_api_key')
+  ) {
+    return 'Claude CLI nao esta autenticado. Rode `claude auth login` no servidor para reconectar.';
+  }
+
+  // Rate limiting
+  if (
+    lower.includes('rate limit') ||
+    lower.includes('rate_limit') ||
+    lower.includes('429') ||
+    lower.includes('too many requests') ||
+    lower.includes('overloaded')
+  ) {
+    return 'Rate limit atingido na API. Aguarde alguns minutos e tente novamente.';
+  }
+
+  // CLI not found / not installed
+  if (
+    lower.includes('enoent') ||
+    (lower.includes('not found') && (lower.includes('claude') || lower.includes('command'))) ||
+    lower.includes('command not found')
+  ) {
+    return 'Claude CLI nao encontrado no servidor. Verifique a instalacao com `which claude`.';
+  }
+
+  // Context window exceeded
+  if (
+    lower.includes('context window') ||
+    lower.includes('context_length') ||
+    lower.includes('too long') ||
+    lower.includes('maximum context')
+  ) {
+    return 'Contexto excedeu o limite. Use /new para iniciar uma sessao limpa.';
+  }
+
+  // Session expired (already handled by runner retry, but just in case)
+  if (
+    lower.includes('no conversation found') ||
+    lower.includes('session not found')
+  ) {
+    return 'Sessao expirou. Use /new para iniciar uma nova.';
+  }
+
+  // Network errors
+  if (
+    lower.includes('econnrefused') ||
+    lower.includes('etimedout') ||
+    lower.includes('fetch failed') ||
+    lower.includes('network')
+  ) {
+    return 'Erro de rede ao conectar com a API. Verifique a conexao do servidor.';
+  }
+
+  // Generic CLI exit code (keep the code for debugging)
+  const exitMatch = errorMsg.match(/exited with code (\d+)/);
+  if (exitMatch) {
+    return `Claude CLI falhou (exit code ${exitMatch[1]}). Verifique os logs com \`forgeclaw logs\`.`;
+  }
+
+  // Unknown error — show truncated message (max 200 chars) to avoid
+  // leaking internal details while still being debuggable.
+  const truncated = errorMsg.length > 200 ? errorMsg.slice(0, 200) + '...' : errorMsg;
+  return `Erro ao processar: ${truncated}`;
 }
 
 /**
