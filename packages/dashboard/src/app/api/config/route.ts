@@ -44,6 +44,7 @@ const VALID_CONFIG_FIELDS = new Set<string>([
   'memoryAutoApproveThreshold',
   'dashboardToken',
   'timezone',
+  'skipPermissions',
 ]);
 
 export async function PUT(request: Request) {
