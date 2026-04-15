@@ -10,7 +10,7 @@
  * return null so API routes can fall back to mock data.
  */
 
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { homedir } from "node:os";
 import { readFile, writeFile, readdir, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -1010,9 +1010,17 @@ export async function writeHarnessFile(
   content: string
 ): Promise<boolean> {
   try {
+    // Guard against path traversal (e.g. "../../etc/passwd")
+    if (name.includes("/") || name.includes("\\")) {
+      throw new Error(`Invalid harness file name: ${name}`);
+    }
+    const resolved = resolve(HARNESS_DIR, name);
+    if (!resolved.startsWith(HARNESS_DIR)) {
+      throw new Error(`Invalid harness file name: ${name}`);
+    }
+
     await mkdir(HARNESS_DIR, { recursive: true });
-    const filePath = join(HARNESS_DIR, name);
-    await writeFile(filePath, content, "utf-8");
+    await writeFile(resolved, content, "utf-8");
     return true;
   } catch {
     return false;
