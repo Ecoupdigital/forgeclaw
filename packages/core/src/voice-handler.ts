@@ -1,51 +1,112 @@
 import { readFile } from 'node:fs/promises';
 import { basename } from 'node:path';
+import { getConfig } from './config';
 
-const WHISPER_API_URL = 'https://api.openai.com/v1/audio/transcriptions';
 const SUPPORTED_FORMATS = new Set(['.ogg', '.mp3', '.m4a', '.wav', '.webm', '.oga']);
 
-class VoiceHandler {
-  private apiKey: string | null = null;
+interface STTProvider {
+  name: string;
+  url: string;
+  model: string;
+  apiKey: string;
+}
 
-  constructor(apiKey?: string) {
-    this.apiKey = apiKey ?? process.env.OPENAI_API_KEY ?? null;
+function getProviders(voiceProvider?: 'groq' | 'openai' | 'none'): STTProvider[] {
+  if (voiceProvider === 'none') {
+    return [];
   }
 
+  const providers: STTProvider[] = [];
+
+  const groqKey = process.env.GROQ_API_KEY;
+  if (groqKey && (!voiceProvider || voiceProvider === 'groq')) {
+    providers.push({
+      name: 'groq',
+      url: 'https://api.groq.com/openai/v1/audio/transcriptions',
+      model: 'whisper-large-v3-turbo',
+      apiKey: groqKey,
+    });
+  }
+
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (openaiKey && (!voiceProvider || voiceProvider === 'openai')) {
+    providers.push({
+      name: 'openai',
+      url: 'https://api.openai.com/v1/audio/transcriptions',
+      model: 'whisper-1',
+      apiKey: openaiKey,
+    });
+  }
+
+  return providers;
+}
+
+/** Telegram sends .oga files — normalize to .ogg so providers accept them. */
+function normalizeFileName(name: string): string {
+  return name.replace(/\.oga$/, '.ogg');
+}
+
+async function callSTT(provider: STTProvider, audioPath: string): Promise<string> {
+  const fileBuffer = await readFile(audioPath);
+  const fileName = normalizeFileName(basename(audioPath));
+
+  const formData = new FormData();
+  formData.append('file', new Blob([fileBuffer]), fileName);
+  formData.append('model', provider.model);
+  formData.append('language', 'pt');
+
+  const response = await fetch(provider.url, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${provider.apiKey}` },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`${provider.name} STT error (${response.status}): ${errorBody}`);
+  }
+
+  const result = (await response.json()) as { text: string };
+  return result.text;
+}
+
+class VoiceHandler {
   /**
-   * Transcribe an audio file using OpenAI Whisper API.
-   * Uses native fetch() - no OpenAI SDK dependency.
+   * Transcribe audio using Groq (primary) with OpenAI Whisper fallback.
+   * Provider order: GROQ_API_KEY present → try Groq first, then OpenAI.
+   * If only one key exists, uses that provider with no fallback.
    */
   async transcribe(audioPath: string): Promise<string> {
-    if (!this.apiKey) {
+    const config = await getConfig();
+    const providers = getProviders(config.voiceProvider);
+
+    if (providers.length === 0) {
+      if (config.voiceProvider === 'none') {
+        throw new Error('Voice transcription is disabled (voiceProvider: none).');
+      }
       throw new Error(
-        'OpenAI API key not configured. Set OPENAI_API_KEY environment variable or add openaiApiKey to config.',
+        `No STT provider configured. voiceProvider is '${config.voiceProvider ?? 'auto'}' but no matching API key found in environment. ` +
+        `Set ${config.voiceProvider === 'groq' ? 'GROQ_API_KEY' : config.voiceProvider === 'openai' ? 'OPENAI_API_KEY' : 'GROQ_API_KEY or OPENAI_API_KEY'} in ~/.forgeclaw/.env`,
       );
     }
 
-    const fileBuffer = await readFile(audioPath);
-    const fileName = basename(audioPath);
+    let lastError: Error | null = null;
 
-    // Build multipart form data with native FormData
-    const formData = new FormData();
-    formData.append('file', new Blob([fileBuffer]), fileName);
-    formData.append('model', 'whisper-1');
-    formData.append('language', 'pt');
-
-    const response = await fetch(WHISPER_API_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(`Whisper API error (${response.status}): ${errorBody}`);
+    for (const provider of providers) {
+      try {
+        const text = await callSTT(provider, audioPath);
+        console.log(`[voice] transcribed via ${provider.name} (${provider.model})`);
+        return text;
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        console.warn(
+          `[voice] ${provider.name} failed, ${providers.indexOf(provider) < providers.length - 1 ? 'trying fallback...' : 'no more providers'}`,
+          lastError.message,
+        );
+      }
     }
 
-    const result = (await response.json()) as { text: string };
-    return result.text;
+    throw lastError!;
   }
 }
 
