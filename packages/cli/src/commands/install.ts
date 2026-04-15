@@ -175,23 +175,39 @@ export async function install(options: InstallOptions = {}): Promise<void> {
   const voiceProvider = checkValue(
     await select({
       message: 'Voice transcription provider:',
-      initialValue: (existingConfig.voiceProvider as string) ?? 'whisper',
+      initialValue: (existingConfig.voiceProvider as string) ?? 'groq',
       options: [
-        { value: 'whisper', label: 'OpenAI Whisper (recommended)' },
-        { value: 'none', label: 'No voice' },
+        { value: 'groq', label: 'Groq Whisper (recommended, fast & free tier)' },
+        { value: 'openai', label: 'OpenAI Whisper' },
+        { value: 'none', label: 'No voice transcription' },
       ],
     })
   )
 
   let openaiApiKey: string | null = null
-  if (voiceProvider === 'whisper') {
+  let groqApiKey: string | null = null
+
+  if (voiceProvider === 'openai') {
     openaiApiKey = checkValue(
       await text({
         message: 'OpenAI API Key:',
         placeholder: 'sk-...',
         initialValue: (existingConfig.openaiApiKey as string) ?? '',
         validate(value) {
-          if (!value) return 'API key is required for Whisper'
+          if (!value) return 'API key is required for OpenAI Whisper'
+        },
+      })
+    )
+  }
+
+  if (voiceProvider === 'groq') {
+    groqApiKey = checkValue(
+      await text({
+        message: 'Groq API Key (get at console.groq.com):',
+        placeholder: 'gsk_...',
+        initialValue: (existingConfig.groqApiKey as string) ?? '',
+        validate(value) {
+          if (!value) return 'API key is required for Groq Whisper'
         },
       })
     )
