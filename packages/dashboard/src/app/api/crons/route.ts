@@ -22,10 +22,23 @@ import { requireApiAuth } from "@/lib/auth";
 const BOT_IPC_URL =
   process.env.FORGECLAW_BOT_IPC_URL ?? "http://127.0.0.1:4041";
 
+async function getIpcAuthHeaders(): Promise<Record<string, string>> {
+  try {
+    const { getDashboardToken } = await import("@/lib/core");
+    const token = await getDashboardToken();
+    if (token) return { Authorization: `Bearer ${token}` };
+  } catch {
+    // core unavailable
+  }
+  return {};
+}
+
 async function notifyCronReload(): Promise<void> {
   try {
+    const authHeaders = await getIpcAuthHeaders();
     await fetch(`${BOT_IPC_URL}/cron/reload`, {
       method: "POST",
+      headers: { ...authHeaders },
       signal: AbortSignal.timeout(1000),
     });
   } catch {
@@ -44,9 +57,10 @@ async function notifyCronRunNow(id: number): Promise<{
     // happens in the background and reports result via cron_logs. 3s is plenty
     // for the "started" ack; if the bot takes longer than that, something
     // is wrong with the IPC path itself.
+    const authHeaders = await getIpcAuthHeaders();
     const res = await fetch(`${BOT_IPC_URL}/cron/run-now`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify({ id }),
       signal: AbortSignal.timeout(3000),
     });
