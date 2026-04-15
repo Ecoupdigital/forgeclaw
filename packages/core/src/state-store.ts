@@ -517,6 +517,28 @@ class StateStore {
     return Number(result.lastInsertRowid);
   }
 
+  updateCronLog(id: number, updates: Partial<Pick<CronLog, 'finishedAt' | 'status' | 'output'>>): void {
+    const fields: string[] = [];
+    const values: (string | number | null)[] = [];
+
+    if (updates.finishedAt !== undefined) {
+      fields.push('finished_at = ?');
+      values.push(updates.finishedAt);
+    }
+    if (updates.status !== undefined) {
+      fields.push('status = ?');
+      values.push(updates.status);
+    }
+    if (updates.output !== undefined) {
+      fields.push('output = ?');
+      values.push(updates.output);
+    }
+
+    if (fields.length === 0) return;
+    values.push(id);
+    this.db.run(`UPDATE cron_logs SET ${fields.join(', ')} WHERE id = ?`, values);
+  }
+
   getCronLogs(jobId: number, limit: number = 20): CronLog[] {
     const rows = this.db.query(
       'SELECT id, job_id, started_at, finished_at, status, output FROM cron_logs WHERE job_id = ? ORDER BY started_at DESC LIMIT ?'
