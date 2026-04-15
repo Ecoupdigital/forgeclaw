@@ -54,6 +54,7 @@ function validateConfig(raw: unknown): ForgeClawConfig {
       ? obj.memoryAutoApproveThreshold
       : undefined,
     dashboardToken: typeof obj.dashboardToken === 'string' ? obj.dashboardToken : undefined,
+    timezone: typeof obj.timezone === 'string' ? obj.timezone : 'America/Sao_Paulo',
   };
 }
 
