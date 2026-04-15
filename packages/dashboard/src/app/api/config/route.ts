@@ -71,6 +71,30 @@ export async function PUT(request: Request) {
       );
     }
 
+    // Security: tokens can only be changed via CLI, not via dashboard.
+    // The dashboard sends masked values like "***hidden***" for display;
+    // any real token value here means someone is trying to rotate credentials.
+    const TOKEN_FIELDS = ['botToken', 'dashboardToken'] as const;
+    for (const field of TOKEN_FIELDS) {
+      const value = incoming[field];
+      if (typeof value === 'string' && value.length > 0 && !value.includes('***hidden***')) {
+        return Response.json(
+          {
+            success: false,
+            error: `${field} cannot be changed via dashboard. Use the CLI: forgeclaw config set ${field} <value>`,
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Strip masked token values so they don't overwrite real ones
+    for (const field of TOKEN_FIELDS) {
+      if (typeof incoming[field] === 'string' && incoming[field].includes('***hidden***')) {
+        delete incoming[field];
+      }
+    }
+
     const written = await core.writeConfig(body as Record<string, unknown>);
 
     if (written) {
