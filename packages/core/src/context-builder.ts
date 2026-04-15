@@ -75,12 +75,12 @@ export class ContextBuilder {
           ? path.join(this.config.vaultPath, '05-pessoal', 'daily-log')
           : path.join(homedir(), '.forgeclaw', 'memory', 'daily'));
       const today = this.isoDate(new Date());
-      const path = `${dailyDir}/${today}.md`;
+      const dailyFilePath = `${dailyDir}/${today}.md`;
 
       let todayCount = 0;
       let lastEntryTime = '—';
-      if (existsSync(path)) {
-        const content = await readFile(path, 'utf-8');
+      if (existsSync(dailyFilePath)) {
+        const content = await readFile(dailyFilePath, 'utf-8');
         const lines = content.split('\n').filter((l) => l.trim().startsWith('- ['));
         todayCount = lines.length;
         const lastLine = lines[lines.length - 1];
