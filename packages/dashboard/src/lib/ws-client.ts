@@ -61,8 +61,24 @@ export interface StreamingMessage {
 
 // --- useWebSocket hook ---
 
-const WS_URL = "ws://localhost:4041";
+const WS_BASE_URL = "ws://localhost:4041";
 const MAX_RECONNECT_DELAY = 30000;
+
+/**
+ * Fetch the WS auth token from the server.
+ * The cookie is httpOnly so we cannot read it client-side; this endpoint
+ * validates the cookie server-side and returns the raw token for WS use.
+ */
+async function getWsToken(): Promise<string | null> {
+  try {
+    const res = await fetch("/api/auth/ws-token");
+    if (!res.ok) return null;
+    const data = (await res.json()) as { token?: string | null };
+    return data.token ?? null;
+  } catch {
+    return null;
+  }
+}
 
 interface WebSocketState {
   send: (msg: Record<string, unknown>) => void;
@@ -110,8 +126,35 @@ export function useWebSocket(): WebSocketState {
     if (!mountedRef.current) return;
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
+    // Fetch token then open WS with it as query param
+    getWsToken()
+      .then((token) => {
+        if (!mountedRef.current) return;
+        if (wsRef.current?.readyState === WebSocket.OPEN) return;
+
+        const wsUrl = new URL(WS_BASE_URL);
+        if (token) {
+          wsUrl.searchParams.set("token", token);
+        }
+
+        return wsUrl.toString();
+      })
+      .then((url) => {
+        if (!url || !mountedRef.current) return;
+        connectWithUrl(url);
+      })
+      .catch(() => {
+        // Token fetch failed -- try without token (will fail if auth enabled)
+        if (mountedRef.current) connectWithUrl(WS_BASE_URL);
+      });
+  }, []);
+
+  const connectWithUrl = useCallback((url: string) => {
+    if (!mountedRef.current) return;
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+
     try {
-      const ws = new WebSocket(WS_URL);
+      const ws = new WebSocket(url);
 
       ws.onopen = () => {
         if (!mountedRef.current) return;
