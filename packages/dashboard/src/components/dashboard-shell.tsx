@@ -8,9 +8,12 @@ import {
   Brain,
   Settings,
   FileCode,
+  Webhook,
   PanelLeftClose,
   PanelLeftOpen,
   LogOut,
+  Coins,
+  Activity,
 } from "lucide-react";
 
 const TABS = [
@@ -19,6 +22,9 @@ const TABS = [
   { id: "memory", label: "Memória", icon: Brain },
   { id: "config", label: "Configurações", icon: Settings },
   { id: "harness", label: "Personalidade", icon: FileCode },
+  { id: "webhooks", label: "Webhooks", icon: Webhook },
+  { id: "tokens", label: "Tokens", icon: Coins },
+  { id: "activity", label: "Atividade", icon: Activity },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -29,6 +35,9 @@ interface DashboardShellProps {
   memoryTab: ReactNode;
   configTab: ReactNode;
   harnessTab: ReactNode;
+  webhooksTab: ReactNode;
+  tokensTab: ReactNode;
+  activityTab: ReactNode;
 }
 
 export function DashboardShell({
@@ -37,6 +46,9 @@ export function DashboardShell({
   memoryTab,
   configTab,
   harnessTab,
+  webhooksTab,
+  tokensTab,
+  activityTab,
 }: DashboardShellProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>("sessions");
@@ -88,6 +100,9 @@ export function DashboardShell({
     memory: memoryTab,
     config: configTab,
     harness: harnessTab,
+    webhooks: webhooksTab,
+    tokens: tokensTab,
+    activity: activityTab,
   };
 
   return (
