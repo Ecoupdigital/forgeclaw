@@ -164,3 +164,14 @@
 - [ ] MED-M8: Installer checa versão mínima do Bun (>= 1.1.0)
 - [ ] MED-M9: allowedUsers e allowedGroups editáveis no config tab do dashboard
 - [ ] MED-M10: Erros do Claude CLI traduzidos para mensagens amigáveis no Telegram
+
+## Mission Control (MC)
+- [ ] MC-01: Tabela token_usage no SQLite (session_key, topic_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, model, timestamp) com migration idempotente
+- [ ] MC-02: Persistir usage data no banco a cada stream:done event no ws-server e text handler
+- [ ] MC-03: API routes GET /api/tokens (agregado por dia/sessão) e GET /api/tokens/stats (totais, médias, top sessões)
+- [ ] MC-04: Nova aba Tokens no dashboard com chart de uso diário, top sessões por consumo, breakdown cache vs fresh tokens
+- [ ] MC-05: Tabela activities no SQLite (type, entity_type, entity_id, actor, description, metadata JSON, timestamp) com migration idempotente
+- [ ] MC-06: Emitir activities nos pontos-chave do sistema (session, cron, message, memory) via EventBus → activity recorder
+- [ ] MC-07: Componente ActivityFeed no dashboard com timeline cronológica, filtros por tipo, atualização em tempo real via WebSocket
+- [ ] MC-08: Tabela webhooks (url, events JSON, secret, enabled, created_at) e webhook_delivery_logs (webhook_id, event_type, payload, status_code, response_body, attempt, created_at) com CRUD via API
+- [ ] MC-09: Webhook dispatcher com HMAC-SHA256 signature, retry com backoff exponencial (3 tentativas), circuit breaker básico

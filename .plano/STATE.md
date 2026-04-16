@@ -33,6 +33,7 @@
 - [2026-04-11][08-06] CronCard origin badge: `db` violet/violeta forte, `file` cinza-violeta neutro. Edit/Delete disabled em file-origin com tooltip "Edit in HEARTBEAT.md" + defesa em profundidade no backend (PUT/DELETE retornam 403).
 - [2026-04-11][08-06] Sub-recorte DASH-04 fechado — 08-01..08-06 todos com SUMMARY. Fase 08 pronta para verificacao manual fim-a-fim no browser.
 - [Phase 13]: global fetch interceptor for 401 redirect (vs per-hook handling)
+- [2026-04-16][21-02] Token recorder escuta stream:done, persiste input/output/cache tokens. Activity recorder escuta session/message/cron events e emite activity:created. Ambos inicializados no boot antes do webhook dispatcher.
 
 ### Bloqueios
 Nenhum
@@ -41,5 +42,5 @@ Nenhum
 - `packages/dashboard/src/components/sessions-tab.tsx:185` — TopicInfo.createdAt missing (pre-existente, registrado em .plano/fases/08-dashboard-web/deferred-items.md)
 
 ## Continuidade de Sessao
-Ultima parada: Completado 21-03-PLAN.md (Webhook Dispatcher) — Modulo webhook-dispatcher.ts com HMAC-SHA256, retry exponencial (1s/4s/16s), circuit breaker (5 falhas). Exportado via core index, inicializado no bot startup.
+Ultima parada: Completado 21-02-PLAN.md (Token Recorder & Activity Recorder) — token-recorder.ts escuta stream:done e persiste token_usage. activity-recorder.ts escuta session/message/cron e grava activities + emite activity:created. Ambos inicializados no bot startup antes do webhook dispatcher. 21-01, 21-02 e 21-03 completos.
 Proximas acoes: Executar 21-04-PLAN.md.
