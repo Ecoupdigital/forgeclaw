@@ -7,9 +7,9 @@
 
 ## Posicao Atual
 **Fase:** 21-mission-control
-**Plano Atual:** 21-01 de 06 — completo
+**Plano Atual:** 21-03 de 06 — completo
 **Status:** Executing
-**Progresso:** [█░░░░░░░░░] 17%
+**Progresso:** [█████░░░░░] 50%
 
 ## Contexto Acumulado
 
@@ -41,5 +41,5 @@ Nenhum
 - `packages/dashboard/src/components/sessions-tab.tsx:185` — TopicInfo.createdAt missing (pre-existente, registrado em .plano/fases/08-dashboard-web/deferred-items.md)
 
 ## Continuidade de Sessao
-Ultima parada: Completado 21-01-PLAN.md (Schema, Types & EventBus Extension) — Tabelas token_usage, activities, webhooks, webhook_delivery_logs criadas com migrations idempotentes. Tipos TypeScript em core e dashboard. EventBus com activity:created. CRUD completo no StateStore e dashboard/core.ts.
-Proximas acoes: Executar 21-02-PLAN.md.
+Ultima parada: Completado 21-03-PLAN.md (Webhook Dispatcher) — Modulo webhook-dispatcher.ts com HMAC-SHA256, retry exponencial (1s/4s/16s), circuit breaker (5 falhas). Exportado via core index, inicializado no bot startup.
+Proximas acoes: Executar 21-04-PLAN.md.
