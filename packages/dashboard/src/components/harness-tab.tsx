@@ -62,23 +62,23 @@ export function HarnessTab() {
         <div className="mb-2 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-text-primary">
-              Harness Files
+              Arquivos de personalidade
             </h2>
             <p className="mt-1 text-sm text-text-secondary">
-              System prompt files that define ForgeClaw personality and context.
-              Changes are applied immediately.
+              Arquivos de system prompt que definem a personalidade e contexto do ForgeClaw.
+              Alterações são aplicadas imediatamente.
             </p>
           </div>
           {source === "mock" && (
             <span className="rounded bg-amber-500/20 px-2 py-1 text-[10px] text-amber-400">
-              Mock data — core unavailable
+              Dados mock — core indisponível
             </span>
           )}
         </div>
 
         {loading && (
           <div className="py-16 text-center">
-            <p className="text-sm text-text-secondary">Loading harness files...</p>
+            <p className="text-sm text-text-secondary">Carregando arquivos de personalidade...</p>
           </div>
         )}
 
@@ -91,10 +91,10 @@ export function HarnessTab() {
         {!loading && !loadError && files.length === 0 && (
           <div className="py-16 text-center">
             <p className="text-sm text-text-secondary">
-              No harness files found
+              Nenhum arquivo de personalidade encontrado
             </p>
             <p className="mt-1 text-xs text-text-secondary/60">
-              Create files in ~/.forgeclaw/harness/
+              Crie arquivos em ~/.forgeclaw/harness/
             </p>
           </div>
         )}
