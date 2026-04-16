@@ -17,3 +17,5 @@ export * from './voice-handler';
 export * from './ws-server';
 export * from './harness-compiler';
 export * from './webhook-dispatcher';
+export * from './token-recorder';
+export * from './activity-recorder';
