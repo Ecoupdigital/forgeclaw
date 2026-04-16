@@ -16,3 +16,4 @@ export * from './file-handler';
 export * from './voice-handler';
 export * from './ws-server';
 export * from './harness-compiler';
+export * from './webhook-dispatcher';
