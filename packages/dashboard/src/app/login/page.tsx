@@ -90,14 +90,11 @@ export default function LoginPage() {
 
         {/* Help text */}
         <p className="text-center text-xs text-text-secondary">
-          Your token was shown during{" "}
+          Esqueceu o token? Rode{" "}
           <code className="rounded bg-night-panel px-1 py-0.5 font-mono text-xs">
-            forgeclaw install
+            forgeclaw token
           </code>
-          . Check your config at{" "}
-          <code className="rounded bg-night-panel px-1 py-0.5 font-mono text-xs">
-            ~/.forgeclaw/forgeclaw.config.json
-          </code>
+          {" "}no terminal.
         </p>
       </div>
     </div>

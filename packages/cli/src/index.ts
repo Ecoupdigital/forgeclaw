@@ -5,6 +5,7 @@ import { uninstall } from './commands/uninstall'
 import { status } from './commands/status'
 import { logs } from './commands/logs'
 import { exportData } from './commands/export'
+import { token } from './commands/token'
 
 const command = process.argv[2]
 
@@ -20,6 +21,7 @@ function showHelp(): void {
     update      Re-run installer preserving existing config
     uninstall   Remove ForgeClaw service and optionally data
     status      Show service and configuration status
+    token       Show your dashboard login token
     export      Create backup of all ForgeClaw data (.tar.gz)
     logs        Tail bot logs in real-time
 
@@ -42,6 +44,9 @@ switch (command) {
     break
   case 'status':
     await status()
+    break
+  case 'token':
+    await token()
     break
   case 'export':
     await exportData()
