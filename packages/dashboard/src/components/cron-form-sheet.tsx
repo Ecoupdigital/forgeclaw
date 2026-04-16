@@ -59,7 +59,7 @@ function validateSchedule(expr: string, displayTz: string): SchedulePreview {
     return {
       humanReadable: null,
       nextRuns: [],
-      error: "Schedule is required",
+      error: "Agendamento é obrigatório",
     };
   }
   try {
@@ -83,7 +83,7 @@ function validateSchedule(expr: string, displayTz: string): SchedulePreview {
     return {
       humanReadable: null,
       nextRuns: [],
-      error: err instanceof Error ? err.message : "Invalid cron expression",
+      error: err instanceof Error ? err.message : "Expressão cron inválida",
     };
   }
 }
@@ -271,12 +271,12 @@ export function CronFormSheet({
       >
         <SheetHeader>
           <SheetTitle className="text-text-primary">
-            {isEdit ? "Edit cron" : "New cron"}
+            {isEdit ? "Editar automação" : "Nova automação"}
           </SheetTitle>
           <SheetDescription className="text-text-secondary">
             {isEdit
-              ? "Update this cron job."
-              : "Schedule a prompt to run on a cron expression."}
+              ? "Atualize esta automação."
+              : "Agende um prompt para rodar em uma expressão cron."}
           </SheetDescription>
         </SheetHeader>
 
@@ -289,13 +289,13 @@ export function CronFormSheet({
               htmlFor="cron-name"
               className="text-xs font-medium text-text-secondary"
             >
-              Name
+              Nome
             </label>
             <Input
               id="cron-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Morning summary"
+              placeholder="ex: Resumo da manhã"
               className="border-violet-dim bg-night-panel text-text-body"
             />
           </div>
@@ -306,7 +306,7 @@ export function CronFormSheet({
               htmlFor="cron-schedule-preset"
               className="text-xs font-medium text-text-secondary"
             >
-              Schedule
+              Agendamento
             </label>
             <select
               id="cron-schedule-preset"
@@ -319,7 +319,7 @@ export function CronFormSheet({
                   {p.label} ({p.value})
                 </option>
               ))}
-              <option value={CRON_CUSTOM_SENTINEL}>Custom...</option>
+              <option value={CRON_CUSTOM_SENTINEL}>Personalizado...</option>
             </select>
             {preset === CRON_CUSTOM_SENTINEL && (
               <Input
@@ -330,7 +330,7 @@ export function CronFormSheet({
               />
             )}
             <p className="text-xs text-text-secondary">
-              Runs on server ({SERVER_TZ}), displayed in {displayTz}
+              Roda no servidor ({SERVER_TZ}), exibido em {displayTz}
               {typeof Intl !== "undefined" && Intl.DateTimeFormat().resolvedOptions().timeZone !== displayTz && (
                 <span className="ml-1 text-[10px]">
                   (browser: {Intl.DateTimeFormat().resolvedOptions().timeZone})
@@ -345,7 +345,7 @@ export function CronFormSheet({
             )}
             {!preview.error && preview.nextRuns.length > 0 && (
               <div className="text-[11px] text-text-secondary">
-                <span className="text-text-secondary/80">Next runs:</span>
+                <span className="text-text-secondary/80">Próximas execuções:</span>
                 <ul className="ml-1 list-disc pl-3">
                   {preview.nextRuns.map((r, i) => (
                     <li key={i}>{r}</li>
@@ -395,7 +395,7 @@ export function CronFormSheet({
                   <div className="flex flex-col gap-2">
                     {skills.length === 0 && (
                       <p className="text-xs text-text-secondary">
-                        No skills found in ~/.claude/skills/
+                        Nenhuma skill encontrada em ~/.claude/skills/
                       </p>
                     )}
                     {skills.map((s) => (
@@ -433,7 +433,7 @@ export function CronFormSheet({
               htmlFor="cron-target-topic"
               className="text-xs font-medium text-text-secondary"
             >
-              Target topic
+              Tópico destino
             </label>
             <select
               id="cron-target-topic"
@@ -445,7 +445,7 @@ export function CronFormSheet({
               }
               className="rounded-md border border-violet-dim bg-night-panel px-3 py-2 text-sm text-text-body focus:outline-none focus:ring-2 focus:ring-violet"
             >
-              <option value="">Default (use harness default)</option>
+              <option value="">Padrão (usar padrão do harness)</option>
               {topics.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name} (chat {t.chatId})
@@ -470,7 +470,7 @@ export function CronFormSheet({
               }
               className="rounded-md border border-violet-dim bg-night-panel px-3 py-2 text-sm text-text-body focus:outline-none focus:ring-2 focus:ring-violet"
             >
-              <option value="default">Default (config global)</option>
+              <option value="default">Padrão (config global)</option>
               <option value="claude-code">Claude Code</option>
               <option value="codex">Codex</option>
             </select>
@@ -490,7 +490,7 @@ export function CronFormSheet({
               onChange={(e) => setModel(e.target.value)}
               className="rounded-md border border-white/[0.06] bg-night-panel px-3 py-2 text-sm text-text-body focus:outline-none focus:ring-2 focus:ring-violet"
             >
-              <option value="">default (usa config global)</option>
+              <option value="">padrão (usa config global)</option>
               {models.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.label} — {m.id}
@@ -510,7 +510,7 @@ export function CronFormSheet({
               htmlFor="cron-enabled"
               className="cursor-pointer text-xs text-text-secondary"
             >
-              Enabled
+              Ativa
             </label>
           </div>
 
@@ -529,14 +529,14 @@ export function CronFormSheet({
               disabled={saving}
               className="flex-1 border-violet-dim text-text-secondary"
             >
-              Cancel
+              Cancelar
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={!canSave}
               className="flex-1 bg-violet text-white hover:bg-violet/90 disabled:opacity-50"
             >
-              {saving ? "Saving..." : isEdit ? "Save changes" : "Create cron"}
+              {saving ? "Salvando..." : isEdit ? "Salvar" : "Criar automação"}
             </Button>
           </div>
         </SheetFooter>
