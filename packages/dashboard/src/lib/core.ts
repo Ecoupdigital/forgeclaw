@@ -1123,6 +1123,405 @@ export function searchMessages(
   }
 }
 
+// --- Mission Control: Token Usage ---
+
+interface TokenUsageRow {
+  id: number;
+  session_key: string;
+  topic_id: number | null;
+  input_tokens: number;
+  output_tokens: number;
+  cache_creation_tokens: number;
+  cache_read_tokens: number;
+  model: string | null;
+  source: string;
+  created_at: number;
+}
+
+function mapTokenUsage(row: TokenUsageRow): import("./types").TokenUsage {
+  return {
+    id: row.id,
+    sessionKey: row.session_key,
+    topicId: row.topic_id,
+    inputTokens: row.input_tokens,
+    outputTokens: row.output_tokens,
+    cacheCreationTokens: row.cache_creation_tokens,
+    cacheReadTokens: row.cache_read_tokens,
+    model: row.model,
+    source: row.source as "dashboard" | "telegram" | "cron",
+    createdAt: row.created_at,
+  };
+}
+
+export function getTokenUsageDailySummary(
+  days: number = 30,
+): Array<{
+  date: string;
+  inputTokens: number;
+  outputTokens: number;
+  cacheCreationTokens: number;
+  cacheReadTokens: number;
+  count: number;
+}> | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const since = Date.now() - days * 86_400_000;
+    const rows = d
+      .prepare(
+        `SELECT
+           DATE(created_at / 1000, 'unixepoch') AS date,
+           SUM(input_tokens) AS input_tokens,
+           SUM(output_tokens) AS output_tokens,
+           SUM(cache_creation_tokens) AS cache_creation_tokens,
+           SUM(cache_read_tokens) AS cache_read_tokens,
+           COUNT(*) AS count
+         FROM token_usage
+         WHERE created_at >= ?
+         GROUP BY date
+         ORDER BY date ASC`,
+      )
+      .all(since) as Array<{
+      date: string;
+      input_tokens: number;
+      output_tokens: number;
+      cache_creation_tokens: number;
+      cache_read_tokens: number;
+      count: number;
+    }>;
+    return rows.map((r) => ({
+      date: r.date,
+      inputTokens: r.input_tokens,
+      outputTokens: r.output_tokens,
+      cacheCreationTokens: r.cache_creation_tokens,
+      cacheReadTokens: r.cache_read_tokens,
+      count: r.count,
+    }));
+  } catch {
+    return null;
+  }
+}
+
+export function getTokenUsageTopSessions(
+  limit: number = 10,
+): Array<{
+  sessionKey: string;
+  totalInput: number;
+  totalOutput: number;
+  totalCache: number;
+  count: number;
+}> | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const rows = d
+      .prepare(
+        `SELECT
+           session_key,
+           SUM(input_tokens) AS total_input,
+           SUM(output_tokens) AS total_output,
+           SUM(cache_creation_tokens + cache_read_tokens) AS total_cache,
+           COUNT(*) AS count
+         FROM token_usage
+         GROUP BY session_key
+         ORDER BY (total_input + total_output) DESC
+         LIMIT ?`,
+      )
+      .all(limit) as Array<{
+      session_key: string;
+      total_input: number;
+      total_output: number;
+      total_cache: number;
+      count: number;
+    }>;
+    return rows.map((r) => ({
+      sessionKey: r.session_key,
+      totalInput: r.total_input,
+      totalOutput: r.total_output,
+      totalCache: r.total_cache,
+      count: r.count,
+    }));
+  } catch {
+    return null;
+  }
+}
+
+export function getTokenUsageStats(): {
+  totalInput: number;
+  totalOutput: number;
+  totalCacheCreation: number;
+  totalCacheRead: number;
+  totalRequests: number;
+} | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const row = d
+      .prepare(
+        `SELECT
+           COALESCE(SUM(input_tokens), 0) AS total_input,
+           COALESCE(SUM(output_tokens), 0) AS total_output,
+           COALESCE(SUM(cache_creation_tokens), 0) AS total_cache_creation,
+           COALESCE(SUM(cache_read_tokens), 0) AS total_cache_read,
+           COUNT(*) AS total_requests
+         FROM token_usage`,
+      )
+      .get() as {
+      total_input: number;
+      total_output: number;
+      total_cache_creation: number;
+      total_cache_read: number;
+      total_requests: number;
+    };
+    return {
+      totalInput: row.total_input,
+      totalOutput: row.total_output,
+      totalCacheCreation: row.total_cache_creation,
+      totalCacheRead: row.total_cache_read,
+      totalRequests: row.total_requests,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// --- Mission Control: Activities ---
+
+interface ActivityRow {
+  id: number;
+  type: string;
+  entity_type: string;
+  entity_id: string;
+  actor: string;
+  description: string;
+  metadata: string | null;
+  created_at: number;
+}
+
+function mapActivity(row: ActivityRow): import("./types").Activity {
+  return {
+    id: row.id,
+    type: row.type as import("./types").ActivityType,
+    entityType: row.entity_type as import("./types").ActivityEntityType,
+    entityId: row.entity_id,
+    actor: row.actor,
+    description: row.description,
+    metadata: row.metadata
+      ? (JSON.parse(row.metadata) as Record<string, unknown>)
+      : null,
+    createdAt: row.created_at,
+  };
+}
+
+export function listActivities(
+  opts: {
+    type?: string;
+    entityType?: string;
+    limit?: number;
+    offset?: number;
+    since?: number;
+  } = {},
+): import("./types").Activity[] | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const parts: string[] = [];
+    const values: (string | number)[] = [];
+    if (opts.type) {
+      parts.push("type = ?");
+      values.push(opts.type);
+    }
+    if (opts.entityType) {
+      parts.push("entity_type = ?");
+      values.push(opts.entityType);
+    }
+    if (opts.since) {
+      parts.push("created_at >= ?");
+      values.push(opts.since);
+    }
+    const where = parts.length > 0 ? `WHERE ${parts.join(" AND ")}` : "";
+    const limit = opts.limit ?? 100;
+    const offset = opts.offset ?? 0;
+    values.push(limit, offset);
+    const rows = d
+      .prepare(
+        `SELECT id, type, entity_type, entity_id, actor, description, metadata, created_at
+         FROM activities ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      )
+      .all(...values) as ActivityRow[];
+    return rows.map(mapActivity);
+  } catch {
+    return null;
+  }
+}
+
+// --- Mission Control: Webhooks ---
+
+interface WebhookRow {
+  id: number;
+  url: string;
+  events: string;
+  secret: string;
+  enabled: number;
+  created_at: number;
+}
+
+function mapWebhook(row: WebhookRow): import("./types").Webhook {
+  return {
+    id: row.id,
+    url: row.url,
+    events: JSON.parse(row.events) as string[],
+    secret: row.secret,
+    enabled: row.enabled === 1,
+    createdAt: row.created_at,
+  };
+}
+
+interface WebhookDeliveryLogRow {
+  id: number;
+  webhook_id: number;
+  event_type: string;
+  payload: string;
+  status_code: number | null;
+  response_body: string | null;
+  attempt: number;
+  created_at: number;
+}
+
+function mapWebhookDeliveryLog(
+  row: WebhookDeliveryLogRow,
+): import("./types").WebhookDeliveryLog {
+  return {
+    id: row.id,
+    webhookId: row.webhook_id,
+    eventType: row.event_type,
+    payload: row.payload,
+    statusCode: row.status_code,
+    responseBody: row.response_body,
+    attempt: row.attempt,
+    createdAt: row.created_at,
+  };
+}
+
+export function listWebhooks(): import("./types").Webhook[] | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const rows = d
+      .prepare(
+        "SELECT id, url, events, secret, enabled, created_at FROM webhooks ORDER BY created_at DESC",
+      )
+      .all() as WebhookRow[];
+    return rows.map(mapWebhook);
+  } catch {
+    return null;
+  }
+}
+
+export function getWebhook(id: number): import("./types").Webhook | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const row = d
+      .prepare(
+        "SELECT id, url, events, secret, enabled, created_at FROM webhooks WHERE id = ?",
+      )
+      .get(id) as WebhookRow | undefined;
+    return row ? mapWebhook(row) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function createWebhook(
+  webhook: Omit<import("./types").Webhook, "id">,
+): number | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const result = d
+      .prepare(
+        "INSERT INTO webhooks (url, events, secret, enabled, created_at) VALUES (?, ?, ?, ?, ?)",
+      )
+      .run(
+        webhook.url,
+        JSON.stringify(webhook.events),
+        webhook.secret,
+        webhook.enabled ? 1 : 0,
+        webhook.createdAt,
+      );
+    return Number(result.lastInsertRowid);
+  } catch {
+    return null;
+  }
+}
+
+export function updateWebhook(
+  id: number,
+  updates: Partial<Omit<import("./types").Webhook, "id" | "createdAt">>,
+): boolean {
+  const d = getDb();
+  if (!d) return false;
+  try {
+    const fields: string[] = [];
+    const values: (string | number | null)[] = [];
+    if (updates.url !== undefined) {
+      fields.push("url = ?");
+      values.push(updates.url);
+    }
+    if (updates.events !== undefined) {
+      fields.push("events = ?");
+      values.push(JSON.stringify(updates.events));
+    }
+    if (updates.secret !== undefined) {
+      fields.push("secret = ?");
+      values.push(updates.secret);
+    }
+    if (updates.enabled !== undefined) {
+      fields.push("enabled = ?");
+      values.push(updates.enabled ? 1 : 0);
+    }
+    if (fields.length === 0) return true;
+    values.push(id);
+    d.prepare(`UPDATE webhooks SET ${fields.join(", ")} WHERE id = ?`).run(
+      ...values,
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function deleteWebhook(id: number): boolean {
+  const d = getDb();
+  if (!d) return false;
+  try {
+    d.prepare("DELETE FROM webhooks WHERE id = ?").run(id);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function listWebhookDeliveryLogs(
+  webhookId: number,
+  limit: number = 50,
+): import("./types").WebhookDeliveryLog[] | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const rows = d
+      .prepare(
+        `SELECT id, webhook_id, event_type, payload, status_code, response_body, attempt, created_at
+         FROM webhook_delivery_logs WHERE webhook_id = ? ORDER BY created_at DESC LIMIT ?`,
+      )
+      .all(webhookId, limit) as WebhookDeliveryLogRow[];
+    return rows.map(mapWebhookDeliveryLog);
+  } catch {
+    return null;
+  }
+}
+
 // --- Utility: check if core data is available ---
 
 export function isCoreAvailable(): boolean {
