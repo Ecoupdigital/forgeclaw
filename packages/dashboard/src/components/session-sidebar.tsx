@@ -24,14 +24,14 @@ export function SessionSidebar({
     <div className="flex h-full w-56 shrink-0 flex-col border-r border-white/[0.06] bg-deep-space">
       <div className="flex h-10 items-center px-3">
         <span className="font-mono text-[10px] uppercase tracking-widest text-text-secondary">
-          // topics
+          // tópicos
         </span>
       </div>
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-0.5 p-1.5">
           {topics.length === 0 && (
             <div className="px-3 py-8 text-center text-xs text-text-disabled">
-              no topics yet
+              nenhum tópico ainda
             </div>
           )}
           {topics.map((topic) => {
