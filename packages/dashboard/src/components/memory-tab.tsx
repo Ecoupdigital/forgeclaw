@@ -51,6 +51,13 @@ const KINDS = ["all", "behavior", "user_profile", "fact", "decision", "preferenc
 export function MemoryTab() {
   const { formatTime } = useTimezone();
   const [activeTab, setActiveTab] = useState<Tab>("active");
+  const tabLabels: Record<Tab, string> = {
+    active: "ativas",
+    pending: "pendentes",
+    archived: "arquivadas",
+    retrievals: "buscas",
+    audit: "auditoria",
+  };
   const [kindFilter, setKindFilter] = useState<(typeof KINDS)[number]>("all");
 
   const [entries, setEntries] = useState<MemoryEntry[]>([]);
@@ -341,7 +348,7 @@ export function MemoryTab() {
                   onClick={() => approveEntry(entry.id)}
                   className="bg-emerald-600 text-white hover:bg-emerald-500"
                 >
-                  ✅ approve
+                  ✅ aprovar
                 </Button>
                 <Button
                   size="xs"
@@ -349,7 +356,7 @@ export function MemoryTab() {
                   onClick={() => rejectEntry(entry.id)}
                   className="border-red-500/50 text-red-400 hover:bg-red-500/10"
                 >
-                  ❌ reject
+                  ❌ rejeitar
                 </Button>
               </>
             )}
@@ -361,7 +368,7 @@ export function MemoryTab() {
                   onClick={() => togglePin(entry)}
                   className="border-violet-dim text-text-secondary"
                 >
-                  {entry.pinned ? "unpin" : "pin"}
+                  {entry.pinned ? "desafixar" : "fixar"}
                 </Button>
                 <Button
                   size="xs"
@@ -419,7 +426,7 @@ export function MemoryTab() {
                 onClick={saveEdit}
                 className="bg-violet text-white"
               >
-                save
+                salvar
               </Button>
               <Button
                 size="xs"
@@ -427,7 +434,7 @@ export function MemoryTab() {
                 onClick={cancelEdit}
                 className="border-violet-dim text-text-secondary"
               >
-                cancel
+                cancelar
               </Button>
             </div>
           </div>
@@ -445,7 +452,7 @@ export function MemoryTab() {
       <div className="mx-auto max-w-5xl space-y-4 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-text-primary">memory system</h2>
+            <h2 className="text-lg font-semibold text-text-primary">sistema de memória</h2>
             <p className="mt-1 text-sm text-text-secondary">
               forgeclaw v1.5 — entries, review queue, audit trail, fts5 retrieval
             </p>
@@ -457,7 +464,7 @@ export function MemoryTab() {
             disabled={loading}
             className="border-violet-dim text-violet hover:bg-violet/10"
           >
-            {loading ? "loading..." : "refresh"}
+            {loading ? "carregando..." : "atualizar"}
           </Button>
         </div>
 
@@ -482,7 +489,7 @@ export function MemoryTab() {
                       : "border-violet-dim text-text-secondary"
                   }
                 >
-                  auto-approve tudo
+                  auto-aprovar tudo
                 </Button>
                 <Button
                   size="xs"
@@ -525,7 +532,7 @@ export function MemoryTab() {
                   : "text-text-secondary hover:text-text-body"
               }`}
             >
-              {t}
+              {tabLabels[t]}
               {t === "active" && entries.length > 0 && ` (${entries.length})`}
               {t === "pending" && pendingEntries.length > 0 && (
                 <span className="ml-1 bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-sm text-[10px]">
@@ -573,7 +580,7 @@ export function MemoryTab() {
                 onClick={() => setCreating(!creating)}
                 className="bg-violet text-white"
               >
-                {creating ? "cancel" : "+ new entry"}
+                {creating ? "cancelar" : "+ novo entry"}
               </Button>
             </div>
 
@@ -611,7 +618,7 @@ export function MemoryTab() {
                       onClick={createEntry}
                       className="bg-violet text-white ml-auto"
                     >
-                      create
+                      criar
                     </Button>
                   </div>
                 </CardContent>
@@ -636,7 +643,7 @@ export function MemoryTab() {
                   disabled={loadingMore}
                   className="border-violet-dim text-violet hover:bg-violet/10"
                 >
-                  {loadingMore ? "loading..." : `load more (showing ${entries.length})`}
+                  {loadingMore ? "carregando..." : `carregar mais (exibindo ${entries.length})`}
                 </Button>
               </div>
             )}
@@ -658,7 +665,7 @@ export function MemoryTab() {
                     onClick={approveAllPending}
                     className="bg-emerald-600 text-white hover:bg-emerald-500"
                   >
-                    ✅ approve all
+                    ✅ aprovar todas
                   </Button>
                   <Button
                     size="xs"
@@ -666,7 +673,7 @@ export function MemoryTab() {
                     onClick={rejectAllPending}
                     className="border-red-500/50 text-red-400 hover:bg-red-500/10"
                   >
-                    ❌ reject all
+                    ❌ rejeitar todas
                   </Button>
                 </div>
               )}
