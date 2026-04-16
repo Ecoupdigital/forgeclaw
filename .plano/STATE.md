@@ -7,9 +7,9 @@
 
 ## Posicao Atual
 **Fase:** 21-mission-control
-**Plano Atual:** 21-03 de 06 — completo
+**Plano Atual:** 21-04 de 06 — completo
 **Status:** Executing
-**Progresso:** [█████░░░░░] 50%
+**Progresso:** [██████░░░░] 67%
 
 ## Contexto Acumulado
 
@@ -42,5 +42,5 @@ Nenhum
 - `packages/dashboard/src/components/sessions-tab.tsx:185` — TopicInfo.createdAt missing (pre-existente, registrado em .plano/fases/08-dashboard-web/deferred-items.md)
 
 ## Continuidade de Sessao
-Ultima parada: Completado 21-02-PLAN.md (Token Recorder & Activity Recorder) — token-recorder.ts escuta stream:done e persiste token_usage. activity-recorder.ts escuta session/message/cron e grava activities + emite activity:created. Ambos inicializados no bot startup antes do webhook dispatcher. 21-01, 21-02 e 21-03 completos.
-Proximas acoes: Executar 21-04-PLAN.md.
+Ultima parada: Completado 21-04-PLAN.md (API Routes: Tokens, Activities, Webhooks) -- 6 REST endpoints criados: GET /api/tokens, GET /api/tokens/stats, GET /api/activities, GET/POST /api/webhooks, PUT/DELETE /api/webhooks/:id, GET /api/webhooks/:id/logs. Todos protegidos por requireApiAuth, com fallback gracioso. 21-01 a 21-04 completos.
+Proximas acoes: Executar 21-05-PLAN.md.
