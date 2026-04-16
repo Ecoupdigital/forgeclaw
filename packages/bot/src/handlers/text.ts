@@ -124,7 +124,14 @@ async function processMessage(
     // H6: Immediate memory save — detect "lembra que X" patterns and persist
     // to memory_entries before Claude processes the message. Best-effort:
     // fire-and-forget so it never delays the response.
-    detectAndSaveImmediateMemory(text).catch((err) => {
+    detectAndSaveImmediateMemory(text).then((saved) => {
+      if (saved) {
+        ctx.reply('✓ Anotado na memória.', {
+          reply_parameters: { message_id: ctx.message!.message_id },
+          ...(topicId ? { message_thread_id: topicId } : {}),
+        }).catch(() => {});
+      }
+    }).catch((err) => {
       console.error('[text-handler] immediate memory save failed:', err);
     });
 
