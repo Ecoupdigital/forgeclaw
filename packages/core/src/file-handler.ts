@@ -119,6 +119,32 @@ class FileHandler {
     }
   }
 
+  /**
+   * Opportunistic cleanup: remove files older than maxAgeMs from given directories.
+   * Runs silently — errors are ignored so it never blocks the caller.
+   */
+  async cleanupStaleFiles(dirs: string[], maxAgeMs: number = 60 * 60 * 1000): Promise<void> {
+    const now = Date.now();
+    for (const dir of dirs) {
+      try {
+        const entries = await readdir(dir);
+        for (const entry of entries) {
+          try {
+            const fullPath = join(dir, entry);
+            const s = await stat(fullPath);
+            if (s.isFile() && now - s.mtimeMs > maxAgeMs) {
+              await unlink(fullPath);
+            }
+          } catch {
+            // ignore per-file errors
+          }
+        }
+      } catch {
+        // directory may not exist yet, ignore
+      }
+    }
+  }
+
   private async extractPdf(filePath: string): Promise<{ type: 'text'; content: string }> {
     try {
       const proc = Bun.spawn(['pdftotext', '-layout', filePath, '-'], {

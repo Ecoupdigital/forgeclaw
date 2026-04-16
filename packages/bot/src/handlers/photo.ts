@@ -2,8 +2,9 @@ import type { Context } from 'grammy';
 import { fileHandler, sessionManager } from '@forgeclaw/core';
 import type { ForgeClawConfig } from '@forgeclaw/core';
 import { createTextHandler } from './text';
-import { copyFile, mkdir, unlink } from 'node:fs/promises';
+import { copyFile, mkdir } from 'node:fs/promises';
 import { join, basename } from 'node:path';
+import { tmpdir } from 'node:os';
 
 export function createPhotoHandler(config: ForgeClawConfig) {
   const textHandler = createTextHandler(config);
@@ -21,6 +22,10 @@ export function createPhotoHandler(config: ForgeClawConfig) {
     let localPath: string | null = null;
 
     try {
+      // 0. Opportunistic cleanup: remove stale files (>1h) from previous photo processing
+      const tmpForgeDir = join(tmpdir(), 'forgeclaw');
+      fileHandler.cleanupStaleFiles([tmpForgeDir]).catch(() => {});
+
       // 1. Get highest resolution photo (last in array)
       const bestPhoto = photos[photos.length - 1];
 
@@ -34,6 +39,8 @@ export function createPhotoHandler(config: ForgeClawConfig) {
       // 4. Copy to projectDir/.forgeclaw-uploads/
       const uploadsDir = join(projectDir, '.forgeclaw-uploads');
       await mkdir(uploadsDir, { recursive: true });
+      // Opportunistic cleanup of stale uploads (>1h)
+      fileHandler.cleanupStaleFiles([uploadsDir]).catch(() => {});
       const fileName = basename(tmpPath);
       localPath = join(uploadsDir, fileName);
       await copyFile(tmpPath, localPath);
@@ -53,13 +60,6 @@ export function createPhotoHandler(config: ForgeClawConfig) {
       await ctx.reply(`Erro ao processar foto: ${errorMsg}`, {
         ...(topicId ? { message_thread_id: topicId } : {}),
       });
-    } finally {
-      if (tmpPath) {
-        await fileHandler.cleanup(tmpPath);
-      }
-      if (localPath) {
-        try { await unlink(localPath); } catch { /* ignore */ }
-      }
     }
   };
 }
