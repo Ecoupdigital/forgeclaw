@@ -52,35 +52,35 @@ export function ChatInput({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={disabled ? "WebSocket disconnected..." : "Type a message..."}
+          placeholder={disabled ? "WebSocket desconectado..." : "Digite uma mensagem..."}
           disabled={disabled || loading}
           className="min-h-[40px] max-h-32 resize-none rounded-md border-violet-dim bg-night-panel text-sm text-text-body placeholder:text-text-secondary focus-visible:ring-violet"
           rows={1}
-          aria-label="Message input"
+          aria-label="Campo de mensagem"
         />
         {loading && onAbort ? (
           <Button
             type="button"
             onClick={onAbort}
             className="h-10 shrink-0 bg-red-600 text-white hover:bg-red-700"
-            aria-label="Stop generation"
+            aria-label="Parar geração"
           >
-            Stop
+            Parar
           </Button>
         ) : (
           <Button
             type="submit"
             disabled={!value.trim() || disabled || loading}
             className="h-10 shrink-0 bg-violet text-white hover:bg-violet/90 disabled:opacity-40"
-            aria-label="Send message"
+            aria-label="Enviar mensagem"
           >
             {loading ? (
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                Sending
+                Enviando
               </span>
             ) : (
-              "Send"
+              "Enviar"
             )}
           </Button>
         )}
