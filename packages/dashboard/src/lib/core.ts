@@ -1060,6 +1060,69 @@ export async function writeHeartbeat(content: string): Promise<boolean> {
   }
 }
 
+// --- Public API: Message Search (FTS5) ---
+
+export interface MessageSearchResult {
+  messageId: number;
+  topicId: number;
+  topicName: string | null;
+  role: string;
+  content: string;
+  createdAt: number;
+  rank: number;
+}
+
+/**
+ * FTS5 full-text search across message history.
+ * Mirrors stateStore.searchMessages() but uses better-sqlite3 and
+ * enriches results with topic name.
+ */
+export function searchMessages(
+  query: string,
+  limit: number = 50,
+): MessageSearchResult[] | null {
+  const d = getDb();
+  if (!d) return null;
+
+  const safeQuery = sanitizeFtsQuery(query);
+  if (!safeQuery) return null;
+
+  try {
+    const rows = d
+      .prepare(
+        `SELECT m.id AS message_id, m.topic_id, m.role, m.content, m.created_at,
+                bm25(messages_fts) AS rank,
+                t.name AS topic_name
+         FROM messages_fts
+         JOIN messages m ON m.id = messages_fts.rowid
+         LEFT JOIN topics t ON t.id = m.topic_id
+         WHERE messages_fts MATCH ?
+         ORDER BY rank LIMIT ?`,
+      )
+      .all(safeQuery, limit) as Array<{
+      message_id: number;
+      topic_id: number;
+      role: string;
+      content: string;
+      created_at: number;
+      rank: number;
+      topic_name: string | null;
+    }>;
+    return rows.map((r) => ({
+      messageId: r.message_id,
+      topicId: r.topic_id,
+      topicName: r.topic_name,
+      role: r.role,
+      content: r.content,
+      createdAt: r.created_at,
+      rank: r.rank,
+    }));
+  } catch (err) {
+    console.warn("[core-wrapper] FTS5 message search failed:", err);
+    return null;
+  }
+}
+
 // --- Utility: check if core data is available ---
 
 export function isCoreAvailable(): boolean {
