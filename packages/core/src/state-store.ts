@@ -269,6 +269,72 @@ class StateStore {
     } catch (err) {
       console.warn('[state-store] FTS5 migration failed (memory features may be degraded):', err);
     }
+
+    // Mission Control tables
+    try {
+      // Mission Control: token_usage table
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS token_usage (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          session_key TEXT NOT NULL,
+          topic_id INTEGER,
+          input_tokens INTEGER NOT NULL DEFAULT 0,
+          output_tokens INTEGER NOT NULL DEFAULT 0,
+          cache_creation_tokens INTEGER NOT NULL DEFAULT 0,
+          cache_read_tokens INTEGER NOT NULL DEFAULT 0,
+          model TEXT,
+          source TEXT NOT NULL DEFAULT 'telegram',
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_token_usage_session ON token_usage(session_key);
+        CREATE INDEX IF NOT EXISTS idx_token_usage_date ON token_usage(created_at);
+      `);
+
+      // Mission Control: activities table
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS activities (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          type TEXT NOT NULL,
+          entity_type TEXT NOT NULL,
+          entity_id TEXT NOT NULL,
+          actor TEXT NOT NULL DEFAULT 'system',
+          description TEXT NOT NULL,
+          metadata TEXT,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_activities_type ON activities(type);
+        CREATE INDEX IF NOT EXISTS idx_activities_date ON activities(created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_activities_entity ON activities(entity_type, entity_id);
+      `);
+
+      // Mission Control: webhooks + delivery logs
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS webhooks (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          url TEXT NOT NULL,
+          events TEXT NOT NULL DEFAULT '[]',
+          secret TEXT NOT NULL,
+          enabled INTEGER NOT NULL DEFAULT 1,
+          created_at INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS webhook_delivery_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          webhook_id INTEGER NOT NULL REFERENCES webhooks(id) ON DELETE CASCADE,
+          event_type TEXT NOT NULL,
+          payload TEXT NOT NULL,
+          status_code INTEGER,
+          response_body TEXT,
+          attempt INTEGER NOT NULL DEFAULT 1,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_wdl_webhook ON webhook_delivery_logs(webhook_id, created_at DESC);
+      `);
+
+      console.log('[state-store] Mission Control tables ready');
+    } catch (err) {
+      console.warn('[state-store] Mission Control migration failed:', err);
+    }
   }
 
   // Sessions
@@ -859,6 +925,174 @@ class StateStore {
     }));
   }
 
+  // ---------------- Token Usage (Mission Control) ----------------
+
+  createTokenUsage(entry: Omit<import('./types').TokenUsage, 'id'>): number {
+    const result = this.db.run(
+      `INSERT INTO token_usage (session_key, topic_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, model, source, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [entry.sessionKey, entry.topicId, entry.inputTokens, entry.outputTokens, entry.cacheCreationTokens, entry.cacheReadTokens, entry.model, entry.source, entry.createdAt]
+    );
+    return Number(result.lastInsertRowid);
+  }
+
+  listTokenUsage(opts: { sessionKey?: string; limit?: number; since?: number }): import('./types').TokenUsage[] {
+    const parts: string[] = [];
+    const values: (string | number)[] = [];
+    if (opts.sessionKey) { parts.push('session_key = ?'); values.push(opts.sessionKey); }
+    if (opts.since) { parts.push('created_at >= ?'); values.push(opts.since); }
+    const where = parts.length > 0 ? `WHERE ${parts.join(' AND ')}` : '';
+    const limit = opts.limit ?? 500;
+    values.push(limit);
+    const rows = this.db.query(
+      `SELECT id, session_key, topic_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, model, source, created_at
+       FROM token_usage ${where} ORDER BY created_at DESC LIMIT ?`
+    ).all(...values) as TokenUsageRow[];
+    return rows.map(mapTokenUsageRow);
+  }
+
+  getTokenUsageDailySummary(days: number = 30): Array<{ date: string; inputTokens: number; outputTokens: number; cacheCreationTokens: number; cacheReadTokens: number; count: number }> {
+    const since = Date.now() - days * 86_400_000;
+    const rows = this.db.query(
+      `SELECT
+         DATE(created_at / 1000, 'unixepoch') AS date,
+         SUM(input_tokens) AS input_tokens,
+         SUM(output_tokens) AS output_tokens,
+         SUM(cache_creation_tokens) AS cache_creation_tokens,
+         SUM(cache_read_tokens) AS cache_read_tokens,
+         COUNT(*) AS count
+       FROM token_usage
+       WHERE created_at >= ?
+       GROUP BY date
+       ORDER BY date ASC`
+    ).all(since) as Array<{ date: string; input_tokens: number; output_tokens: number; cache_creation_tokens: number; cache_read_tokens: number; count: number }>;
+    return rows.map(r => ({
+      date: r.date,
+      inputTokens: r.input_tokens,
+      outputTokens: r.output_tokens,
+      cacheCreationTokens: r.cache_creation_tokens,
+      cacheReadTokens: r.cache_read_tokens,
+      count: r.count,
+    }));
+  }
+
+  getTokenUsageTopSessions(limit: number = 10): Array<{ sessionKey: string; totalInput: number; totalOutput: number; totalCache: number; count: number }> {
+    const rows = this.db.query(
+      `SELECT
+         session_key,
+         SUM(input_tokens) AS total_input,
+         SUM(output_tokens) AS total_output,
+         SUM(cache_creation_tokens + cache_read_tokens) AS total_cache,
+         COUNT(*) AS count
+       FROM token_usage
+       GROUP BY session_key
+       ORDER BY (total_input + total_output) DESC
+       LIMIT ?`
+    ).all(limit) as Array<{ session_key: string; total_input: number; total_output: number; total_cache: number; count: number }>;
+    return rows.map(r => ({
+      sessionKey: r.session_key,
+      totalInput: r.total_input,
+      totalOutput: r.total_output,
+      totalCache: r.total_cache,
+      count: r.count,
+    }));
+  }
+
+  // ---------------- Activities (Mission Control) ----------------
+
+  createActivity(entry: Omit<import('./types').Activity, 'id'>): number {
+    const result = this.db.run(
+      `INSERT INTO activities (type, entity_type, entity_id, actor, description, metadata, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [entry.type, entry.entityType, entry.entityId, entry.actor, entry.description, entry.metadata ? JSON.stringify(entry.metadata) : null, entry.createdAt]
+    );
+    return Number(result.lastInsertRowid);
+  }
+
+  listActivities(opts: { type?: string; entityType?: string; limit?: number; since?: number; offset?: number }): import('./types').Activity[] {
+    const parts: string[] = [];
+    const values: (string | number)[] = [];
+    if (opts.type) { parts.push('type = ?'); values.push(opts.type); }
+    if (opts.entityType) { parts.push('entity_type = ?'); values.push(opts.entityType); }
+    if (opts.since) { parts.push('created_at >= ?'); values.push(opts.since); }
+    const where = parts.length > 0 ? `WHERE ${parts.join(' AND ')}` : '';
+    const limit = opts.limit ?? 100;
+    const offset = opts.offset ?? 0;
+    values.push(limit, offset);
+    const rows = this.db.query(
+      `SELECT id, type, entity_type, entity_id, actor, description, metadata, created_at
+       FROM activities ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+    ).all(...values) as ActivityRow[];
+    return rows.map(mapActivityRow);
+  }
+
+  // ---------------- Webhooks (Mission Control) ----------------
+
+  createWebhook(entry: Omit<import('./types').Webhook, 'id'>): number {
+    const result = this.db.run(
+      `INSERT INTO webhooks (url, events, secret, enabled, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
+      [entry.url, JSON.stringify(entry.events), entry.secret, entry.enabled ? 1 : 0, entry.createdAt]
+    );
+    return Number(result.lastInsertRowid);
+  }
+
+  getWebhook(id: number): import('./types').Webhook | null {
+    const row = this.db.query(
+      'SELECT id, url, events, secret, enabled, created_at FROM webhooks WHERE id = ?'
+    ).get(id) as WebhookRow | null;
+    return row ? mapWebhookRow(row) : null;
+  }
+
+  listWebhooks(): import('./types').Webhook[] {
+    const rows = this.db.query(
+      'SELECT id, url, events, secret, enabled, created_at FROM webhooks ORDER BY created_at DESC'
+    ).all() as WebhookRow[];
+    return rows.map(mapWebhookRow);
+  }
+
+  updateWebhook(id: number, updates: Partial<Omit<import('./types').Webhook, 'id' | 'createdAt'>>): void {
+    const fields: string[] = [];
+    const values: (string | number | null)[] = [];
+    if (updates.url !== undefined) { fields.push('url = ?'); values.push(updates.url); }
+    if (updates.events !== undefined) { fields.push('events = ?'); values.push(JSON.stringify(updates.events)); }
+    if (updates.secret !== undefined) { fields.push('secret = ?'); values.push(updates.secret); }
+    if (updates.enabled !== undefined) { fields.push('enabled = ?'); values.push(updates.enabled ? 1 : 0); }
+    if (fields.length === 0) return;
+    values.push(id);
+    this.db.run(`UPDATE webhooks SET ${fields.join(', ')} WHERE id = ?`, values);
+  }
+
+  deleteWebhook(id: number): void {
+    this.db.run('DELETE FROM webhooks WHERE id = ?', [id]);
+  }
+
+  listWebhookDeliveryLogs(webhookId: number, limit: number = 50): import('./types').WebhookDeliveryLog[] {
+    const rows = this.db.query(
+      `SELECT id, webhook_id, event_type, payload, status_code, response_body, attempt, created_at
+       FROM webhook_delivery_logs WHERE webhook_id = ? ORDER BY created_at DESC LIMIT ?`
+    ).all(webhookId, limit) as WebhookDeliveryLogRow[];
+    return rows.map(mapWebhookDeliveryLogRow);
+  }
+
+  createWebhookDeliveryLog(entry: Omit<import('./types').WebhookDeliveryLog, 'id'>): number {
+    const result = this.db.run(
+      `INSERT INTO webhook_delivery_logs (webhook_id, event_type, payload, status_code, response_body, attempt, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [entry.webhookId, entry.eventType, entry.payload, entry.statusCode, entry.responseBody, entry.attempt, entry.createdAt]
+    );
+    return Number(result.lastInsertRowid);
+  }
+
+  getEnabledWebhooksForEvent(eventType: string): import('./types').Webhook[] {
+    // events column is JSON array. Use LIKE for SQLite JSON compatibility.
+    const rows = this.db.query(
+      `SELECT id, url, events, secret, enabled, created_at FROM webhooks
+       WHERE enabled = 1 AND events LIKE ?`
+    ).all(`%"${eventType}"%`) as WebhookRow[];
+    return rows.map(mapWebhookRow);
+  }
+
   // ---------------- FTS5 search ----------------
 
   /**
@@ -1102,6 +1336,102 @@ function mapCronJobRow(row: CronJobRow): CronJob {
     sourceFile: row.source_file,
     runtime: (row.runtime as 'claude-code' | 'codex' | null) ?? null,
     model: row.model,
+  };
+}
+
+interface TokenUsageRow {
+  id: number;
+  session_key: string;
+  topic_id: number | null;
+  input_tokens: number;
+  output_tokens: number;
+  cache_creation_tokens: number;
+  cache_read_tokens: number;
+  model: string | null;
+  source: string;
+  created_at: number;
+}
+
+function mapTokenUsageRow(row: TokenUsageRow): import('./types').TokenUsage {
+  return {
+    id: row.id,
+    sessionKey: row.session_key,
+    topicId: row.topic_id,
+    inputTokens: row.input_tokens,
+    outputTokens: row.output_tokens,
+    cacheCreationTokens: row.cache_creation_tokens,
+    cacheReadTokens: row.cache_read_tokens,
+    model: row.model,
+    source: row.source as 'dashboard' | 'telegram' | 'cron',
+    createdAt: row.created_at,
+  };
+}
+
+interface ActivityRow {
+  id: number;
+  type: string;
+  entity_type: string;
+  entity_id: string;
+  actor: string;
+  description: string;
+  metadata: string | null;
+  created_at: number;
+}
+
+function mapActivityRow(row: ActivityRow): import('./types').Activity {
+  return {
+    id: row.id,
+    type: row.type as import('./types').ActivityType,
+    entityType: row.entity_type as import('./types').ActivityEntityType,
+    entityId: row.entity_id,
+    actor: row.actor,
+    description: row.description,
+    metadata: row.metadata ? JSON.parse(row.metadata) as Record<string, unknown> : null,
+    createdAt: row.created_at,
+  };
+}
+
+interface WebhookRow {
+  id: number;
+  url: string;
+  events: string;
+  secret: string;
+  enabled: number;
+  created_at: number;
+}
+
+function mapWebhookRow(row: WebhookRow): import('./types').Webhook {
+  return {
+    id: row.id,
+    url: row.url,
+    events: JSON.parse(row.events) as string[],
+    secret: row.secret,
+    enabled: row.enabled === 1,
+    createdAt: row.created_at,
+  };
+}
+
+interface WebhookDeliveryLogRow {
+  id: number;
+  webhook_id: number;
+  event_type: string;
+  payload: string;
+  status_code: number | null;
+  response_body: string | null;
+  attempt: number;
+  created_at: number;
+}
+
+function mapWebhookDeliveryLogRow(row: WebhookDeliveryLogRow): import('./types').WebhookDeliveryLog {
+  return {
+    id: row.id,
+    webhookId: row.webhook_id,
+    eventType: row.event_type,
+    payload: row.payload,
+    statusCode: row.status_code,
+    responseBody: row.response_body,
+    attempt: row.attempt,
+    createdAt: row.created_at,
   };
 }
 
