@@ -1,8 +1,34 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { homedir } from "node:os";
 
 /** Cookie name must match lib/auth.ts AUTH_COOKIE_NAME */
 const AUTH_COOKIE = "fc-token";
+
+/**
+ * Check if dashboard auth is configured by reading the config file synchronously.
+ * Cached after first read to avoid filesystem access on every request.
+ * Returns true if a dashboardToken is set, false otherwise (auth disabled).
+ */
+let authConfigured: boolean | null = null;
+function isAuthConfigured(): boolean {
+  if (authConfigured !== null) return authConfigured;
+  try {
+    const configPath = join(homedir(), ".forgeclaw", "forgeclaw.config.json");
+    if (!existsSync(configPath)) {
+      authConfigured = false;
+      return false;
+    }
+    const raw = JSON.parse(readFileSync(configPath, "utf-8"));
+    authConfigured = typeof raw.dashboardToken === "string" && raw.dashboardToken.length > 0;
+    return authConfigured;
+  } catch {
+    authConfigured = false;
+    return false;
+  }
+}
 
 /**
  * Next.js 16 Proxy (replaces middleware.ts).
@@ -22,6 +48,11 @@ export function proxy(request: NextRequest) {
 
   // Allow all API routes (they validate auth themselves via requireApiAuth)
   if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
+  // If no dashboardToken is configured, auth is disabled -- allow all
+  if (!isAuthConfigured()) {
     return NextResponse.next();
   }
 
