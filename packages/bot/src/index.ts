@@ -14,6 +14,7 @@ import {
   memoryManager,
   memoryManagerV2,
   runnerRegistry,
+  startWebhookDispatcher,
 } from '@forgeclaw/core';
 import { createAuthMiddleware } from './middleware/auth';
 import { getSessionKey } from './middleware/sequentialize';
@@ -223,6 +224,11 @@ async function main(): Promise<void> {
   // Start cron engine (HEARTBEAT.md scheduler)
   console.log('[forgeclaw] Starting cron engine...');
   await cronEngine.start();
+
+  // Start webhook dispatcher — reacts to 'activity:created' events emitted by
+  // the activity recorder (21-02). Must start AFTER token/activity recorders
+  // so the EventBus pipeline flows in the right order.
+  startWebhookDispatcher();
 
   // v1 MemoryManager compile cron DEPRECATED (M2): the v2 memory system
   // (writer + janitor crons in memoryManagerV2.startCrons()) handles daily
