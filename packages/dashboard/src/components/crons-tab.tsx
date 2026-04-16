@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
@@ -25,6 +25,16 @@ interface ToastState {
   kind: ToastKind;
 }
 
+/** Result from a "Run Now" execution, shown inline on the card. */
+export interface RunResult {
+  status: string;
+  output: string | null;
+  finishedAt: number;
+}
+
+const POLL_INTERVAL_MS = 3_000;
+const POLL_TIMEOUT_MS = 120_000;
+
 export function CronsTab() {
   const [jobs, setJobs] = useState<CronJob[]>([]);
   const [logs, setLogs] = useState<Record<number, CronLog[]>>({});
@@ -46,6 +56,19 @@ export function CronsTab() {
 
   // Highlight (pulse) for recently saved card
   const [highlightedId, setHighlightedId] = useState<number | null>(null);
+
+  // Inline run results from "Run Now" polling
+  const [runResults, setRunResults] = useState<Record<number, RunResult>>({});
+  const pollTimers = useRef<Map<number, ReturnType<typeof setInterval>>>(new Map());
+
+  // Cleanup poll timers on unmount
+  useEffect(() => {
+    return () => {
+      for (const timer of pollTimers.current.values()) {
+        clearInterval(timer);
+      }
+    };
+  }, []);
 
   // Toast
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -100,11 +123,34 @@ export function CronsTab() {
     })();
   }, [fetchJobs, fetchHeartbeat]);
 
+  const clearPoll = useCallback((id: number) => {
+    const timer = pollTimers.current.get(id);
+    if (timer) {
+      clearInterval(timer);
+      pollTimers.current.delete(id);
+    }
+  }, []);
+
+  const handleDismissResult = useCallback((id: number) => {
+    setRunResults((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }, []);
+
   const handleRunNow = useCallback(
     async (id: number) => {
+      // Clear any previous result for this job
+      handleDismissResult(id);
       setRunningId(id);
       const job = jobs.find((j) => j.id === id);
-      showToast(`Triggering cron "${job?.name ?? `#${id}`}"...`);
+      showToast(`Executing "${job?.name ?? `#${id}`}"...`);
+
+      // Snapshot the current latest log id so we can detect a NEW log
+      const currentLogs = logs[id] ?? [];
+      const latestLogId = currentLogs.length > 0 ? currentLogs[0].id : 0;
+
       try {
         const res = await fetch("/api/crons", {
           method: "PUT",
@@ -114,15 +160,68 @@ export function CronsTab() {
         const data = (await res.json()) as { success?: boolean; error?: string };
         if (!data.success) {
           showToast(data.error || "Run now failed", "error");
+          setRunningId(null);
+          return;
         }
       } catch (err) {
         console.error("Run now failed:", err);
         showToast("Run now failed", "error");
-      } finally {
-        setTimeout(() => setRunningId(null), 3000);
+        setRunningId(null);
+        return;
       }
+
+      // Start polling for the result
+      const startedAt = Date.now();
+      const poll = async () => {
+        // Timeout check
+        if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
+          clearPoll(id);
+          setRunningId((prev) => (prev === id ? null : prev));
+          showToast("Execution timed out -- check Telegram for results", "error");
+          return;
+        }
+
+        try {
+          const lr = await fetch(`/api/crons/${id}/logs`);
+          const ld = (await lr.json()) as { logs?: CronLog[] };
+          const allLogs = ld.logs ?? [];
+          // Find a completed log newer than the one we had before triggering
+          const newLog = allLogs.find(
+            (l) => l.id > latestLogId && l.finishedAt
+          );
+          if (newLog) {
+            clearPoll(id);
+            setRunningId((prev) => (prev === id ? null : prev));
+            setRunResults((prev) => ({
+              ...prev,
+              [id]: {
+                status: newLog.status,
+                output: newLog.output,
+                finishedAt: newLog.finishedAt!,
+              },
+            }));
+            // Also refresh the full logs list so the card's log history is current
+            setLogs((prev) => ({
+              ...prev,
+              [id]: allLogs.filter((l) => l.finishedAt).slice(0, 10),
+            }));
+            const statusLabel = newLog.status === "success" ? "completed" : "failed";
+            showToast(
+              `"${job?.name ?? `#${id}`}" ${statusLabel}`,
+              newLog.status === "success" ? "success" : "error"
+            );
+          }
+        } catch {
+          // Ignore transient fetch errors, keep polling
+        }
+      };
+
+      // Poll immediately once, then every POLL_INTERVAL_MS
+      poll();
+      const timer = setInterval(poll, POLL_INTERVAL_MS);
+      pollTimers.current.set(id, timer);
     },
-    [jobs, showToast]
+    [jobs, logs, showToast, clearPoll, handleDismissResult]
   );
 
   const handleToggle = useCallback(
@@ -333,6 +432,8 @@ export function CronsTab() {
               onDuplicate={handleDuplicate}
               runningId={runningId}
               highlighted={highlightedId === job.id}
+              runResult={runResults[job.id] ?? null}
+              onDismissResult={handleDismissResult}
             />
           ))}
         </div>

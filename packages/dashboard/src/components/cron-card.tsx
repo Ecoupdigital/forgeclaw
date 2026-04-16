@@ -12,6 +12,9 @@ import {
   Pencil,
   Copy,
   Trash2,
+  X,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +27,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import type { CronJob, CronLog } from "@/lib/types";
+import type { RunResult } from "./crons-tab";
 import { useTimezone } from "@/hooks/use-timezone";
 
 interface CronCardProps {
@@ -36,6 +40,8 @@ interface CronCardProps {
   onDuplicate: (job: CronJob) => void;
   runningId: number | null;
   highlighted?: boolean;
+  runResult: RunResult | null;
+  onDismissResult: (id: number) => void;
 }
 
 export function CronCard({
@@ -48,6 +54,8 @@ export function CronCard({
   onDuplicate,
   runningId,
   highlighted = false,
+  runResult,
+  onDismissResult,
 }: CronCardProps) {
   const { formatTime } = useTimezone();
   const [showLogs, setShowLogs] = useState(false);
@@ -252,6 +260,64 @@ export function CronCard({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        {/* Inline run result (appears after Run Now completes) */}
+        {runResult && (
+          <div
+            className={`mt-3 rounded-md border p-3 ${
+              runResult.status === "success"
+                ? "border-emerald-500/30 bg-emerald-500/5"
+                : "border-red-500/30 bg-red-500/5"
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                {runResult.status === "success" ? (
+                  <CheckCircle2
+                    className="h-3.5 w-3.5 text-emerald-400"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <XCircle
+                    className="h-3.5 w-3.5 text-red-400"
+                    aria-hidden="true"
+                  />
+                )}
+                <span
+                  className={`text-xs font-medium ${
+                    runResult.status === "success"
+                      ? "text-emerald-400"
+                      : "text-red-400"
+                  }`}
+                >
+                  Run {runResult.status}
+                </span>
+                <span className="text-[10px] text-text-secondary">
+                  {formatTime(runResult.finishedAt)}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => onDismissResult(job.id)}
+                className="rounded p-0.5 text-text-secondary hover:bg-white/[0.06] hover:text-text-body transition-colors"
+                aria-label="Dismiss run result"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            {runResult.output ? (
+              <pre className="max-h-64 overflow-auto rounded bg-black/30 p-2 text-text-body whitespace-pre-wrap font-mono text-[11px] leading-relaxed">
+                {runResult.output}
+              </pre>
+            ) : (
+              <p className="text-xs text-text-secondary">
+                No output produced.
+              </p>
+            )}
+          </div>
+        )}
 
         {showLogs && (
           <div className="mt-3 space-y-2 border-t border-violet-dim pt-3">
