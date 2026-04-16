@@ -126,15 +126,15 @@ function EditableIdList({ label, ids, onChange, minItems }: EditableIdListProps)
                   ? 'text-text-secondary/30 cursor-not-allowed'
                   : 'text-red-400 hover:text-red-300'
               }`}
-              aria-label={`Remove ${id}`}
+              aria-label={`Remover ${id}`}
             >
-              Remove
+              Remover
             </button>
           </div>
         ))}
         {ids.length === 0 && (
           <span className="text-xs text-text-secondary/60 italic">
-            No IDs configured
+            Nenhum ID configurado
           </span>
         )}
         <div className="flex gap-2 pt-1">
@@ -154,7 +154,7 @@ function EditableIdList({ label, ids, onChange, minItems }: EditableIdListProps)
             size="sm"
             className="border-violet-dim text-text-secondary hover:bg-violet/10 hover:text-text-body"
           >
-            Add
+            Adicionar
           </Button>
         </div>
       </div>
@@ -217,7 +217,7 @@ export function ConfigTab() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center text-text-secondary">
-        Loading config...
+        Carregando configurações...
       </div>
     );
   }
@@ -225,7 +225,7 @@ export function ConfigTab() {
   if (!config) {
     return (
       <div className="flex h-full items-center justify-center text-text-secondary">
-        Could not load configuration.
+        Não foi possível carregar as configurações.
       </div>
     );
   }
@@ -237,7 +237,7 @@ export function ConfigTab() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold text-text-primary">
-              Configuration
+              Configurações
             </h2>
             <Badge
               className={
@@ -252,11 +252,11 @@ export function ConfigTab() {
           <div className="flex items-center gap-2">
             {status === "saved" && (
               <Badge className="bg-emerald-500/20 text-emerald-400">
-                Saved
+                Salvo
               </Badge>
             )}
             {status === "error" && (
-              <Badge className="bg-red-500/20 text-red-400">Error</Badge>
+              <Badge className="bg-red-500/20 text-red-400">Erro</Badge>
             )}
             <Button
               onClick={handleSave}
@@ -266,10 +266,10 @@ export function ConfigTab() {
               {saving ? (
                 <span className="flex items-center gap-1.5">
                   <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  Saving
+                  Salvando
                 </span>
               ) : (
-                "Save Changes"
+                "Salvar"
               )}
             </Button>
           </div>
@@ -300,7 +300,7 @@ export function ConfigTab() {
             <Separator className="bg-white/[0.06]" />
             <ConfigField
               id="maxSessions"
-              label="Max Concurrent Sessions"
+              label="Máx. sessões simultâneas"
               value={String(config.maxConcurrentSessions ?? 3)}
               onChange={(v) =>
                 updateField("maxConcurrentSessions", parseInt(v) || 3)
@@ -326,7 +326,7 @@ export function ConfigTab() {
             <Separator className="bg-white/[0.06]" />
             <div className="flex items-center justify-between py-2">
               <span className="text-sm text-text-secondary">
-                Show Runtime Badge
+                Exibir badge de runtime
               </span>
               <button
                 type="button"
@@ -367,7 +367,7 @@ export function ConfigTab() {
             />
             <Separator className="bg-white/[0.06]" />
             <EditableIdList
-              label="Allowed Users"
+              label="Usuários permitidos"
               ids={config.allowedUsers}
               onChange={(ids) => {
                 if (ids.length === 0) return; // prevent lockout — at least 1 user required
@@ -377,7 +377,7 @@ export function ConfigTab() {
             />
             <Separator className="bg-white/[0.06]" />
             <EditableIdList
-              label="Allowed Groups"
+              label="Grupos permitidos"
               ids={config.allowedGroups ?? []}
               onChange={(ids) => updateField('allowedGroups', ids)}
             />
@@ -414,7 +414,7 @@ export function ConfigTab() {
               options={[
                 { value: "groq", label: "Groq (Whisper Large v3)" },
                 { value: "openai", label: "OpenAI Whisper" },
-                { value: "none", label: "Disabled" },
+                { value: "none", label: "Desativado" },
               ]}
             />
           </CardContent>
@@ -424,13 +424,13 @@ export function ConfigTab() {
         <Card className="">
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm text-text-primary">
-              Memory
+              Memória
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <SelectField
               id="memoryReviewMode"
-              label="Review Mode"
+              label="Modo de revisão"
               value={config.memoryReviewMode ?? "hybrid"}
               onChange={(v) =>
                 updateField(
@@ -439,15 +439,15 @@ export function ConfigTab() {
                 )
               }
               options={[
-                { value: "auto", label: "Auto (trust janitor)" },
-                { value: "hybrid", label: "Hybrid (auto + review queue)" },
-                { value: "review", label: "Manual (all to review)" },
+                { value: "auto", label: "Auto (confiar no janitor)" },
+                { value: "hybrid", label: "Híbrido (auto + fila de revisão)" },
+                { value: "review", label: "Manual (tudo para revisão)" },
               ]}
             />
             <Separator className="bg-white/[0.06]" />
             <ConfigField
               id="memoryThreshold"
-              label="Auto-approve Threshold"
+              label="Limite de auto-aprovação"
               value={String(config.memoryAutoApproveThreshold ?? 85)}
               onChange={(v) =>
                 updateField(
@@ -472,13 +472,13 @@ export function ConfigTab() {
         <Card className="">
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm text-text-primary">
-              Paths
+              Caminhos
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <ConfigField
               id="workingDir"
-              label="Working Directory"
+              label="Diretório de trabalho"
               value={config.workingDir}
               onChange={(v) => updateField("workingDir", v)}
               mono
@@ -489,12 +489,12 @@ export function ConfigTab() {
         {/* System Info */}
         <Card className="">
           <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm text-text-primary">System</CardTitle>
+            <CardTitle className="text-sm text-text-primary">Sistema</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-text-secondary">Version</span>
+                <span className="text-text-secondary">Versão</span>
                 <span className="font-mono text-text-body">0.1.0</span>
               </div>
               <Separator className="bg-white/[0.06]" />
