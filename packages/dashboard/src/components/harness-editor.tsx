@@ -53,11 +53,11 @@ export function HarnessEditor({ file, onSave }: HarnessEditorProps) {
               variant="outline"
               className="h-4 border-violet-dim bg-violet/10 px-1.5 text-[10px] text-text-secondary"
             >
-              {lineCount} lines
+              {lineCount} linhas
             </Badge>
             {saved && (
               <Badge className="h-4 bg-emerald-500/20 px-1.5 text-[10px] text-emerald-400">
-                Saved
+                Salvo
               </Badge>
             )}
           </div>
@@ -71,7 +71,7 @@ export function HarnessEditor({ file, onSave }: HarnessEditorProps) {
                   disabled={isSaving}
                   className="border-violet-dim text-text-secondary hover:text-text-body hover:bg-night-panel"
                 >
-                  Cancel
+                  Cancelar
                 </Button>
                 <Button
                   size="xs"
@@ -82,10 +82,10 @@ export function HarnessEditor({ file, onSave }: HarnessEditorProps) {
                   {isSaving ? (
                     <span className="flex items-center gap-1">
                       <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      Saving
+                      Salvando
                     </span>
                   ) : (
-                    "Save"
+                    "Salvar"
                   )}
                 </Button>
               </>
@@ -96,7 +96,7 @@ export function HarnessEditor({ file, onSave }: HarnessEditorProps) {
                 onClick={() => setIsEditing(true)}
                 className="border-violet-dim text-violet hover:bg-violet/10"
               >
-                Edit
+                Editar
               </Button>
             )}
           </div>
