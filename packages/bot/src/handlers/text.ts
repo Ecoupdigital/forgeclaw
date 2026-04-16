@@ -224,13 +224,27 @@ async function processMessage(
             }
 
             // Calculate context usage
-            const usage = event.data.usage as { input_tokens: number; output_tokens: number } | undefined;
+            const usage = event.data.usage as {
+              input_tokens: number;
+              output_tokens: number;
+              cache_creation_input_tokens?: number;
+              cache_read_input_tokens?: number;
+            } | undefined;
             const contextLimit = event.data.contextLimit as number | undefined;
             let contextPercent = 0;
             if (usage && contextLimit && contextLimit > 0) {
               contextPercent = Math.round(((usage.input_tokens + usage.output_tokens) / contextLimit) * 100);
               await sessionManager.updateContextUsage(chatId, topicId, contextPercent);
             }
+
+            // Emit stream:done for token-recorder (Mission Control)
+            eventBus.emit('stream:done', {
+              sessionKey,
+              topicId,
+              usage: usage ?? undefined,
+              model: config.claudeModel ?? null,
+              source: 'telegram',
+            });
 
             // Build final message
             const finalHtml = accumulatedText

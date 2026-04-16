@@ -228,12 +228,26 @@ async function handleSend(ws: WsSocket, msg: WsSendMessage): Promise<void> {
           await sessionManager.updateClaudeSessionId(chatId, topicId, resultSessionId);
         }
 
-        const usage = event.data.usage as { input_tokens: number; output_tokens: number } | undefined;
+        const usage = event.data.usage as {
+          input_tokens: number;
+          output_tokens: number;
+          cache_creation_input_tokens?: number;
+          cache_read_input_tokens?: number;
+        } | undefined;
         const contextLimit = event.data.contextLimit as number | undefined;
         if (usage && contextLimit && contextLimit > 0) {
           const contextPercent = Math.round(((usage.input_tokens + usage.output_tokens) / contextLimit) * 100);
           await sessionManager.updateContextUsage(chatId, topicId, contextPercent);
         }
+
+        // Emit stream:done for token-recorder (Mission Control)
+        eventBus.emit('stream:done', {
+          sessionKey,
+          topicId,
+          usage: usage ?? undefined,
+          model: cfgForRuntime.claudeModel ?? null,
+          source: 'dashboard',
+        });
 
         // Save assistant message
         const assistantContent = accumulatedText || ((event.data.result as string) ?? '');
