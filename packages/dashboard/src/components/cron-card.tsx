@@ -93,8 +93,8 @@ export function CronCard({
               }`}
               title={
                 job.origin === "db"
-                  ? "Created via dashboard (stored in DB)"
-                  : "Declared in HEARTBEAT.md"
+                  ? "Criada pelo dashboard (armazenada no DB)"
+                  : "Declarada no HEARTBEAT.md"
               }
             >
               {job.origin}
@@ -107,7 +107,7 @@ export function CronCard({
                   : "border-text-secondary/30 bg-text-secondary/10 text-text-secondary"
               }`}
             >
-              {job.enabled ? "Active" : "Paused"}
+              {job.enabled ? "Ativa" : "Pausada"}
             </Badge>
             {job.lastStatus && (
               <Badge
@@ -127,12 +127,12 @@ export function CronCard({
       <CardContent className="p-4 pt-0">
         <div className="mb-3 space-y-1">
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-text-secondary">Schedule:</span>
+            <span className="text-text-secondary">Agendamento:</span>
             <span className="font-mono text-text-body">{job.schedule}</span>
           </div>
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-text-secondary">Last run:</span>
-            <span className="text-text-body">{job.lastRun ? formatTime(job.lastRun) : "Never"}</span>
+            <span className="text-text-secondary">Última execução:</span>
+            <span className="text-text-body">{job.lastRun ? formatTime(job.lastRun) : "Nunca"}</span>
           </div>
           <div className="text-xs text-text-secondary">
             <span className="text-text-secondary">Prompt: </span>
@@ -150,18 +150,18 @@ export function CronCard({
             size="xs"
             onClick={() => onRunNow(job.id)}
             disabled={isRunning}
-            title="Run this cron now"
+            title="Executar agora"
             className="bg-violet text-white hover:bg-violet/90"
           >
             {isRunning ? (
               <span className="flex items-center gap-1">
                 <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                Running
+                Executando
               </span>
             ) : (
               <span className="flex items-center gap-1">
                 <RefreshCw aria-hidden="true" />
-                Run now
+                Executar
               </span>
             )}
           </Button>
@@ -174,22 +174,22 @@ export function CronCard({
             disabled={isFileOrigin}
             title={
               isFileOrigin
-                ? "Cannot toggle file-origin jobs. Edit in HEARTBEAT.md."
+                ? "Não é possível alternar jobs de arquivo. Edite no HEARTBEAT.md."
                 : job.enabled
-                ? "Pause this cron"
-                : "Resume this cron"
+                ? "Pausar esta automação"
+                : "Retomar esta automação"
             }
             className="border-violet-dim text-violet hover:bg-violet/10 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {job.enabled ? (
               <span className="flex items-center gap-1">
                 <Pause aria-hidden="true" />
-                Pause
+                Pausar
               </span>
             ) : (
               <span className="flex items-center gap-1">
                 <Play aria-hidden="true" />
-                Resume
+                Retomar
               </span>
             )}
           </Button>
@@ -199,12 +199,12 @@ export function CronCard({
             variant="outline"
             size="xs"
             onClick={() => setShowLogs(!showLogs)}
-            title={showLogs ? "Hide logs" : "View recent logs"}
+            title={showLogs ? "Ocultar logs" : "Ver logs recentes"}
             className="border-violet-dim text-text-secondary hover:text-text-body hover:bg-night-panel"
           >
             <span className="flex items-center gap-1">
               <ScrollText aria-hidden="true" />
-              {showLogs ? "Hide" : "Logs"}
+              {showLogs ? "Ocultar" : "Logs"}
             </span>
           </Button>
 
@@ -215,13 +215,13 @@ export function CronCard({
                 <Button
                   variant="ghost"
                   size="xs"
-                  aria-label="More actions"
-                  title="More actions"
+                  aria-label="Mais ações"
+                  title="Mais ações"
                   className="text-text-secondary hover:text-text-body hover:bg-night-panel"
                 >
                   <span className="flex items-center gap-1">
                     <MoreHorizontal aria-hidden="true" />
-                    <span className="sm:hidden lg:inline">More</span>
+                    <span className="sm:hidden lg:inline">Mais</span>
                   </span>
                 </Button>
               }
@@ -232,7 +232,7 @@ export function CronCard({
                 onClick={() => onEdit(job)}
               >
                 <Pencil aria-hidden="true" />
-                Edit
+                Editar
                 {isFileOrigin && (
                   <span className="ml-auto text-[10px] text-text-secondary">
                     file
@@ -241,7 +241,7 @@ export function CronCard({
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onDuplicate(job)}>
                 <Copy aria-hidden="true" />
-                Duplicate
+                Duplicar
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -250,7 +250,7 @@ export function CronCard({
                 onClick={() => onDelete(job)}
               >
                 <Trash2 aria-hidden="true" />
-                Delete
+                Excluir
                 {isFileOrigin && (
                   <span className="ml-auto text-[10px] text-text-secondary">
                     file
@@ -292,7 +292,7 @@ export function CronCard({
                       : "text-red-400"
                   }`}
                 >
-                  Run {runResult.status}
+                  Execução {runResult.status === "success" ? "bem-sucedida" : "falhou"}
                 </span>
                 <span className="text-[10px] text-text-secondary">
                   {formatTime(runResult.finishedAt)}
@@ -302,7 +302,7 @@ export function CronCard({
                 type="button"
                 onClick={() => onDismissResult(job.id)}
                 className="rounded p-0.5 text-text-secondary hover:bg-white/[0.06] hover:text-text-body transition-colors"
-                aria-label="Dismiss run result"
+                aria-label="Fechar resultado"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -313,7 +313,7 @@ export function CronCard({
               </pre>
             ) : (
               <p className="text-xs text-text-secondary">
-                No output produced.
+                Nenhuma saída produzida.
               </p>
             )}
           </div>
@@ -322,7 +322,7 @@ export function CronCard({
         {showLogs && (
           <div className="mt-3 space-y-2 border-t border-violet-dim pt-3">
             {logs.length === 0 && (
-              <p className="text-xs text-text-secondary">No logs yet</p>
+              <p className="text-xs text-text-secondary">Nenhum log ainda</p>
             )}
             {logs.map((log) => (
               <div
@@ -352,7 +352,7 @@ export function CronCard({
                       type="button"
                       onClick={() => toggleLogExpand(log.id)}
                       className="flex items-center gap-1 text-[10px] text-violet hover:text-violet/80"
-                      aria-label={expandedLogIds.has(log.id) ? "Collapse output" : "Expand output"}
+                      aria-label={expandedLogIds.has(log.id) ? "Recolher saída" : "Expandir saída"}
                     >
                       {expandedLogIds.has(log.id) ? (
                         <ChevronDown className="h-3 w-3" />
