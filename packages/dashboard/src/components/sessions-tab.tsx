@@ -478,10 +478,10 @@ export function SessionsTab() {
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <div className="mb-3 text-3xl text-text-secondary/30">/</div>
                     <p className="text-sm text-text-secondary">
-                      No messages in this session
+                      Nenhuma mensagem nesta sessão
                     </p>
                     <p className="mt-1 text-xs text-text-secondary/60">
-                      Send a message to start a conversation
+                      Envie uma mensagem para iniciar uma conversa
                     </p>
                   </div>
                 )}
@@ -496,7 +496,7 @@ export function SessionsTab() {
                       role: "assistant",
                       content:
                         chat.streamingMessage.content ||
-                        (chat.streamingMessage.thinking ? "Thinking..." : ""),
+                        (chat.streamingMessage.thinking ? "Pensando..." : ""),
                       createdAt: chat.streamingMessage.createdAt,
                     }}
                     streaming={true}
@@ -519,8 +519,8 @@ export function SessionsTab() {
               <div className="mb-3 font-mono text-4xl text-violet/20">FC</div>
               <p className="text-sm text-text-secondary">
                 {sessions.length === 0
-                  ? "No sessions yet. Send a message in Telegram to create one."
-                  : "Select a session to view messages"}
+                  ? "Nenhuma sessão ainda. Envie uma mensagem no Telegram para criar."
+                  : "Selecione uma sessão para ver mensagens"}
               </p>
             </div>
           </div>
