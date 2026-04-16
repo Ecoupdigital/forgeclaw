@@ -129,7 +129,7 @@ export function ChatMessage({ message, streaming = false, tools: streamTools }: 
           )}
           {streaming && (
             <span className="font-mono text-[10px] text-emerald-400 animate-pulse">
-              ▸ streaming
+              ▸ transmitindo
             </span>
           )}
         </div>
