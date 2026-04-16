@@ -7,9 +7,9 @@
 
 ## Posicao Atual
 **Fase:** 21-mission-control
-**Plano Atual:** 21-05 de 06 — completo
+**Plano Atual:** 21-06 de 06 — completo
 **Status:** Executing
-**Progresso:** [████████░░] 83%
+**Progresso:** [██████████] 100%
 
 ## Contexto Acumulado
 
@@ -42,5 +42,5 @@ Nenhum
 - `packages/dashboard/src/components/sessions-tab.tsx:185` — TopicInfo.createdAt missing (pre-existente, registrado em .plano/fases/08-dashboard-web/deferred-items.md)
 
 ## Continuidade de Sessao
-Ultima parada: Completado 21-05-PLAN.md (Dashboard UI: Tokens & Activity Tabs) -- TokensTab com chart CSS puro (barras empilhadas), cards de totais, top sessoes. ActivityTab com feed cronologico, filtros por entidade, auto-refresh 10s. DashboardShell expandido para 8 tabs. Tudo em pt-BR, zero dependencias novas. 21-01 a 21-05 completos.
-Proximas acoes: Executar 21-06-PLAN.md.
+Ultima parada: Completado 21-06-PLAN.md (Dashboard UI: Webhooks Tab) -- WebhooksTab com CRUD completo (criar, listar, toggle, deletar), secret masking, delivery logs expandiveis. Task 2 (wiring) absorvida pelo 21-05 paralelo. Fase 21 completa (21-01 a 21-06).
+Proximas acoes: Verificacao visual das 3 novas tabs no browser. Escolher proxima fase.
