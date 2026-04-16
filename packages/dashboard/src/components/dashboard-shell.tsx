@@ -14,11 +14,11 @@ import {
 } from "lucide-react";
 
 const TABS = [
-  { id: "sessions", label: "Sessions", icon: MessageSquare },
-  { id: "crons", label: "Crons", icon: Clock },
-  { id: "memory", label: "Memory", icon: Brain },
-  { id: "config", label: "Config", icon: Settings },
-  { id: "harness", label: "Harness", icon: FileCode },
+  { id: "sessions", label: "Sessões", icon: MessageSquare },
+  { id: "crons", label: "Automações", icon: Clock },
+  { id: "memory", label: "Memória", icon: Brain },
+  { id: "config", label: "Configurações", icon: Settings },
+  { id: "harness", label: "Personalidade", icon: FileCode },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -157,7 +157,7 @@ export function DashboardShell({
           <button
             onClick={toggleExpanded}
             className="flex h-8 w-full items-center justify-center rounded-md text-text-disabled hover:bg-white/[0.04] hover:text-text-secondary transition-colors"
-            aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
+            aria-label={expanded ? "Recolher barra lateral" : "Expandir barra lateral"}
           >
             {expanded ? (
               <PanelLeftClose size={14} strokeWidth={1.5} />
@@ -192,10 +192,10 @@ export function DashboardShell({
             <button
               onClick={handleLogout}
               className="flex items-center gap-1 text-xs text-text-muted hover:text-text-body transition-colors px-2 py-1 rounded hover:bg-white/[0.04]"
-              title="Logout"
+              title="Sair"
             >
               <LogOut size={12} strokeWidth={1.5} />
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden sm:inline">Sair</span>
             </button>
           </div>
         </header>
