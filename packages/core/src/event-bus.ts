@@ -8,7 +8,8 @@ export type EventName =
   | 'session:created'
   | 'session:resumed'
   | 'cron:fired'
-  | 'cron:result';
+  | 'cron:result'
+  | 'activity:created';
 
 class EventBus {
   private handlers = new Map<string, Set<EventHandler>>();
