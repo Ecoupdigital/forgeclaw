@@ -271,7 +271,7 @@ export function CronsTab() {
     const copy: CronJob = {
       ...job,
       id: 0,
-      name: `${job.name} (copy)`,
+      name: `${job.name} (cópia)`,
       origin: "db",
       sourceFile: null,
       lastRun: null,
@@ -294,15 +294,15 @@ export function CronsTab() {
       });
       const data = (await res.json()) as { success?: boolean; error?: string };
       if (data.success) {
-        showToast(`Cron "${deleteTarget.name}" deleted`);
+        showToast(`Automação "${deleteTarget.name}" excluída`);
         setDeleteTarget(null);
         await fetchJobs();
       } else {
-        showToast(data.error || "Delete failed", "error");
+        showToast(data.error || "Falha ao excluir", "error");
       }
     } catch (err) {
       console.error("Delete failed:", err);
-      showToast("Delete failed", "error");
+      showToast("Falha ao excluir", "error");
     } finally {
       setDeleteLoading(false);
     }
@@ -311,7 +311,7 @@ export function CronsTab() {
   const handleSaved = useCallback(
     async (saved: CronJob) => {
       const wasEdit = Boolean(editingJob && editingJob.id);
-      showToast(wasEdit ? "Cron updated" : "Cron created");
+      showToast(wasEdit ? "Automação atualizada" : "Automação criada");
       setEditingJob(null);
       await fetchJobs();
       // Pulse highlight 3s on the affected card
@@ -332,13 +332,13 @@ export function CronsTab() {
         body: JSON.stringify({ content: heartbeat }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      showToast("HEARTBEAT.md saved");
+      showToast("HEARTBEAT.md salvo");
       setAdvancedOpen(false);
       // Reload jobs because file-origin crons may have changed
       await fetchJobs();
     } catch (err) {
       console.error("Failed to save heartbeat:", err);
-      showToast("Save failed", "error");
+      showToast("Falha ao salvar", "error");
     } finally {
       setSavingHeartbeat(false);
     }
@@ -364,7 +364,7 @@ export function CronsTab() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-text-secondary">Loading crons...</p>
+        <p className="text-sm text-text-secondary">Carregando automações...</p>
       </div>
     );
   }
@@ -374,7 +374,7 @@ export function CronsTab() {
       {/* Header */}
       <div className="flex min-h-10 flex-col gap-2 px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:py-0">
         <h2 className="text-sm font-semibold text-text-primary">
-          Cron Jobs ({jobs.filter((j) => j.enabled).length} active)
+          Automações ({jobs.filter((j) => j.enabled).length} ativas)
         </h2>
         <div className="flex gap-2">
           <Button
@@ -382,8 +382,8 @@ export function CronsTab() {
             onClick={handleNew}
             className="bg-violet text-white hover:bg-violet/90"
           >
-            <span className="sm:hidden">+ New</span>
-            <span className="hidden sm:inline">+ New cron</span>
+            <span className="sm:hidden">+ Nova</span>
+            <span className="hidden sm:inline">+ Nova automação</span>
           </Button>
           <Button
             variant="outline"
@@ -391,7 +391,7 @@ export function CronsTab() {
             onClick={() => setAdvancedOpen(true)}
             className="border-violet-dim text-text-secondary hover:text-text-body"
           >
-            Advanced
+            Avançado
           </Button>
         </div>
       </div>
@@ -406,17 +406,17 @@ export function CronsTab() {
                 className="h-14 w-14 text-violet/60"
                 aria-hidden="true"
               />
-              <p className="text-sm text-text-secondary">No cron jobs yet</p>
+              <p className="text-sm text-text-secondary">Nenhuma automação ainda</p>
               <p className="max-w-xs text-sm text-text-body">
-                Schedule a prompt to run automatically. You can call any of your
-                Claude skills.
+                Agende um prompt para rodar automaticamente. Você pode chamar
+                qualquer uma das suas skills.
               </p>
               <Button
                 size="lg"
                 onClick={handleNew}
                 className="mt-2 w-full max-w-xs bg-violet text-white hover:bg-violet/90 sm:w-auto"
               >
-                + Create your first cron
+                + Criar sua primeira automação
               </Button>
             </div>
           )}
@@ -469,12 +469,12 @@ export function CronsTab() {
         >
           <SheetHeader>
             <SheetTitle className="text-text-primary">
-              Advanced: HEARTBEAT.md
+              Avançado: HEARTBEAT.md
             </SheetTitle>
             <SheetDescription className="text-text-secondary">
-              Raw editor for HEARTBEAT.md. Changes here hot-reload the
-              file-origin cron jobs. Dashboard-created jobs (db-origin) are
-              unaffected.
+              Editor direto do HEARTBEAT.md. Alterações aqui recarregam as
+              automações de origem arquivo. Automações criadas pelo dashboard
+              (origem DB) não são afetadas.
             </SheetDescription>
           </SheetHeader>
           <Separator className="bg-violet-dim" />
@@ -495,14 +495,14 @@ export function CronsTab() {
                 disabled={savingHeartbeat}
                 className="flex-1 border-violet-dim text-text-secondary"
               >
-                Cancel
+                Cancelar
               </Button>
               <Button
                 onClick={handleSaveHeartbeat}
                 disabled={savingHeartbeat}
                 className="flex-1 bg-violet text-white hover:bg-violet/90 disabled:opacity-50"
               >
-                {savingHeartbeat ? "Saving..." : "Save"}
+                {savingHeartbeat ? "Salvando..." : "Salvar"}
               </Button>
             </div>
           </SheetFooter>
