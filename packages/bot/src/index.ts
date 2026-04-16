@@ -15,6 +15,8 @@ import {
   memoryManagerV2,
   runnerRegistry,
   startWebhookDispatcher,
+  startTokenRecorder,
+  startActivityRecorder,
 } from '@forgeclaw/core';
 import { createAuthMiddleware } from './middleware/auth';
 import { getSessionKey } from './middleware/sequentialize';
@@ -224,6 +226,10 @@ async function main(): Promise<void> {
   // Start cron engine (HEARTBEAT.md scheduler)
   console.log('[forgeclaw] Starting cron engine...');
   await cronEngine.start();
+
+  // Mission Control: start token & activity recorders
+  startTokenRecorder();
+  startActivityRecorder();
 
   // Start webhook dispatcher — reacts to 'activity:created' events emitted by
   // the activity recorder (21-02). Must start AFTER token/activity recorders
