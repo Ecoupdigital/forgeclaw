@@ -3,13 +3,13 @@
 ## Referencia do Projeto
 **Projeto:** ForgeClaw
 **Valor Central:** O Claude Code deve responder de forma confiavel via Telegram com isolamento perfeito entre topicos
-**Foco Atual:** Fase 08 — UI de gerenciamento de cron jobs (DASH-04)
+**Foco Atual:** Fase 21 — Mission Control (schema, types, EventBus extension)
 
 ## Posicao Atual
-**Fase:** 08 de 10 (sub-recorte DASH-04 concluido)
-**Plano Atual:** 08-06 de 06 — completo (todos os planos 08-01..08-06 entregues)
-**Status:** Ready to plan
-**Progresso:** [██████████] 100%
+**Fase:** 21-mission-control
+**Plano Atual:** 21-01 de 06 — completo
+**Status:** Executing
+**Progresso:** [█░░░░░░░░░] 17%
 
 ## Contexto Acumulado
 
@@ -41,5 +41,5 @@ Nenhum
 - `packages/dashboard/src/components/sessions-tab.tsx:185` — TopicInfo.createdAt missing (pre-existente, registrado em .plano/fases/08-dashboard-web/deferred-items.md)
 
 ## Continuidade de Sessao
-Ultima parada: Completado 08-06-crud-actions-crons-tab-PLAN.md — DeleteCronDialog criado, CronCard refatorado com origin badge + Edit/Duplicate/Delete (origin-aware), CronsTab reescrito com CronFormSheet wireado, Advanced sheet, empty state acionavel, toast inline, pulse highlight 3s, ordenacao por proximo disparo via cron-parser. **Sub-recorte DASH-04 fechado.**
-Proximas acoes: Verificacao manual end-to-end no browser pelo orquestrador da fase (criar/editar/duplicar/deletar um cron via UI); apos isso, encerrar Fase 08.
+Ultima parada: Completado 21-01-PLAN.md (Schema, Types & EventBus Extension) — Tabelas token_usage, activities, webhooks, webhook_delivery_logs criadas com migrations idempotentes. Tipos TypeScript em core e dashboard. EventBus com activity:created. CRUD completo no StateStore e dashboard/core.ts.
+Proximas acoes: Executar 21-02-PLAN.md.

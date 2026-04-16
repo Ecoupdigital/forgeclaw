@@ -238,3 +238,15 @@
 **Critérios de Sucesso:**
   1. `forgeclaw export` gera .tar.gz com db + config + harness + memory
   2. Fotos enviadas ao bot são copiadas para workingDir antes de enviar ao Claude
+
+### Fase 21: Mission Control (Token Tracking + Activity Feed + Webhooks)
+**Objetivo:** Adicionar 3 features de observabilidade e integração inspiradas em mission-control: tracking de tokens por sessão/dia, feed de atividades unificado em tempo real, e webhooks outbound com retry e assinatura HMAC.
+**Depende de:** Fase 8
+**Requisitos:** [MC-01, MC-02, MC-03, MC-04, MC-05, MC-06, MC-07, MC-08, MC-09]
+**Critérios de Sucesso:**
+  1. Cada stream:done persiste input_tokens, output_tokens, cache_creation, cache_read na tabela token_usage
+  2. Dashboard aba Tokens mostra uso diário (chart), top sessões, breakdown cache vs fresh
+  3. Tabela activities registra eventos do sistema (sessão, cron, mensagem, memória)
+  4. Dashboard mostra feed de atividades cronológico com atualização em tempo real via WebSocket
+  5. Webhooks configuráveis via dashboard com CRUD, HMAC-SHA256, retry com backoff
+  6. Webhook dispatcher dispara em background quando activity é criada
