@@ -30,10 +30,10 @@ export function DeleteCronDialog({
       <DialogContent className="border border-violet-dim bg-deep-space sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-text-primary">
-            Delete cron &ldquo;{jobName}&rdquo;?
+            Excluir automação &ldquo;{jobName}&rdquo;?
           </DialogTitle>
           <DialogDescription className="text-text-secondary">
-            This cannot be undone. Cron logs for this job are kept for audit.
+            Essa ação não pode ser desfeita. Os logs desta automação são mantidos para auditoria.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="!flex-col gap-2 sm:!flex-row sm:justify-end">
@@ -43,14 +43,14 @@ export function DeleteCronDialog({
             disabled={loading}
             className="border-violet-dim text-text-secondary hover:text-text-body"
           >
-            Cancel
+            Cancelar
           </Button>
           <Button
             onClick={onConfirm}
             disabled={loading}
             className="bg-red-500 text-white hover:bg-red-500/90 disabled:opacity-50"
           >
-            {loading ? "Deleting..." : "Delete"}
+            {loading ? "Excluindo..." : "Excluir"}
           </Button>
         </DialogFooter>
       </DialogContent>
