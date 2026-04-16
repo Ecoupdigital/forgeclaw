@@ -200,3 +200,64 @@ export interface MemorySearchHit {
   score: number;
   reason: string; // 'fts' | 'entity' | 'kind-match' | ...
 }
+
+// ------ Mission Control types ------
+
+export interface TokenUsage {
+  id: number;
+  sessionKey: string;
+  topicId: number | null;
+  inputTokens: number;
+  outputTokens: number;
+  cacheCreationTokens: number;
+  cacheReadTokens: number;
+  model: string | null;
+  source: 'dashboard' | 'telegram' | 'cron';
+  createdAt: number;
+}
+
+export type ActivityType =
+  | 'session:created'
+  | 'session:resumed'
+  | 'message:sent'
+  | 'message:received'
+  | 'cron:fired'
+  | 'cron:completed'
+  | 'cron:failed'
+  | 'memory:created'
+  | 'memory:updated'
+  | 'webhook:delivered'
+  | 'webhook:failed';
+
+export type ActivityEntityType = 'session' | 'cron' | 'message' | 'memory' | 'webhook';
+
+export interface Activity {
+  id: number;
+  type: ActivityType;
+  entityType: ActivityEntityType;
+  entityId: string;
+  actor: string;
+  description: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: number;
+}
+
+export interface Webhook {
+  id: number;
+  url: string;
+  events: string[];  // ActivityType[] serialized
+  secret: string;
+  enabled: boolean;
+  createdAt: number;
+}
+
+export interface WebhookDeliveryLog {
+  id: number;
+  webhookId: number;
+  eventType: string;
+  payload: string;
+  statusCode: number | null;
+  responseBody: string | null;
+  attempt: number;
+  createdAt: number;
+}
