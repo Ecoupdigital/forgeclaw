@@ -53,11 +53,23 @@ export class BuiltinMemoryProvider implements MemoryProvider {
     return parts.join('\n\n---\n\n');
   }
 
-  async prefetch(query: string, ctx: { sessionId?: string } = {}): Promise<PrefetchResult | null> {
+  async prefetch(query: string, ctx: { sessionId?: string; entityFilter?: string[] } = {}): Promise<PrefetchResult | null> {
     if (!this.shouldSearch(query)) return null;
 
-    // 1) FTS5 over memory_entries
-    const memHits = this.store.search(query, 5);
+    // 1) FTS5 over memory_entries -- filter by entity tags when agent has filtered memory mode
+    let memHits = this.store.search(query, ctx.entityFilter ? 20 : 5);
+
+    // When entityFilter is active, post-filter hits to only include memories
+    // that have at least one memory_ref.entity_name matching the filter tags.
+    // Pre-fetch more hits (20) so filtering doesn't starve the result set.
+    if (ctx.entityFilter && ctx.entityFilter.length > 0 && memHits.length > 0) {
+      const filterSet = new Set(ctx.entityFilter.map(t => t.toLowerCase()));
+      memHits = memHits.filter(h => {
+        const refs = stateStore.listMemoryRefs(h.entry.id);
+        return refs.some(r => filterSet.has(r.entityName.toLowerCase()));
+      });
+      memHits = memHits.slice(0, 5);
+    }
 
     // 2) FTS5 over past messages — SKIP when the session has --resume active,
     //    because the Claude CLI already sees the full conversation history.
