@@ -13,7 +13,7 @@ import {
   runnerRegistry,
   type AgentCliRunner,
 } from '@forgeclaw/core';
-import type { StreamEvent, ForgeClawConfig, RuntimeName } from '@forgeclaw/core';
+import type { StreamEvent, ForgeClawConfig, RuntimeName, AgentConfig } from '@forgeclaw/core';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -135,16 +135,27 @@ async function processMessage(
       console.error('[text-handler] immediate memory save failed:', err);
     });
 
+    // Resolve topic row early — needed for agent lookup + runtime resolution
+    const topicRow = stateStore.getTopicByChatAndThread(chatId, topicId);
+
+    // Load agent linked to this topic (if any)
+    let agentConfig: AgentConfig | null = null;
+    if (topicRow?.agentId) {
+      agentConfig = stateStore.getAgent(topicRow.agentId);
+      if (agentConfig) {
+        console.log(`[text-handler] topic ${sessionKey} linked to agent '${agentConfig.name}'`);
+      }
+    }
+
     // GAP 1: Build enriched prompt with context (harness, memory, vault, state)
     const contextBuilder = new ContextBuilder(config, harnessLoader);
-    const enrichedPrompt = await contextBuilder.build(text, chatId, topicId ?? 0, session.claudeSessionId);
+    const enrichedPrompt = await contextBuilder.build(text, chatId, topicId ?? 0, session.claudeSessionId, agentConfig);
 
     // GAP 5: Detect thinking keywords
     const shouldThink = THINKING_KEYWORDS.some(k => text.toLowerCase().includes(k));
 
-    // Resolve runtime: topic override → config default → claude-code
-    const topicRow = stateStore.getTopicByChatAndThread(chatId, topicId);
-    const requestedRuntime = (topicRow?.runtime ?? config.defaultRuntime) as RuntimeName | undefined;
+    // Agent runtime > topic runtime > config default
+    const requestedRuntime = (agentConfig?.defaultRuntime ?? topicRow?.runtime ?? config.defaultRuntime) as RuntimeName | undefined;
     const allowFallback = topicRow?.runtimeFallback ?? false;
     const runner = runnerRegistry.get(requestedRuntime, { allowFallback });
     console.log(`[text-handler] using runtime '${runner.name}' for ${sessionKey}`);
