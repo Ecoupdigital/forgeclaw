@@ -3,13 +3,13 @@
 ## Referencia do Projeto
 **Projeto:** ForgeClaw
 **Valor Central:** O Claude Code deve responder de forma confiavel via Telegram com isolamento perfeito entre topicos
-**Foco Atual:** Fase 21 — Mission Control (schema, types, EventBus extension)
+**Foco Atual:** Fase 22 — Agentes Especializados + Memoria por Topic
 
 ## Posicao Atual
-**Fase:** 21-mission-control
-**Plano Atual:** 21-06 de 06 — completo
-**Status:** Project complete
-**Progresso:** [██████████] 100%
+**Fase:** 22-agentes-especializados-mem-ria-por-topic
+**Plano Atual:** 22-01 de 04 — completo
+**Status:** Em execucao
+**Progresso:** [██▌       ] 25%
 
 ## Contexto Acumulado
 
@@ -42,8 +42,8 @@ Nenhum
 - `packages/dashboard/src/components/sessions-tab.tsx:185` — TopicInfo.createdAt missing (pre-existente, registrado em .plano/fases/08-dashboard-web/deferred-items.md)
 
 ## Continuidade de Sessao
-Ultima parada: Completado 21-06-PLAN.md (Dashboard UI: Webhooks Tab) -- WebhooksTab com CRUD completo (criar, listar, toggle, deletar), secret masking, delivery logs expandiveis. Task 2 (wiring) absorvida pelo 21-05 paralelo. Fase 21 completa (21-01 a 21-06).
-Proximas acoes: Planejar e executar Fase 22 (Agentes Especializados + Memória por Topic).
+Ultima parada: Completado 22-01-PLAN.md (Schema + Tipos + Data Access Layer) -- Tabela agents criada no SQLite, FK agent_id em topics, AgentConfig/MemoryMode em core e dashboard types, CRUD completo em StateStore e dashboard core.ts, GET /api/topics retorna agentId.
+Proximas acoes: Executar 22-02 (API Routes para Agents) e demais planos da fase 22.
 
 ### Evolucao do Roadmap
 - Fase 22 adicionada: Agentes Especializados + Memória por Topic (prompt base por topic, filtro de memória por tags, edição via dashboard)

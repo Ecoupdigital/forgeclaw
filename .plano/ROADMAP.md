@@ -254,11 +254,12 @@
 ### Fase 22: Agentes Especializados + Memória por Topic
 **Objetivo:** Permitir que cada topic do Telegram tenha um agente com prompt base próprio e filtro de memória por tags, eliminando repetição de contexto entre topics. Inclui edição via dashboard.
 **Depende de:** Fase 8
-**Requisitos:** [AGT-01, AGT-02, AGT-03, AGT-04, AGT-05, AGT-06]
+**Requisitos:** [AGT-01, AGT-02, AGT-03, AGT-04, AGT-05, AGT-06, AGT-07, AGT-08]
 **Critérios de Sucesso:**
-  1. Topic tem campos system_prompt, memory_mode e memory_domain_filter no banco
-  2. system_prompt do topic é prepended ao harness CLAUDE.md antes de cada chamada
-  3. memory_mode='filtered' injeta só memórias com tags matching memory_domain_filter
-  4. memory_mode='global' mantém comportamento atual (injeta tudo)
-  5. Dashboard permite editar system_prompt, memory_mode e tags por topic
-  6. API routes CRUD para configuração de agente por topic
+  1. Tabela agents existe com name, system_prompt, memory_mode, memory_domain_filter, default_runtime
+  2. CRUD de agentes funciona via API e dashboard (aba Agentes)
+  3. Topic pode ser vinculado a um agente via agent_id (dropdown no dashboard)
+  4. system_prompt do agente é prepended ao harness CLAUDE.md antes de cada chamada
+  5. memory_mode='filtered' injeta só memórias com tags matching memory_domain_filter do agente
+  6. memory_mode='global' mantém comportamento atual (injeta tudo)
+  7. Criar topic novo já permite selecionar agente
