@@ -204,13 +204,13 @@ export class MemoryManager {
    * fence. Returns the fenced block ready to inject, or empty string if
    * nothing relevant was retrieved. Also logs the retrieval event.
    */
-  async prefetchAll(query: string, source: 'context_builder' | 'tool_search' = 'context_builder', sessionId?: string): Promise<string> {
+  async prefetchAll(query: string, source: 'context_builder' | 'tool_search' = 'context_builder', sessionId?: string, entityFilter?: string[]): Promise<string> {
     const parts: string[] = [];
     const allHits: Array<{ memoryId: number; score: number; reason: string; contentPreview: string }> = [];
 
     for (const p of this.providers) {
       try {
-        const res = await p.prefetch(query, { sessionId: sessionId ?? this.initCtx?.sessionId });
+        const res = await p.prefetch(query, { sessionId: sessionId ?? this.initCtx?.sessionId, entityFilter });
         if (res && res.text && res.text.trim()) {
           parts.push(res.text);
           allHits.push(...res.hits);
