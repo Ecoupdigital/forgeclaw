@@ -335,6 +335,32 @@ class StateStore {
     } catch (err) {
       console.warn('[state-store] Mission Control migration failed:', err);
     }
+
+    // Agents: specialized agents linked to topics
+    try {
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS agents (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          system_prompt TEXT,
+          memory_mode TEXT NOT NULL DEFAULT 'global',
+          memory_domain_filter TEXT,
+          default_runtime TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+      `);
+
+      // Migration: add agent_id FK to topics
+      const topicCols = (this.db.query("PRAGMA table_info(topics)").all() as Array<{ name: string }>).map(c => c.name);
+      if (!topicCols.includes('agent_id')) {
+        this.db.exec('ALTER TABLE topics ADD COLUMN agent_id INTEGER REFERENCES agents(id)');
+      }
+
+      console.log('[state-store] Agents tables ready');
+    } catch (err) {
+      console.warn('[state-store] Agents migration failed:', err);
+    }
   }
 
   // Sessions
@@ -421,15 +447,15 @@ class StateStore {
 
   getTopic(id: number): TopicInfo | null {
     const row = this.db.query(
-      'SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at, runtime, runtime_fallback FROM topics WHERE id = ?'
+      'SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at, runtime, runtime_fallback, agent_id FROM topics WHERE id = ?'
     ).get(id) as TopicRow | null;
     return row ? mapTopicRow(row) : null;
   }
 
   getTopicByChatAndThread(chatId: number, threadId: number | null): TopicInfo | null {
     const row = threadId
-      ? this.db.query('SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at, runtime, runtime_fallback FROM topics WHERE chat_id = ? AND thread_id = ?').get(chatId, threadId) as TopicRow | null
-      : this.db.query('SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at, runtime, runtime_fallback FROM topics WHERE chat_id = ? AND thread_id IS NULL').get(chatId) as TopicRow | null;
+      ? this.db.query('SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at, runtime, runtime_fallback, agent_id FROM topics WHERE chat_id = ? AND thread_id = ?').get(chatId, threadId) as TopicRow | null
+      : this.db.query('SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at, runtime, runtime_fallback, agent_id FROM topics WHERE chat_id = ? AND thread_id IS NULL').get(chatId) as TopicRow | null;
     return row ? mapTopicRow(row) : null;
   }
 
@@ -509,7 +535,7 @@ class StateStore {
 
   listTopics(): TopicInfo[] {
     const rows = this.db.query(
-      'SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at, runtime, runtime_fallback FROM topics ORDER BY created_at DESC'
+      'SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at, runtime, runtime_fallback, agent_id FROM topics ORDER BY created_at DESC'
     ).all() as TopicRow[];
     return rows.map(mapTopicRow);
   }
@@ -1171,6 +1197,60 @@ class StateStore {
     }
   }
 
+  // ---------------- Agents ----------------
+
+  createAgent(agent: Omit<import('./types').AgentConfig, 'id'>): number {
+    const result = this.db.run(
+      `INSERT INTO agents (name, system_prompt, memory_mode, memory_domain_filter, default_runtime, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [agent.name, agent.systemPrompt, agent.memoryMode, agent.memoryDomainFilter.length > 0 ? JSON.stringify(agent.memoryDomainFilter) : null, agent.defaultRuntime, agent.createdAt, agent.updatedAt]
+    );
+    return Number(result.lastInsertRowid);
+  }
+
+  getAgent(id: number): import('./types').AgentConfig | null {
+    const row = this.db.query(
+      'SELECT id, name, system_prompt, memory_mode, memory_domain_filter, default_runtime, created_at, updated_at FROM agents WHERE id = ?'
+    ).get(id) as AgentRow | null;
+    return row ? mapAgentRow(row) : null;
+  }
+
+  listAgents(): import('./types').AgentConfig[] {
+    const rows = this.db.query(
+      'SELECT id, name, system_prompt, memory_mode, memory_domain_filter, default_runtime, created_at, updated_at FROM agents ORDER BY name ASC'
+    ).all() as AgentRow[];
+    return rows.map(mapAgentRow);
+  }
+
+  updateAgent(id: number, updates: Partial<Omit<import('./types').AgentConfig, 'id' | 'createdAt'>>): void {
+    const fields: string[] = [];
+    const values: (string | number | null)[] = [];
+    if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
+    if (updates.systemPrompt !== undefined) { fields.push('system_prompt = ?'); values.push(updates.systemPrompt); }
+    if (updates.memoryMode !== undefined) { fields.push('memory_mode = ?'); values.push(updates.memoryMode); }
+    if (updates.memoryDomainFilter !== undefined) {
+      fields.push('memory_domain_filter = ?');
+      values.push(updates.memoryDomainFilter.length > 0 ? JSON.stringify(updates.memoryDomainFilter) : null);
+    }
+    if (updates.defaultRuntime !== undefined) { fields.push('default_runtime = ?'); values.push(updates.defaultRuntime); }
+    if (fields.length === 0) return;
+    fields.push('updated_at = ?');
+    values.push(Date.now());
+    values.push(id);
+    this.db.run(`UPDATE agents SET ${fields.join(', ')} WHERE id = ?`, values);
+  }
+
+  deleteAgent(id: number): void {
+    // Unlink topics first (set agent_id = NULL)
+    this.db.run('UPDATE topics SET agent_id = NULL WHERE agent_id = ?', [id]);
+    this.db.run('DELETE FROM agents WHERE id = ?', [id]);
+  }
+
+  // Update topic's agent_id
+  updateTopicAgent(id: number, agentId: number | null): void {
+    this.db.run('UPDATE topics SET agent_id = ? WHERE id = ?', [agentId, id]);
+  }
+
   close(): void {
     this.db.close();
   }
@@ -1205,6 +1285,7 @@ interface TopicRow {
   created_at: number;
   runtime: string | null;
   runtime_fallback: number;
+  agent_id: number | null;
 }
 
 interface CronJobRow {
@@ -1319,6 +1400,7 @@ function mapTopicRow(row: TopicRow): TopicInfo {
     createdAt: row.created_at,
     runtime: (row.runtime as 'claude-code' | 'codex' | null) ?? null,
     runtimeFallback: row.runtime_fallback === 1,
+    agentId: row.agent_id ?? null,
   };
 }
 
@@ -1432,6 +1514,30 @@ function mapWebhookDeliveryLogRow(row: WebhookDeliveryLogRow): import('./types')
     responseBody: row.response_body,
     attempt: row.attempt,
     createdAt: row.created_at,
+  };
+}
+
+interface AgentRow {
+  id: number;
+  name: string;
+  system_prompt: string | null;
+  memory_mode: string;
+  memory_domain_filter: string | null;
+  default_runtime: string | null;
+  created_at: number;
+  updated_at: number;
+}
+
+function mapAgentRow(row: AgentRow): import('./types').AgentConfig {
+  return {
+    id: row.id,
+    name: row.name,
+    systemPrompt: row.system_prompt,
+    memoryMode: (row.memory_mode as 'global' | 'filtered') ?? 'global',
+    memoryDomainFilter: row.memory_domain_filter ? JSON.parse(row.memory_domain_filter) as string[] : [],
+    defaultRuntime: (row.default_runtime as 'claude-code' | 'codex' | null) ?? null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
