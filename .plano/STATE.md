@@ -43,4 +43,7 @@ Nenhum
 
 ## Continuidade de Sessao
 Ultima parada: Completado 21-06-PLAN.md (Dashboard UI: Webhooks Tab) -- WebhooksTab com CRUD completo (criar, listar, toggle, deletar), secret masking, delivery logs expandiveis. Task 2 (wiring) absorvida pelo 21-05 paralelo. Fase 21 completa (21-01 a 21-06).
-Proximas acoes: Verificacao visual das 3 novas tabs no browser. Escolher proxima fase.
+Proximas acoes: Planejar e executar Fase 22 (Agentes Especializados + Memória por Topic).
+
+### Evolucao do Roadmap
+- Fase 22 adicionada: Agentes Especializados + Memória por Topic (prompt base por topic, filtro de memória por tags, edição via dashboard)

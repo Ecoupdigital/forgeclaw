@@ -175,3 +175,11 @@
 - [ ] MC-07: Componente ActivityFeed no dashboard com timeline cronológica, filtros por tipo, atualização em tempo real via WebSocket
 - [ ] MC-08: Tabela webhooks (url, events JSON, secret, enabled, created_at) e webhook_delivery_logs (webhook_id, event_type, payload, status_code, response_body, attempt, created_at) com CRUD via API
 - [ ] MC-09: Webhook dispatcher com HMAC-SHA256 signature, retry com backoff exponencial (3 tentativas), circuit breaker básico
+
+## Agentes Especializados (AGT)
+- [ ] AGT-01: Migration idempotente adicionando system_prompt TEXT, memory_mode TEXT DEFAULT 'global', memory_domain_filter TEXT (JSON array) na tabela topics
+- [ ] AGT-02: ContextBuilder prependa system_prompt do topic ao harness CLAUDE.md antes de cada chamada ao Claude
+- [ ] AGT-03: Retrieval de memória filtra por tags (memory_refs.entity_name) quando memory_mode='filtered' e memory_domain_filter não é vazio
+- [ ] AGT-04: API routes GET/PUT /api/topics/[id]/agent para ler e atualizar system_prompt, memory_mode e memory_domain_filter de um topic
+- [ ] AGT-05: Dashboard permite editar system_prompt (textarea), memory_mode (select global/filtered) e memory_domain_filter (chips input com tags) por topic
+- [ ] AGT-06: text.ts e ws-server.ts passam system_prompt e memory config do topic ao ContextBuilder
