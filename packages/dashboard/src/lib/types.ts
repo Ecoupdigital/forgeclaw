@@ -20,6 +20,20 @@ export interface TopicInfo {
   createdAt: number;
   runtime?: RuntimeName | null;
   runtimeFallback?: boolean;
+  agentId?: number | null;
+}
+
+export type MemoryMode = "global" | "filtered";
+
+export interface AgentConfig {
+  id: number;
+  name: string;
+  systemPrompt: string | null;
+  memoryMode: MemoryMode;
+  memoryDomainFilter: string[];
+  defaultRuntime: RuntimeName | null;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface CronJob {
