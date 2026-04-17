@@ -23,6 +23,7 @@ import type {
   DailyLog,
   HarnessFile,
   ForgeClawConfig,
+  AgentConfig,
 } from "./types";
 
 // --- Paths ---
@@ -90,6 +91,7 @@ interface TopicRow {
   created_at: number;
   runtime: string | null;
   runtime_fallback: number;
+  agent_id: number | null;
 }
 
 interface MessageRow {
@@ -124,6 +126,17 @@ interface CronLogRow {
   output: string | null;
 }
 
+interface AgentRow {
+  id: number;
+  name: string;
+  system_prompt: string | null;
+  memory_mode: string;
+  memory_domain_filter: string | null;
+  default_runtime: string | null;
+  created_at: number;
+  updated_at: number;
+}
+
 function mapSession(row: SessionRow): SessionInfo {
   return {
     id: row.id,
@@ -147,6 +160,20 @@ function mapTopic(row: TopicRow): TopicInfo {
     createdAt: row.created_at,
     runtime: (row.runtime as "claude-code" | "codex" | null) ?? null,
     runtimeFallback: row.runtime_fallback === 1,
+    agentId: row.agent_id ?? null,
+  };
+}
+
+function mapAgent(row: AgentRow): AgentConfig {
+  return {
+    id: row.id,
+    name: row.name,
+    systemPrompt: row.system_prompt,
+    memoryMode: (row.memory_mode as "global" | "filtered") ?? "global",
+    memoryDomainFilter: row.memory_domain_filter ? JSON.parse(row.memory_domain_filter) as string[] : [],
+    defaultRuntime: (row.default_runtime as "claude-code" | "codex" | null) ?? null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -211,7 +238,7 @@ export function listTopics(): TopicInfo[] | null {
   try {
     const rows = d
       .prepare(
-        "SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at, runtime, runtime_fallback FROM topics ORDER BY created_at DESC"
+        "SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at, runtime, runtime_fallback, agent_id FROM topics ORDER BY created_at DESC"
       )
       .all() as TopicRow[];
     return rows.map(mapTopic);
@@ -226,7 +253,7 @@ export function getTopic(id: number): TopicInfo | null {
   try {
     const row = d
       .prepare(
-        "SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at, runtime, runtime_fallback FROM topics WHERE id = ?"
+        "SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at, runtime, runtime_fallback, agent_id FROM topics WHERE id = ?"
       )
       .get(id) as TopicRow | undefined;
     return row ? mapTopic(row) : null;
@@ -404,6 +431,131 @@ export function getCronLogs(
       )
       .all(jobId, limit) as CronLogRow[];
     return rows.map(mapCronLog);
+  } catch {
+    return null;
+  }
+}
+
+// --- Public API: Agents ---
+
+export function listAgents(): AgentConfig[] | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const rows = d
+      .prepare(
+        "SELECT id, name, system_prompt, memory_mode, memory_domain_filter, default_runtime, created_at, updated_at FROM agents ORDER BY name ASC"
+      )
+      .all() as AgentRow[];
+    return rows.map(mapAgent);
+  } catch {
+    return null;
+  }
+}
+
+export function getAgent(id: number): AgentConfig | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const row = d
+      .prepare(
+        "SELECT id, name, system_prompt, memory_mode, memory_domain_filter, default_runtime, created_at, updated_at FROM agents WHERE id = ?"
+      )
+      .get(id) as AgentRow | undefined;
+    return row ? mapAgent(row) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function createAgent(agent: Omit<AgentConfig, "id">): number | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const result = d
+      .prepare(
+        "INSERT INTO agents (name, system_prompt, memory_mode, memory_domain_filter, default_runtime, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      )
+      .run(
+        agent.name,
+        agent.systemPrompt,
+        agent.memoryMode,
+        agent.memoryDomainFilter.length > 0 ? JSON.stringify(agent.memoryDomainFilter) : null,
+        agent.defaultRuntime,
+        agent.createdAt,
+        agent.updatedAt
+      );
+    return Number(result.lastInsertRowid);
+  } catch {
+    return null;
+  }
+}
+
+export function updateAgent(
+  id: number,
+  updates: Partial<Omit<AgentConfig, "id" | "createdAt">>
+): boolean {
+  const d = getDb();
+  if (!d) return false;
+  try {
+    const fields: string[] = [];
+    const values: (string | number | null)[] = [];
+    if (updates.name !== undefined) { fields.push("name = ?"); values.push(updates.name); }
+    if (updates.systemPrompt !== undefined) { fields.push("system_prompt = ?"); values.push(updates.systemPrompt); }
+    if (updates.memoryMode !== undefined) { fields.push("memory_mode = ?"); values.push(updates.memoryMode); }
+    if (updates.memoryDomainFilter !== undefined) {
+      fields.push("memory_domain_filter = ?");
+      values.push(updates.memoryDomainFilter.length > 0 ? JSON.stringify(updates.memoryDomainFilter) : null);
+    }
+    if (updates.defaultRuntime !== undefined) { fields.push("default_runtime = ?"); values.push(updates.defaultRuntime); }
+    if (fields.length === 0) return true;
+    fields.push("updated_at = ?");
+    values.push(Date.now());
+    values.push(id);
+    d.prepare(`UPDATE agents SET ${fields.join(", ")} WHERE id = ?`).run(...values);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function deleteAgent(id: number): boolean {
+  const d = getDb();
+  if (!d) return false;
+  try {
+    // Unlink topics first
+    d.prepare("UPDATE topics SET agent_id = NULL WHERE agent_id = ?").run(id);
+    d.prepare("DELETE FROM agents WHERE id = ?").run(id);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function updateTopicAgent(topicId: number, agentId: number | null): boolean {
+  const d = getDb();
+  if (!d) return false;
+  try {
+    d.prepare("UPDATE topics SET agent_id = ? WHERE id = ?").run(agentId, topicId);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * List topics linked to a specific agent.
+ */
+export function listTopicsByAgent(agentId: number): TopicInfo[] | null {
+  const d = getDb();
+  if (!d) return null;
+  try {
+    const rows = d
+      .prepare(
+        "SELECT id, thread_id, chat_id, name, project_dir, session_id, created_at, runtime, runtime_fallback, agent_id FROM topics WHERE agent_id = ? ORDER BY created_at DESC"
+      )
+      .all(agentId) as TopicRow[];
+    return rows.map(mapTopic);
   } catch {
     return null;
   }
