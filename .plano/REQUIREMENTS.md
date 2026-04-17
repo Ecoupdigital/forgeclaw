@@ -177,9 +177,11 @@
 - [ ] MC-09: Webhook dispatcher com HMAC-SHA256 signature, retry com backoff exponencial (3 tentativas), circuit breaker básico
 
 ## Agentes Especializados (AGT)
-- [ ] AGT-01: Migration idempotente adicionando system_prompt TEXT, memory_mode TEXT DEFAULT 'global', memory_domain_filter TEXT (JSON array) na tabela topics
-- [ ] AGT-02: ContextBuilder prependa system_prompt do topic ao harness CLAUDE.md antes de cada chamada ao Claude
-- [ ] AGT-03: Retrieval de memória filtra por tags (memory_refs.entity_name) quando memory_mode='filtered' e memory_domain_filter não é vazio
-- [ ] AGT-04: API routes GET/PUT /api/topics/[id]/agent para ler e atualizar system_prompt, memory_mode e memory_domain_filter de um topic
-- [ ] AGT-05: Dashboard permite editar system_prompt (textarea), memory_mode (select global/filtered) e memory_domain_filter (chips input com tags) por topic
-- [ ] AGT-06: text.ts e ws-server.ts passam system_prompt e memory config do topic ao ContextBuilder
+- [ ] AGT-01: Tabela agents no SQLite (id, name, system_prompt, memory_mode, memory_domain_filter, default_runtime, created_at, updated_at) com migration idempotente
+- [ ] AGT-02: Tabela topics ganha coluna agent_id (FK pra agents) com migration idempotente
+- [ ] AGT-03: CRUD completo de agentes — API routes GET/POST/PUT/DELETE /api/agents
+- [ ] AGT-04: Dashboard aba Agentes com lista, formulário de criação/edição (nome, prompt textarea, memory mode select, tags chips, runtime select)
+- [ ] AGT-05: Vincular agente ao topic — dropdown de agente no topic card do dashboard + API PUT /api/topics/[id] com agent_id
+- [ ] AGT-06: ContextBuilder prependa system_prompt do agente ao harness e filtra memória por tags quando memory_mode='filtered'
+- [ ] AGT-07: text.ts e ws-server.ts carregam agente do topic e passam config ao ContextBuilder
+- [ ] AGT-08: Retrieval de memória filtra por memory_domain_filter (memory_refs.entity_name) quando agente tem memory_mode='filtered'
