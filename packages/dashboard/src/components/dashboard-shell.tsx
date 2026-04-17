@@ -14,6 +14,7 @@ import {
   LogOut,
   Coins,
   Activity,
+  Bot,
 } from "lucide-react";
 
 const TABS = [
@@ -22,6 +23,7 @@ const TABS = [
   { id: "memory", label: "Memória", icon: Brain },
   { id: "config", label: "Configurações", icon: Settings },
   { id: "harness", label: "Personalidade", icon: FileCode },
+  { id: "agents", label: "Agentes", icon: Bot },
   { id: "webhooks", label: "Webhooks", icon: Webhook },
   { id: "tokens", label: "Tokens", icon: Coins },
   { id: "activity", label: "Atividade", icon: Activity },
@@ -35,6 +37,7 @@ interface DashboardShellProps {
   memoryTab: ReactNode;
   configTab: ReactNode;
   harnessTab: ReactNode;
+  agentsTab: ReactNode;
   webhooksTab: ReactNode;
   tokensTab: ReactNode;
   activityTab: ReactNode;
@@ -46,6 +49,7 @@ export function DashboardShell({
   memoryTab,
   configTab,
   harnessTab,
+  agentsTab,
   webhooksTab,
   tokensTab,
   activityTab,
@@ -100,6 +104,7 @@ export function DashboardShell({
     memory: memoryTab,
     config: configTab,
     harness: harnessTab,
+    agents: agentsTab,
     webhooks: webhooksTab,
     tokens: tokensTab,
     activity: activityTab,
