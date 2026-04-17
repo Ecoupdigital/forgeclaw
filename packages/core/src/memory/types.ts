@@ -70,8 +70,8 @@ export interface MemoryProvider {
 
   systemPromptBlock(): Promise<string>;
 
-  prefetch(query: string, ctx: { sessionId?: string }): Promise<PrefetchResult | null>;
-  queuePrefetch(query: string, ctx: { sessionId?: string }): void;
+  prefetch(query: string, ctx: { sessionId?: string; entityFilter?: string[] }): Promise<PrefetchResult | null>;
+  queuePrefetch(query: string, ctx: { sessionId?: string; entityFilter?: string[] }): void;
 
   syncTurn(userContent: string, assistantContent: string, ctx: { sessionId?: string }): Promise<void>;
 
