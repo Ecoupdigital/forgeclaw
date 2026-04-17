@@ -248,12 +248,12 @@ async function processMessage(
             });
 
             // Build final message
-            const finalHtml = accumulatedText
-              ? convertToHtml(accumulatedText)
-              : (event.data.result as string) ?? 'Done.';
-
-            const contextBar = buildContextBar(contextPercent);
-            const finalMessage = truncateForTelegram(`${finalHtml}\n\n<i>${contextBar}</i>`);
+            const rawResult = (event.data.result as string) ?? '';
+            const textToConvert = accumulatedText || rawResult;
+            const finalHtml = textToConvert
+              ? convertToHtml(textToConvert)
+              : 'Done.';
+            const finalMessage = truncateForTelegram(finalHtml);
 
             // Build keyboard only if Claude output contains UP commands or numbered options
             const fullResponseText = accumulatedText || ((event.data.result as string) ?? '');
