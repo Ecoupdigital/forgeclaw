@@ -12,7 +12,7 @@ import { harnessLoader } from './harness-loader';
 import { getConfig } from './config';
 import { runnerRegistry } from './runners';
 import type { AgentCliRunner } from './runners';
-import type { StreamEvent, SessionInfo, RuntimeName } from './types';
+import type { StreamEvent, SessionInfo, RuntimeName, AgentConfig } from './types';
 
 const HARNESS_CLAUDE_MD = join(homedir(), '.forgeclaw', 'harness', 'CLAUDE.md');
 
@@ -186,8 +186,18 @@ async function handleSend(ws: WsSocket, msg: WsSendMessage): Promise<void> {
     topicId !== null
       ? stateStore.getTopicByChatAndThread(chatId, topicId)
       : stateStore.getTopicByChatAndThread(chatId, null);
+  // Load agent linked to this topic (if any)
+  let agentConfig: AgentConfig | null = null;
+  if (topicRow?.agentId) {
+    agentConfig = stateStore.getAgent(topicRow.agentId);
+    if (agentConfig) {
+      console.log(`[ws-server] topic ${sessionKey} linked to agent '${agentConfig.name}'`);
+    }
+  }
+
   const cfgForRuntime = await getConfig();
-  const requestedRuntime = (topicRow?.runtime ?? cfgForRuntime.defaultRuntime) as RuntimeName | undefined;
+  // Agent runtime > topic runtime > config default
+  const requestedRuntime = (agentConfig?.defaultRuntime ?? topicRow?.runtime ?? cfgForRuntime.defaultRuntime) as RuntimeName | undefined;
   const allowFallback = topicRow?.runtimeFallback ?? false;
   const runner = runnerRegistry.get(requestedRuntime, { allowFallback });
   console.log(`[ws-server] using runtime '${runner.name}' for ${sessionKey}`);
@@ -201,7 +211,7 @@ async function handleSend(ws: WsSocket, msg: WsSendMessage): Promise<void> {
     try {
       const config = await getConfig();
       const builder = new ContextBuilder(config, harnessLoader);
-      enrichedPrompt = await builder.build(message, chatId, topicId ?? 0);
+      enrichedPrompt = await builder.build(message, chatId, topicId ?? 0, undefined, agentConfig);
     } catch (err) {
       console.warn('[ws-server] ContextBuilder failed, using raw message:', err);
     }
