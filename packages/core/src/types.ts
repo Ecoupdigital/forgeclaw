@@ -77,6 +77,21 @@ export interface TopicInfo {
   runtime?: RuntimeName | null;
   /** If true, fall back to default runtime when the chosen one is unavailable. */
   runtimeFallback?: boolean;
+  /** FK to agents table. NULL = no agent linked. */
+  agentId?: number | null;
+}
+
+export type MemoryMode = 'global' | 'filtered';
+
+export interface AgentConfig {
+  id: number;
+  name: string;
+  systemPrompt: string | null;
+  memoryMode: MemoryMode;
+  memoryDomainFilter: string[];  // parsed from JSON, e.g. ["financeiro", "clientes"]
+  defaultRuntime: RuntimeName | null;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface CronJob {
