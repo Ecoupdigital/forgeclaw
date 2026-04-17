@@ -7,9 +7,9 @@
 
 ## Posicao Atual
 **Fase:** 22-agentes-especializados-mem-ria-por-topic
-**Plano Atual:** 22-03 de 04 — completo
-**Status:** Em execucao
-**Progresso:** [███████▌  ] 75%
+**Plano Atual:** 22-04 de 04 — completo
+**Status:** Fase 22 completa
+**Progresso:** [██████████] 100%
 
 ## Contexto Acumulado
 
@@ -42,8 +42,8 @@ Nenhum
 - `packages/dashboard/src/components/sessions-tab.tsx:185` — TopicInfo.createdAt missing (pre-existente, registrado em .plano/fases/08-dashboard-web/deferred-items.md)
 
 ## Continuidade de Sessao
-Ultima parada: Completado 22-03-PLAN.md (Core Logic -- ContextBuilder + Memory Filtering + Wiring) -- ContextBuilder aceita AgentConfig para persona + filtro de memoria por entity tags. text.ts e ws-server.ts carregam agente do topic e passam ao ContextBuilder. Cadeia completa: topic -> agent -> systemPrompt prepended + memoria filtrada.
-Proximas acoes: Executar 22-04 (Dashboard UI para Agents).
+Ultima parada: Completado 22-04-PLAN.md (Dashboard UI -- Aba Agentes + Agent Dropdown em Topics) -- AgentsTab com CRUD completo (cards, formulario inline, tag chips, badges), dropdown de agente nos topic cards do session sidebar, pipeline agentId da API ate o frontend.
+Proximas acoes: Fase 22 completa. Verificacao manual fim-a-fim no browser recomendada.
 
 ### Evolucao do Roadmap
 - Fase 22 adicionada: Agentes Especializados + Memória por Topic (prompt base por topic, filtro de memória por tags, edição via dashboard)
