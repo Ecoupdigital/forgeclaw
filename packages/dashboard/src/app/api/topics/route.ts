@@ -16,6 +16,7 @@ export async function GET(request: Request) {
         threadId: t.threadId,
         runtime: t.runtime ?? null,
         runtimeFallback: t.runtimeFallback ?? false,
+        agentId: t.agentId ?? null,
       }));
       return Response.json({ topics: slim, source: "core" });
     }
