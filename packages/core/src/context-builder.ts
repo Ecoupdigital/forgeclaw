@@ -2,7 +2,7 @@ import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
-import type { ForgeClawConfig } from './types';
+import type { ForgeClawConfig, AgentConfig } from './types';
 import type { HarnessLoader } from './harness-loader';
 import { stateStore } from './state-store';
 import { memoryManagerV2 } from './memory';
@@ -31,8 +31,14 @@ export class ContextBuilder {
     this.harnessLoader = harnessLoader;
   }
 
-  async build(userMessage: string, _chatId: number, topicId: number, sessionId?: string | null): Promise<string> {
+  async build(userMessage: string, _chatId: number, topicId: number, sessionId?: string | null, agent?: AgentConfig | null): Promise<string> {
     const parts: string[] = [];
+
+    // 0. Agent system prompt -- prepended BEFORE everything else so it acts
+    //    as a persona/instruction layer that wraps the entire context.
+    if (agent?.systemPrompt) {
+      parts.push(`# Agente: ${agent.name}\n\n${agent.systemPrompt}`);
+    }
 
     // 1. Stat line: tiny, always present, ~50 tokens
     const stat = await this.buildStatLine();
@@ -42,7 +48,10 @@ export class ContextBuilder {
     //    relevant to this message. Returns fenced <memory-context> block
     //    or empty string. Internally logs every retrieval to memory_retrievals.
     try {
-      const memBlock = await memoryManagerV2.prefetchAll(userMessage, 'context_builder', sessionId ?? undefined);
+      const entityFilter = agent?.memoryMode === 'filtered' && agent.memoryDomainFilter.length > 0
+        ? agent.memoryDomainFilter
+        : undefined;
+      const memBlock = await memoryManagerV2.prefetchAll(userMessage, 'context_builder', sessionId ?? undefined, entityFilter);
       if (memBlock) parts.push(memBlock);
     } catch (err) {
       // Never block the turn on memory errors
