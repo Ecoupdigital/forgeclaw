@@ -153,6 +153,7 @@ async function processMessage(
     let accumulatedText = '';
     let lastEditTime = 0;
     let currentStatus = 'Processing...';
+    let typingInterval: ReturnType<typeof setInterval> | undefined;
 
     try {
       const runOptions: Record<string, unknown> = {
@@ -169,7 +170,7 @@ async function processMessage(
 
       // H9: Send "typing" chat action every 4s while Claude processes.
       // Telegram typing indicator expires after ~5s, so 4s keeps it alive.
-      const typingInterval = setInterval(async () => {
+      typingInterval = setInterval(async () => {
         try {
           await ctx.api.sendChatAction(chatId, "typing", {
             ...(topicId ? { message_thread_id: topicId } : {}),
@@ -348,7 +349,7 @@ async function processMessage(
         friendlyMsg,
       );
     } finally {
-      clearInterval(typingInterval);
+      if (typingInterval) clearInterval(typingInterval);
       activeRunners.delete(sessionKey);
     }
   } finally {
