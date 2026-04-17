@@ -147,6 +147,7 @@ interface SessionData {
   topicRowId?: number | null;
   chatId?: number | null;
   threadId?: number | null;
+  agentId?: number | null;
 }
 
 interface TopicData {
@@ -256,6 +257,7 @@ export function SessionsTab() {
         projectDir: s.projectDir,
         sessionId: s.id,
         createdAt: s.createdAt,
+        agentId: s.agentId ?? null,
       })),
     [sessions]
   );

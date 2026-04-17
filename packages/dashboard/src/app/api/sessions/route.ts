@@ -46,6 +46,7 @@ export async function GET(request: Request) {
           topicRowId: topic?.id ?? null,
           chatId: topic?.chatId ?? null,
           threadId: topic?.threadId ?? null,
+          agentId: topic?.agentId ?? null,
         };
       });
       return Response.json({
