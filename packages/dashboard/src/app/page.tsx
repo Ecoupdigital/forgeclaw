@@ -4,6 +4,7 @@ import { CronsTab } from "@/components/crons-tab";
 import { MemoryTab } from "@/components/memory-tab";
 import { ConfigTab } from "@/components/config-tab";
 import { HarnessTab } from "@/components/harness-tab";
+import { AgentsTab } from "@/components/agents-tab";
 import { WebhooksTab } from "@/components/webhooks-tab";
 import { TokensTab } from "@/components/tokens-tab";
 import { ActivityTab } from "@/components/activity-tab";
@@ -16,6 +17,7 @@ export default function HomePage() {
       memoryTab={<MemoryTab />}
       configTab={<ConfigTab />}
       harnessTab={<HarnessTab />}
+      agentsTab={<AgentsTab />}
       webhooksTab={<WebhooksTab />}
       tokensTab={<TokensTab />}
       activityTab={<ActivityTab />}
