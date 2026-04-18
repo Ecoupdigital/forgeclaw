@@ -134,6 +134,7 @@ function AgentForm({
           >
             <option value="global">Global (todas as memorias)</option>
             <option value="filtered">Filtrado (por tags)</option>
+            <option value="none">Nenhuma (sem memoria)</option>
           </select>
         </div>
 
@@ -243,12 +244,14 @@ function AgentCard({
       {/* Badges */}
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-mono ${
-          agent.memoryMode === "filtered"
-            ? "bg-amber-500/15 text-amber-400"
-            : "bg-emerald-500/15 text-emerald-400"
+          agent.memoryMode === "none"
+            ? "bg-red-500/15 text-red-400"
+            : agent.memoryMode === "filtered"
+              ? "bg-amber-500/15 text-amber-400"
+              : "bg-emerald-500/15 text-emerald-400"
         }`}>
           <Brain className="h-3 w-3" />
-          {agent.memoryMode === "filtered" ? "Filtrado" : "Global"}
+          {agent.memoryMode === "none" ? "Sem memoria" : agent.memoryMode === "filtered" ? "Filtrado" : "Global"}
         </span>
         {agent.defaultRuntime && (
           <span className="inline-flex items-center gap-1 rounded-full bg-code-blue/15 px-2 py-0.5 text-[10px] font-mono text-code-blue">

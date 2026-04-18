@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     name?: string;
     systemPrompt?: string | null;
-    memoryMode?: "global" | "filtered";
+    memoryMode?: "global" | "filtered" | "none";
     memoryDomainFilter?: string[];
     defaultRuntime?: "claude-code" | "codex" | null;
   };
@@ -43,8 +43,8 @@ export async function POST(request: Request) {
     return Response.json({ error: "name is required" }, { status: 400 });
   }
 
-  if (body.memoryMode && !["global", "filtered"].includes(body.memoryMode)) {
-    return Response.json({ error: "memoryMode must be 'global' or 'filtered'" }, { status: 400 });
+  if (body.memoryMode && !["global", "filtered", "none"].includes(body.memoryMode)) {
+    return Response.json({ error: "memoryMode deve ser 'global', 'filtered' ou 'none'" }, { status: 400 });
   }
 
   if (body.memoryMode === "filtered" && (!body.memoryDomainFilter || body.memoryDomainFilter.length === 0)) {

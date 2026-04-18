@@ -81,7 +81,7 @@ export interface TopicInfo {
   agentId?: number | null;
 }
 
-export type MemoryMode = 'global' | 'filtered';
+export type MemoryMode = 'global' | 'filtered' | 'none';
 
 export interface AgentConfig {
   id: number;

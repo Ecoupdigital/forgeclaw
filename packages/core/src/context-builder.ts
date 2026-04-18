@@ -44,18 +44,19 @@ export class ContextBuilder {
     const stat = await this.buildStatLine();
     if (stat) parts.push(stat);
 
-    // 2. Memory retrieval — only injects if the memory system finds something
-    //    relevant to this message. Returns fenced <memory-context> block
-    //    or empty string. Internally logs every retrieval to memory_retrievals.
-    try {
-      const entityFilter = agent?.memoryMode === 'filtered' && agent.memoryDomainFilter.length > 0
-        ? agent.memoryDomainFilter
-        : undefined;
-      const memBlock = await memoryManagerV2.prefetchAll(userMessage, 'context_builder', sessionId ?? undefined, entityFilter);
-      if (memBlock) parts.push(memBlock);
-    } catch (err) {
-      // Never block the turn on memory errors
-      console.warn('[context-builder] prefetch failed (non-fatal):', err);
+    // 2. Memory retrieval — skip entirely when agent has memoryMode='none',
+    //    filter by tags when 'filtered', inject all when 'global' (default).
+    if (agent?.memoryMode !== 'none') {
+      try {
+        const entityFilter = agent?.memoryMode === 'filtered' && agent.memoryDomainFilter.length > 0
+          ? agent.memoryDomainFilter
+          : undefined;
+        const memBlock = await memoryManagerV2.prefetchAll(userMessage, 'context_builder', sessionId ?? undefined, entityFilter);
+        if (memBlock) parts.push(memBlock);
+      } catch (err) {
+        // Never block the turn on memory errors
+        console.warn('[context-builder] prefetch failed (non-fatal):', err);
+      }
     }
 
     // 3. Vault pointer (one line, not full MOC.md)

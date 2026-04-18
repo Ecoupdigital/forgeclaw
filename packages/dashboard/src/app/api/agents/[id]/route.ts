@@ -55,7 +55,7 @@ export async function PUT(
   const body = (await request.json()) as {
     name?: string;
     systemPrompt?: string | null;
-    memoryMode?: "global" | "filtered";
+    memoryMode?: "global" | "filtered" | "none";
     memoryDomainFilter?: string[];
     defaultRuntime?: "claude-code" | "codex" | null;
   };
@@ -65,8 +65,8 @@ export async function PUT(
     return Response.json({ error: "name cannot be empty" }, { status: 400 });
   }
 
-  if (body.memoryMode && !["global", "filtered"].includes(body.memoryMode)) {
-    return Response.json({ error: "memoryMode must be 'global' or 'filtered'" }, { status: 400 });
+  if (body.memoryMode && !["global", "filtered", "none"].includes(body.memoryMode)) {
+    return Response.json({ error: "memoryMode deve ser 'global', 'filtered' ou 'none'" }, { status: 400 });
   }
 
   // Se memoryMode='filtered', verificar que tem tags (considerar estado final, nao apenas o body)
