@@ -26,7 +26,19 @@
 # em paths ignorados sao inuteis — o gate nao vai olhar pra elas.
 #
 # ---------------------------------------------------------------------------
-# Entries ativos (repo esta limpo pos 23-02 — nenhum entry ativo).
+# Entries ativos
 # ---------------------------------------------------------------------------
 
-# (nenhum entry ativo — o repo deve manter-se limpo)
+# packages/cli/tests/archetypes/loader.test.ts — lista FORBIDDEN de dados
+# pessoais usada pelo teste 'no template contains forbidden personal data'.
+# Os strings existem para serem proibidos nos templates, nao sao vazamento.
+# Se o array for reordenado/editado os line numbers mudam e a suppressao
+# deixa de casar — e o scanner volta a falhar, forcando re-revisao. Desejado.
+packages/cli/tests/archetypes/loader.test.ts:91:personal_name  # blacklist intencional: teste garante que 'Jonathan' NAO aparece em nenhum template
+packages/cli/tests/archetypes/loader.test.ts:92:personal_company  # blacklist intencional: teste garante que 'EcoUp' NAO aparece em nenhum template
+packages/cli/tests/archetypes/loader.test.ts:93:personal_client  # blacklist intencional: teste garante que 'Don Vicente' NAO aparece em nenhum template
+packages/cli/tests/archetypes/loader.test.ts:94:personal_client  # blacklist intencional: teste garante que 'Donvicente' NAO aparece em nenhum template
+packages/cli/tests/archetypes/loader.test.ts:95:personal_client  # blacklist intencional: teste garante que 'Kovvy' NAO aparece em nenhum template
+packages/cli/tests/archetypes/loader.test.ts:96:personal_client  # blacklist intencional: teste garante que 'LFpro' NAO aparece em nenhum template
+packages/cli/tests/archetypes/loader.test.ts:97:personal_client  # blacklist intencional: teste garante que 'LF Pro' NAO aparece em nenhum template
+packages/cli/tests/archetypes/loader.test.ts:99:personal_client  # blacklist intencional: teste garante que 'Clearify' NAO aparece em nenhum template
