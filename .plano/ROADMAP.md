@@ -297,7 +297,7 @@
 **Objetivo:** [A ser planejado]
 **Requisitos**: TBD
 **Depende de:** Fase 25
-**Planos:** 1/4 plans executed
+**Planos:** 2/4 plans executed
 
 ### Fase 27: Dashboard First-run Onboarding — rota onboarding com chat conversacional à esquerda e preview ao vivo dos arquivos do harness à direita até existir sentinel .onboarded
 

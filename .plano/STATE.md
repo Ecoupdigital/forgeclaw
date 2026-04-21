@@ -7,9 +7,9 @@
 
 ## Posicao Atual
 **Fase:** 26-persona-entrevistador-forgeclaw (IN PROGRESS)
-**Plano Atual:** 26-01 de 04 COMPLETO
-**Status:** Ready to plan 26-02
-**Progresso:** [██▌░░░░░░░] 25%
+**Plano Atual:** 26-03 de 04 COMPLETO
+**Status:** Ready to plan 26-04
+**Progresso:** [███████▌░░] 75%
 
 ## Contexto Acumulado
 
@@ -93,6 +93,13 @@
 - [2026-04-21][26-01] Runtime smoke test (bun -e) com 15 checks validou end-to-end: loaders, cache, extractor com fenced/bare/invalid, validators em todos os 3 status, rejeicao de file invalido + placeholder fora da whitelist + replace_section sem H2, aceitacao das 6 keys, HARNESS_FILES_ALL.length=7, DEFAULT_BUDGET correto.
 - [2026-04-21][26-01] Typecheck do core: zero erros em onboarding/**. 8 erros pre-existentes em runners/* e conflito MemoryManager em index.ts seguem out-of-scope.
 - [2026-04-21][26-01] Audit personal context CI: PASS. Zero critical findings em codigo distribuivel.
+- [2026-04-21][26-03] Criados 5 scripts de entrevista em packages/core/src/onboarding/scripts/ (solo-builder.md 50l/7 topicos, content-creator.md 56l/8 topicos, agency-freela.md 56l/8 topicos, ecom-manager.md 55l/8 topicos, generic.md 34l/4 topicos) + README.md 56l. Cada script e lista priorizada de topicos com pergunta sugerida + diff esperado. Topicos 1-3 ou 1-4 sempre cobrem placeholders universais (userName/company/role/workingDir); 5+ sao especificos do arquetipo.
+- [2026-04-21][26-03] generic.md deliberadamente minimo (4 topicos) porque o fallback nao presume nicho. Solo-builder tem 7, outros 3 arquetipos tem 8. Max 8 pra respeitar limite de 12 perguntas do interviewer.md.
+- [2026-04-21][26-03] createIfMissing=false explicito em replace_section que aponta pra secoes ja existentes nos templates da Fase 24 (## Pilares editoriais em content-creator, ## Clientes ativos em agency-freela, ## Tom em solo-builder STYLE.md). Previne corrupcao de template.
+- [2026-04-21][26-03] Cross-check estatico (grep) confirma: apenas arquivos de HARNESS_FILES_ALL referenciados (USER.md/TOOLS.md/STYLE.md/HEARTBEAT.md), apenas keys de VALID_PLACEHOLDER_KEYS usadas (userName/company/role/workingDir — vaultPath/timezone nao usadas mas permitidas).
+- [2026-04-21][26-03] Scripts herdam tom do archetype.json do perfil (solo-builder direto, content-creator com voz/pilares, agency-freela com clientes/cobranca, ecom-manager com plataforma/ads/meta, generic neutro). Scripts e archetype apontam pra mesma realidade sem duplicacao.
+- [2026-04-21][26-03] scripts/README.md documenta contrato de formato pra arquetipos futuros: titulo H1, regras especificas, 4-8 topicos, sinal de done antecipado. Schema de topico padronizado (Objetivo/Pergunta/Diff/Nota).
+- [2026-04-21][26-03] Runtime smoke test: loadScript(slug) retorna 1435-2888 chars por script, loadInterviewerPrompt(slug) concatena base+script resultando em 6610-8063 chars. 5/5 ok. Typecheck zero erros em onboarding/scripts/**. Audit CI PASS.
 
 ### Bloqueios
 Nenhum
@@ -102,8 +109,8 @@ Nenhum
 - `packages/cli/src/commands/install.ts:22` — `Cannot find module '@forgeclaw/core'` (pre-existente, validado via git stash). Registrado em `.plano/fases/24-.../deferred-items.md`. Acao sugerida: adicionar `@forgeclaw/core: workspace:*` em packages/cli/package.json como primeira tarefa de 25-01.
 
 ## Continuidade de Sessao
-Ultima parada: Completado 26-01-PLAN.md (Protocolo, Tipos e System Prompt do Entrevistador). 7 tarefas, 6 commits. Criado modulo novo `packages/core/src/onboarding/` com: types.ts (239 linhas — HarnessFile/ArchetypeSlug/InterviewTurn/DiffOp/FileDiff/HarnessDiff/BudgetConfig/BudgetStatus/InterviewStatus/InterviewState/InterviewResponse/InterviewerOptions/DEFAULT_BUDGET + 3 typed errors), interviewer.md (128 linhas — system prompt fixo versionado com 7 regras + 3 exemplos JSON + self-check), prompts.ts (221 linhas — loadInterviewerPrompt/loadInterviewerBase/loadScript com cache, extractJsonBlock com fallback, validateInterviewResponse/validateHarnessDiff/validateDiffOp com InterviewResponseParseError+InterviewDiffValidationError, VALID_PLACEHOLDER_KEYS whitelist de 6 keys), index.ts (43 linhas — barrel), README.md (112 linhas — arquitetura/protocolo/diff/budget/integracoes). Editado packages/core/src/index.ts: +1 linha `export * from './onboarding'`. Commits: 83c7985 (types), dcd2c8c (interviewer.md), f4baf05 (prompts), ee5c0ae (barrel), 11932c8 (README), 04620a7 (core barrel). Runtime smoke test 15/15 checks. Typecheck zero erros em onboarding/**. Audit CI PASS.
-Proximas acoes: 26-02 (motor Interviewer + merger.ts + budget.ts — consome types/prompts/validators da 26-01). 26-03 (scripts por arquetipo em onboarding/scripts/ — loadScript ja pronto pra carrega-los). 26-04 (testes do motor). Depois 27 (dashboard first-run onboarding) -> 28 (forgeclaw refine) -> 29 (gate comunidade) -> 30 (docs+distribuicao) -> 31 (alpha).
+Ultima parada: Completado 26-03-PLAN.md (Roteiros por Arquetipo). 7 tarefas, 6 commits (tarefa 7 e validacao pura). Criados 5 scripts em `packages/core/src/onboarding/scripts/`: solo-builder.md (50l/7 topicos — stack, projeto em foco, deploy, tom), content-creator.md (56l/8 topicos — canais, pilares editoriais, voz, horario HEARTBEAT), agency-freela.md (56l/8 topicos — clientes ativos, ferramenta/politica de cobranca, canal), ecom-manager.md (55l/8 topicos — plataforma, ads, ERP, atendimento, meta), generic.md (34l/4 topicos — fallback minimo). README.md (56l) documenta contrato de formato + schema de topico + regras de content pra arquetipos futuros. Todos os topicos 1-3/1-4 cobrem placeholders universais (userName/company/role/workingDir); 5+ sao especificos. replace_section com createIfMissing=false aponta so pra H2 que JA existem nos templates da Fase 24. Cross-check estatico OK: apenas HARNESS_FILES_ALL e VALID_PLACEHOLDER_KEYS usados. Runtime smoke test: 5/5 slugs carregam via loadScript + loadInterviewerPrompt. Commits: 70359d6 (solo-builder), 6fa55b4 (content-creator), b322402 (agency-freela), 47bc369 (ecom-manager), cad2ffb (generic), 444cd78 (README). Typecheck zero erros em onboarding/scripts/**. Audit CI PASS. Observacao: 26-02 rodou em paralelo (commits 7240980, 80712e4, ed81f44, f8ee696 visiveis no git log entre os commits do 26-03).
+Proximas acoes: 26-04 (testes do motor com fixtures de conversa por arquetipo, validacao E2E de diff util em <10 turnos). Depois 27 (dashboard first-run onboarding) -> 28 (forgeclaw refine) -> 29 (gate comunidade) -> 30 (docs+distribuicao) -> 31 (alpha).
 
 ### Evolucao do Roadmap
 - Fase 22 adicionada: Agentes Especializados + Memória por Topic (prompt base por topic, filtro de memória por tags, edição via dashboard)
