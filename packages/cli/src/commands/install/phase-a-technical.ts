@@ -9,6 +9,8 @@ import {
 import { randomBytes } from 'node:crypto';
 import type { InstallContext, PhaseAResult } from './types';
 import { writeState } from './state';
+import { checkBun, checkClaudeInstalled, checkClaudeAuth, MIN_BUN_VERSION } from './diagnostics';
+import { validateBotToken, validateDirectoryExists } from './validators';
 
 function cancelled(): never {
   log.warn('Installation cancelled.');
@@ -21,9 +23,8 @@ function checkValue<T>(value: T | symbol): T {
 }
 
 /**
- * STUB — implementacao real em 25-02.
- * Retorna {ok:true} sempre nesta fase. Versao real valida versao do Bun,
- * existencia do `claude` CLI e se esta autenticado (via claude --print "ping" etc).
+ * Valida Bun (>= MIN_BUN_VERSION), Claude Code CLI instalado e autenticado.
+ * Cada falha retorna `ok:false` com `reason` acionavel e flags de diagnostico.
  */
 export async function checkDependencies(): Promise<{
   ok: boolean;
@@ -32,15 +33,62 @@ export async function checkDependencies(): Promise<{
   claudeAuthenticated: boolean;
   reason?: string;
 }> {
-  return { ok: true, hasClaude: true, claudeAuthenticated: true };
+  const bun = await checkBun();
+  if (!bun.installed) {
+    return {
+      ok: false,
+      hasClaude: false,
+      claudeAuthenticated: false,
+      reason: 'Bun is not installed. Install from https://bun.sh then run: npx forgeclaw install --resume',
+    };
+  }
+  if (!bun.meetsMinimum) {
+    return {
+      ok: false,
+      bunVersion: bun.version,
+      hasClaude: false,
+      claudeAuthenticated: false,
+      reason: `Bun ${bun.version} detected; minimum required is ${MIN_BUN_VERSION}. Run: bun upgrade, then: npx forgeclaw install --resume`,
+    };
+  }
+
+  const claude = await checkClaudeInstalled();
+  if (!claude.installed) {
+    return {
+      ok: false,
+      bunVersion: bun.version,
+      hasClaude: false,
+      claudeAuthenticated: false,
+      reason: 'Claude Code CLI not found on PATH. Install: npm install -g @anthropic-ai/claude-code, then: claude login, then: npx forgeclaw install --resume',
+    };
+  }
+
+  const auth = await checkClaudeAuth();
+  if (!auth.authenticated) {
+    return {
+      ok: false,
+      bunVersion: bun.version,
+      hasClaude: true,
+      claudeAuthenticated: false,
+      reason: auth.hint ?? 'Claude Code CLI is installed but not authenticated. Run: claude login',
+    };
+  }
+
+  return {
+    ok: true,
+    bunVersion: bun.version,
+    hasClaude: true,
+    claudeAuthenticated: true,
+  };
 }
 
 /**
- * STUB — 25-02 substitui com logica que tenta `claude --print` e detecta
- * mensagens de nao-autenticado.
+ * Delegado a diagnostics.checkClaudeAuth. Mantido como superficie publica
+ * pra permitir rechecagem pontual em outras fases se necessario.
  */
 export async function verifyClaudeAuth(): Promise<{ authenticated: boolean; hint?: string }> {
-  return { authenticated: true };
+  const r = await checkClaudeAuth();
+  return { authenticated: r.authenticated, hint: r.hint };
 }
 
 /**
@@ -85,17 +133,34 @@ export async function runPhaseA(ctx: InstallContext): Promise<PhaseAResult> {
   }
 
   // --- 2) Credenciais ---
-  const botToken = checkValue(
-    await text({
-      message: 'Telegram Bot Token (create at @BotFather):',
-      placeholder: '123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11',
-      initialValue: (existing.botToken as string) ?? '',
-      validate(value) {
-        if (!value) return 'Token is required';
-        if (!/^\d+:.+$/.test(value)) return 'Token must start with a number followed by :';
-      },
-    })
-  );
+  let botToken = '';
+  let initialTokenValue = (existing.botToken as string) ?? '';
+  while (true) {
+    const raw = checkValue(
+      await text({
+        message: 'Telegram Bot Token (create at @BotFather):',
+        placeholder: '123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11',
+        initialValue: initialTokenValue,
+        validate(value) {
+          if (!value) return 'Token is required';
+          if (!/^\d+:.+$/.test(value)) return 'Token must start with a number followed by :';
+        },
+      })
+    );
+    const tokenSpinner = spinner();
+    tokenSpinner.start('Validating token with Telegram...');
+    const check = await validateBotToken(raw);
+    tokenSpinner.stop(
+      check.ok ? `Token valid (@${check.data?.botUsername})` : 'Token validation failed.'
+    );
+    if (check.ok) {
+      botToken = raw;
+      break;
+    }
+    log.warn(check.reason);
+    // Pre-preenche com o valor rejeitado pro usuario poder editar em vez de digitar tudo de novo.
+    initialTokenValue = raw;
+  }
 
   const userIdRaw = checkValue(
     await text({
@@ -117,6 +182,8 @@ export async function runPhaseA(ctx: InstallContext): Promise<PhaseAResult> {
       initialValue: (existing.workingDir as string) ?? '',
       validate(value) {
         if (!value) return 'Directory is required';
+        const r = validateDirectoryExists(value);
+        if (!r.ok) return r.reason;
       },
     })
   );
