@@ -3,13 +3,13 @@
 ## Referencia do Projeto
 **Projeto:** ForgeClaw
 **Valor Central:** O Claude Code deve responder de forma confiavel via Telegram com isolamento perfeito entre topicos
-**Foco Atual:** Fase 22 — Agentes Especializados + Memoria por Topic
+**Foco Atual:** Fase 23 — Auditoria de Despersonalizacao (pre-distribuicao)
 
 ## Posicao Atual
-**Fase:** 22-agentes-especializados-mem-ria-por-topic
-**Plano Atual:** 22-04 de 04 — completo
-**Status:** Fase 22 completa
-**Progresso:** [██████████] 100%
+**Fase:** 23-auditoria-de-despersonalizacao
+**Plano Atual:** 23-01 de 03 — completo
+**Status:** Fase 23 em andamento (1/3 planos)
+**Progresso:** [███░░░░░░░] 33%
 
 ## Contexto Acumulado
 
@@ -35,6 +35,9 @@
 - [Phase 13]: global fetch interceptor for 401 redirect (vs per-hook handling)
 - [2026-04-16][21-02] Token recorder escuta stream:done, persiste input/output/cache tokens. Activity recorder escuta session/message/cron events e emite activity:created. Ambos inicializados no boot antes do webhook dispatcher.
 - [Phase 23]: ForgeClaw será distribuído como bônus da comunidade Dominando AutoIA (R7/mes), não vendido isoladamente. Modelo: repo privado + invite manual no GitHub ao assinar. Wizard entrevistador + templates por arquétipo geram harness personalizado sem contexto pessoal do Jonathan
+- [2026-04-21][23-01] Scanner de contexto pessoal determinista em scripts/audit-personal-context.ts: 27 regras regex em 11 categorias (personal_name, personal_company, personal_client, personal_handle, personal_userid, hardcoded_path, private_repo_url, private_skill_dep, vault_structure, playwright_snapshot, bot_token_fragment). Zero deps novas. IGNORE_FILE_NAMES exclui os proprios outputs pra evitar auto-referencia em runs repetidos.
+- [2026-04-21][23-01] Ground truth: 1280 findings reais em 97 arquivos (428 critical / 762 high / 90 medium). 19 arquivos de produto real precisam acao (janitor.md, writer.md, memory-manager.ts, mock-data.ts, .continue-aqui.md, .playwright-mcp/, README.md, ops/*.service, install.ts + context-builder cluster de 5 files com `05-pessoal/daily-log`).
+- [2026-04-21][23-01] CI guard do 23-03 fara whitelist de `.plano/` e `scripts/audit-personal-context.ts`, exceto categorias bot_token_fragment, personal_userid, personal_handle que nunca podem existir em lugar nenhum.
 
 ### Bloqueios
 Nenhum
@@ -43,8 +46,9 @@ Nenhum
 - `packages/dashboard/src/components/sessions-tab.tsx:185` — TopicInfo.createdAt missing (pre-existente, registrado em .plano/fases/08-dashboard-web/deferred-items.md)
 
 ## Continuidade de Sessao
-Ultima parada: Completado 22-04-PLAN.md (Dashboard UI -- Aba Agentes + Agent Dropdown em Topics) -- AgentsTab com CRUD completo (cards, formulario inline, tag chips, badges), dropdown de agente nos topic cards do session sidebar, pipeline agentId da API ate o frontend.
-Proximas acoes: Fase 22 completa. Verificacao manual fim-a-fim no browser recomendada.
+Ultima parada: Completado 23-01-PLAN.md (Auditoria Automatizada de Contexto Pessoal) -- scanner standalone em scripts/audit-personal-context.ts, npm scripts audit:personal / audit:personal:json, AUDIT-REPORT.md (1280 findings em 97 arquivos), CLEANUP-CHECKLIST.md com acoes tipadas por arquivo, COVERAGE-VALIDATION.md provando cobertura dos 10 arquivos-alvo conhecidos. 6 commits (9c40a67, c5f5432, 0dd4496, e94177e, 5c1c1ac, ed2b445).
+Proximas acoes: Executar 23-02-PLAN.md (cleanup) consumindo CLEANUP-CHECKLIST.md. Depois 23-03-PLAN.md (CI guard).
 
 ### Evolucao do Roadmap
 - Fase 22 adicionada: Agentes Especializados + Memória por Topic (prompt base por topic, filtro de memória por tags, edição via dashboard)
+- Fase 23 iniciada: Auditoria de Despersonalizacao — 23-01 completo (scanner + relatorios), 23-02 e 23-03 pendentes.

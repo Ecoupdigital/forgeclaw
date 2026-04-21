@@ -263,3 +263,69 @@
   5. memory_mode='filtered' injeta só memórias com tags matching memory_domain_filter do agente
   6. memory_mode='global' mantém comportamento atual (injeta tudo)
   7. Criar topic novo já permite selecionar agente
+
+### Fase 23: Auditoria de Despersonalização — mapear e expurgar contexto pessoal do repo (harness, HEARTBEAT, memória, skills) antes de distribuir
+
+**Objetivo:** Scanner automatizado + cleanup + CI guard para garantir zero PII no repo antes de distribuir via comunidade.
+**Requisitos**: TBD
+**Depende de:** Fase 22
+**Planos:** 3 planos (1/3 completos)
+  - [x] 23-01 — Auditoria automatizada de contexto pessoal (scanner + relatório + checklist)
+  - [ ] 23-02 — Execução do cleanup (consome CLEANUP-CHECKLIST.md)
+  - [ ] 23-03 — CI guard (whitelist .plano/, bloqueia tokens/handles/userids)
+
+### Fase 24: Templates por Arquétipo — cinco perfis (Solo Builder, Criador de Conteúdo, Agência/Freela, Gestor E-commerce, Genérico) com harness completo genérico por arquétipo
+
+**Objetivo:** [A ser planejado]
+**Requisitos**: TBD
+**Depende de:** Fase 23
+**Planos:** 0 planos
+
+### Fase 25: CLI Installer em Duas Fases — fase técnica valida Claude Code CLI autenticado e credenciais, escolha de arquétipo popula harness, sobe dashboard em modo onboarding
+
+**Objetivo:** [A ser planejado]
+**Requisitos**: TBD
+**Depende de:** Fase 24
+**Planos:** 0 planos
+
+### Fase 26: Persona Entrevistador ForgeClaw — system prompt fixo no produto com roteiro por arquétipo, output em diff estruturado do harness, bounded em turnos e tokens
+
+**Objetivo:** [A ser planejado]
+**Requisitos**: TBD
+**Depende de:** Fase 25
+**Planos:** 0 planos
+
+### Fase 27: Dashboard First-run Onboarding — rota onboarding com chat conversacional à esquerda e preview ao vivo dos arquivos do harness à direita até existir sentinel .onboarded
+
+**Objetivo:** [A ser planejado]
+**Requisitos**: TBD
+**Depende de:** Fase 26
+**Planos:** 0 planos
+
+### Fase 28: Comando forgeclaw refine — CLI command que reexecuta a entrevista depois do install pra refinar harness sem reinstalar o produto
+
+**Objetivo:** [A ser planejado]
+**Requisitos**: TBD
+**Depende de:** Fase 27
+**Planos:** 0 planos
+
+### Fase 29: Gate de Acesso pela Comunidade — v1 simples com repo privado e invite manual no GitHub ao assinar comunidade, documentação de fluxo de concessão e revogação
+
+**Objetivo:** [A ser planejado]
+**Requisitos**: TBD
+**Depende de:** Fase 28
+**Planos:** 0 planos
+
+### Fase 30: Docs e Distribuição — reescrever README como guia de boas-vindas ao membro, quick reference das nove abas do dashboard, roteiro de vídeo walkthrough de install em cinco minutos
+
+**Objetivo:** [A ser planejado]
+**Requisitos**: TBD
+**Depende de:** Fase 29
+**Planos:** 0 planos
+
+### Fase 31: Alpha com Cinco Membros da Comunidade — seleção de perfis diferentes, observação de instalação sem ajudar, coleta de friction points, iteração antes do release geral
+
+**Objetivo:** [A ser planejado]
+**Requisitos**: TBD
+**Depende de:** Fase 30
+**Planos:** 0 planos
