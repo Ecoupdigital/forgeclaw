@@ -19,8 +19,8 @@ export const mockTopics: TopicInfo[] = [
     id: 1,
     threadId: 101,
     chatId: 1001,
-    name: "ForgeClaw Core",
-    projectDir: "/home/projects/ForgeClaw",
+    name: "Demo Project",
+    projectDir: "/home/example/projects/demo-app",
     sessionId: "sess-001",
     createdAt: now - 7 * day,
   },
@@ -28,8 +28,8 @@ export const mockTopics: TopicInfo[] = [
     id: 2,
     threadId: 102,
     chatId: 1001,
-    name: "Dashboard Build",
-    projectDir: "/home/projects/ForgeClaw/packages/dashboard",
+    name: "Demo Dashboard",
+    projectDir: "/home/example/projects/demo-app/packages/dashboard",
     sessionId: "sess-002",
     createdAt: now - 2 * day,
   },
@@ -37,8 +37,8 @@ export const mockTopics: TopicInfo[] = [
     id: 3,
     threadId: 103,
     chatId: 1001,
-    name: "Memory System",
-    projectDir: "/home/projects/ForgeClaw",
+    name: "Demo Memory",
+    projectDir: "/home/example/projects/demo-app",
     sessionId: null,
     createdAt: now - 5 * day,
   },
@@ -47,7 +47,7 @@ export const mockTopics: TopicInfo[] = [
     threadId: null,
     chatId: 1001,
     name: "Cron Jobs Setup",
-    projectDir: "/home/projects/ForgeClaw",
+    projectDir: "/home/example/projects/demo-app",
     sessionId: null,
     createdAt: now - 3 * day,
   },
@@ -58,7 +58,7 @@ export const mockSessions: SessionInfo[] = [
     id: "sess-001",
     topicId: 1,
     claudeSessionId: "claude-abc123",
-    projectDir: "/home/projects/ForgeClaw",
+    projectDir: "/home/example/projects/demo-app",
     contextUsage: 34,
     createdAt: now - 2 * hour,
     updatedAt: now - 300000,
@@ -67,7 +67,7 @@ export const mockSessions: SessionInfo[] = [
     id: "sess-002",
     topicId: 2,
     claudeSessionId: "claude-def456",
-    projectDir: "/home/projects/ForgeClaw/packages/dashboard",
+    projectDir: "/home/example/projects/demo-app/packages/dashboard",
     contextUsage: 12,
     createdAt: now - hour,
     updatedAt: now - 60000,
@@ -222,19 +222,19 @@ export const mockDailyLogs: DailyLog[] = [
 export const mockMemoryContent = `# MEMORY.md
 
 ## Decisoes Importantes
-- [2026-04-08] Escolhido SQLite via bun:sqlite como banco de dados principal
-- [2026-04-07] Arquitetura: monorepo com packages/core, packages/bot, packages/dashboard
-- [2026-04-06] Stack definida: Bun runtime, TypeScript, Next.js para dashboard
+- [2026-04-08] Escolhido banco local como store principal
+- [2026-04-07] Arquitetura: monorepo com multiplos packages
+- [2026-04-06] Stack definida: runtime moderno, TypeScript, framework fullstack
 
 ## Padroes Aprendidos
-- [2026-04-08] StateStore deve ser singleton para evitar locks no SQLite
-- [2026-04-07] Harness files sao cached por mtime para performance
-- [2026-04-06] Cron engine parseia HEARTBEAT.md com hot-reload via fs.watch
+- [2026-04-08] Store deve ser singleton para evitar locks
+- [2026-04-07] Arquivos de configuracao cached por mtime para performance
+- [2026-04-06] Engine de agendamento com hot-reload via fs.watch
 
 ## Contexto do Usuario
-- Prefere respostas em portugues
-- Projeto pessoal de IA - ForgeClaw
-- Usa Claude Code como backend de execucao
+- Prefere respostas concisas
+- Projeto de demo (example-project)
+- Usa agente de IA como backend de execucao
 `;
 
 export const mockHarnessFiles: HarnessFile[] = [
@@ -300,8 +300,8 @@ Codigo: sempre com tipos e comentarios.`,
 export const mockConfig: ForgeClawConfig = {
   botToken: "***hidden***",
   allowedUsers: [123456789],
-  workingDir: "/home/projects/ForgeClaw",
-  vaultPath: "/home/vault",
+  workingDir: "/home/example/projects/demo-app",
+  vaultPath: "/home/example/vault",
   voiceProvider: "groq",
   claudeModel: "claude-sonnet-4-20250514",
   maxConcurrentSessions: 3,
@@ -313,11 +313,11 @@ export const mockConfig: ForgeClawConfig = {
 
 export const mockHeartbeat = `# HEARTBEAT.md
 
-## Todo dia as 23h30 -> topico: ForgeClaw Core
+## Todo dia as 23h30 -> topico: Example Topic
 - Compile o daily log em MEMORY.md
 - Extraia insights e decisoes importantes
 
-## Todo dia as 8h -> topico: ForgeClaw Core
+## Todo dia as 8h -> topico: Example Topic
 - Bom dia! Verifique tarefas pendentes e me de um resumo
 - Liste issues abertas no GitHub
 
