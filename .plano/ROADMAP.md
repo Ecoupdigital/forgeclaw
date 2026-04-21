@@ -269,9 +269,9 @@
 **Objetivo:** Scanner automatizado + cleanup + CI guard para garantir zero PII no repo antes de distribuir via comunidade.
 **Requisitos**: TBD
 **Depende de:** Fase 22
-**Planos:** 3 planos (1/3 completos)
+**Planos:** 3 planos (2/3 completos)
   - [x] 23-01 — Auditoria automatizada de contexto pessoal (scanner + relatório + checklist)
-  - [ ] 23-02 — Execução do cleanup (consome CLEANUP-CHECKLIST.md)
+  - [x] 23-02 — Execução do cleanup (consome CLEANUP-CHECKLIST.md)
   - [ ] 23-03 — CI guard (whitelist .plano/, bloqueia tokens/handles/userids)
 
 ### Fase 24: Templates por Arquétipo — cinco perfis (Solo Builder, Criador de Conteúdo, Agência/Freela, Gestor E-commerce, Genérico) com harness completo genérico por arquétipo
