@@ -71,6 +71,13 @@ CHANGELOG.md:46:personal_name  # changelog Removed: descreve de onde contexto pe
 docs/landing.md:52:personal_name  # bloco Construido por: attribution publica do autor
 docs/landing.md:52:personal_company  # bloco Construido por: attribution publica da empresa
 
+# docs/getting-started.md (PLAN 30-02) — tutorial end-to-end. O comando
+# `git clone https://github.com/Ecoupdigital/forgeclaw.git` e a instrucao
+# legitima pra membro que ja tem acesso ao repo privado (Fase 29). Mesmo
+# padrao da entry README.md:22.
+docs/getting-started.md:29:personal_company  # Quick Start: URL oficial do repo privado para membros que ja tem acesso
+docs/getting-started.md:29:private_repo_url  # Quick Start: URL oficial do repo privado para membros que ja tem acesso
+
 # ops/gate/* (PLAN 29-02) — script operacional e docs do gate de acesso.
 # Por definicao, o script opera SOBRE o repo privado oficial Ecoupdigital/forgeclaw
 # e e executado pelo detentor dos direitos autorais (Jonathan). As referencias
