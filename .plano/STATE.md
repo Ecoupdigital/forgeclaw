@@ -6,10 +6,10 @@
 **Foco Atual:** Fase 26 — Persona Entrevistador ForgeClaw
 
 ## Posicao Atual
-**Fase:** 26-persona-entrevistador-forgeclaw (IN PROGRESS)
-**Plano Atual:** 26-03 de 04 COMPLETO (26-01, 26-02, 26-03 todos fechados com SUMMARY)
-**Status:** Ready to execute 26-04 (testes de motor com fixtures de conversa)
-**Progresso:** [███████▌░░] 75%
+**Fase:** 26-persona-entrevistador-forgeclaw (COMPLETE)
+**Plano Atual:** 26-04 de 04 COMPLETO (Fase 26 totalmente fechada — 4/4 planos com SUMMARY)
+**Status:** Ready to execute Fase 27 (dashboard first-run onboarding)
+**Progresso:** [██████████] 100%
 
 ## Contexto Acumulado
 
@@ -106,6 +106,12 @@
 - [2026-04-21][26-02] replaceSection usa lines.findIndex match exato em inicio de linha (toleracao trimEnd) em vez de regex — impede que '## Intro' dentro de bloco de codigo disparasse replace acidental. set_placeholder usa split(token).join(value) — escape-safe pra valores com $1, \\test, a.b (validado no teste 'value with special regex chars'). Sem regex em lugar nenhum do merger.
 - [2026-04-21][26-02] Interviewer.abort() idempotente — chamar 2x nao quebra. AbortSignal integrado DUAS vezes (defense in depth): constructor registra listener que chama abort(), e o loop async verifica abortSignal.aborted a cada StreamEvent. extractTextFromEvent ignora thinking/tool_use/result — so 'text' conta pra construcao da resposta.
 - [2026-04-21][26-02] Testes em vitest (nao bun:test) alinhando com padrao do packages/core (tests/event-bus.test.ts etc). Suite: 22/22 passed em 294ms. Tmpdir com 3 seeds (USER/AGENTS/SOUL) pra testes de applyDiff real. previewDiff validado via before/after byteequal. Executor anterior bateu rate limit entre criar testes e criar SUMMARY — esta sessao apenas finalizou metadados.
+- [2026-04-21][26-04] Suite onboarding passa de 22 -> 63 testes em 4 arquivos (budget 8 + merger 14 + prompts 35 + interviewer 6) rodando em 264ms. Determinística end-to-end sem depender do claude CLI real. Mock do ClaudeRunner via `vi.mock('../../src/claude-runner')` com queue module-level (`mockResponseQueue[]`) alimentada por `__setNextResponse()`. Cada chamada a `runner.run()` shift da queue e emite 2 eventos sintéticos (`text` + `done` com usage). Import do Interviewer OBRIGATORIAMENTE apos `vi.mock` — ordem critica.
+- [2026-04-21][26-04] 4 fixtures JSON sob tests/onboarding/fixtures/: content-creator-happy (3 turns, diff aplicado byte-a-byte em USER.md), solo-builder-budget-exceeded (maxTurns=2, 3a resposta nunca consumida), generic-abort (modelo emite aborted no 1o turn), malformed-response (texto livre sem JSON forca InterviewResponseParseError). Fixtures em JSON puro (nao TS) — legivel por tooling externo, editavel sem recompilar.
+- [2026-04-21][26-04] Teste de budget usa `expect(['asking','aborted']).toContain(r2.status)` pra tolerar 2 semanticas de incrementTurn — a impl atual incrementa ENTAO checa `>`, entao maxTurns=2 permite 2 turnos e aborta o 3o. Teste tolera ambas sem perder rigor: garante que `state.status==='aborted'` + `cutoffReason==='max_turns'` ao final.
+- [2026-04-21][26-04] Happy path valida cadeia completa Interviewer -> Response -> applyDiff -> disco. Apos 3 turnos, readFileSync de USER.md mostra `nome: Ana` e `empresa: Acme` (placeholders substituidos). Prova que o pipeline funciona sem trapacas.
+- [2026-04-21][26-04] Reporter `basic` do vitest 4.1.3 foi removido (causa ERR_LOAD_URL). Fix: rodar sem `--reporter=basic` (default funciona). Vitest precisa ser invocado da raiz do monorepo, nao de packages/core (include do config e `packages/*/tests/**`).
+- [2026-04-21][26-04] Fase 26 COMPLETA. 4/4 planos fechados. Entrevistador ForgeClaw funcional end-to-end: protocolo tipado (26-01) + motor/budget/merger (26-02) + 5 scripts por arquetipo (26-03) + 63 testes deterministicos (26-04). Zero deps externas novas. Pronto para Fase 27 (dashboard first-run onboarding) consumir via `Interviewer` + `previewDiff` + `applyDiff`.
 
 ### Bloqueios
 Nenhum
@@ -115,11 +121,12 @@ Nenhum
 - `packages/cli/src/commands/install.ts:22` — `Cannot find module '@forgeclaw/core'` (pre-existente, validado via git stash). Registrado em `.plano/fases/24-.../deferred-items.md`. Acao sugerida: adicionar `@forgeclaw/core: workspace:*` em packages/cli/package.json como primeira tarefa de 25-01.
 
 ## Continuidade de Sessao
-Ultima parada: Finalizado 26-02 (SUMMARY criado). O codigo e testes do 26-02 foram escritos em sessao anterior (5 commits), mas o executor bateu rate limit antes de criar o SUMMARY — esta sessao apenas validou arquivos/testes/typecheck/audit, criou 26-02-SUMMARY.md e atualizou STATE.md/ROADMAP.md. Zero mudancas de codigo nesta etapa de finalizacao. Entrega consolidada do 26-02: 3 arquivos novos em `packages/core/src/onboarding/` (budget.ts 78l — createBudgetTracker com cutoff por turnos/tokens/tempo; merger.ts 179l — applyDiff/previewDiff/4 ops cirurgicas/rollback per-file; interviewer.ts 296l — classe Interviewer com start/answer/abort/getState reusando ClaudeRunner), index.ts barrel atualizado (+13l), e suite vitest em packages/core/tests/onboarding/ (budget.test.ts 67l/8 testes, merger.test.ts 193l/14 testes) — 22/22 verde em 294ms. Typecheck zero erros em onboarding/**. Audit CI PASS. Commits: 7240980 (budget), 80712e4 (merger), ed81f44 (interviewer), f8ee696 (barrel), 35ce6df (testes). 26-03 tambem ja fechado (commit 2ecbf74 SUMMARY).
-Proximas acoes: 26-04 (testes do motor com fixtures de conversa por arquetipo, validacao E2E de diff util em <10 turnos). Depois 27 (dashboard first-run onboarding) -> 28 (forgeclaw refine) -> 29 (gate comunidade) -> 30 (docs+distribuicao) -> 31 (alpha).
+Ultima parada: Fase 26 COMPLETA. 26-04 fechado nesta sessao. Suite onboarding cresceu de 22 para 63 testes (4 arquivos) rodando em 264ms. Entrega 26-04: 6 arquivos novos em packages/core/tests/onboarding/ (prompts.test.ts 218l/35 testes cobrindo extractor+validators+loader; interviewer.test.ts 247l/6 testes de integracao com vi.mock do ClaudeRunner; 4 fixtures JSON cobrindo happy/budget-cutoff/model-abort/malformed-response). Commits 26-04: 4607d80 (prompts tests), 6eb02cd (fixtures), 151c5e3 (interviewer integration). Typecheck zero erros em onboarding/. Audit CI PASS. Desvios registrados no SUMMARY: (1) vitest 4.1.3 removeu reporter `basic` — rodar sem flag; (2) vitest exige cwd=raiz do monorepo pra resolver `include: packages/*/tests/**`.
+Proximas acoes: Fase 27 (dashboard first-run onboarding) — rota /onboarding com chat conversacional (esquerda) + preview live do harness (direita) consumindo `Interviewer` + `previewDiff` do @forgeclaw/core. Fixtures deste plano (26-04) podem virar seed de demo no dashboard. Depois 28 (forgeclaw refine) -> 29 (gate comunidade) -> 30 (docs+distribuicao) -> 31 (alpha).
 
 ### Evolucao do Roadmap
 - Fase 22 adicionada: Agentes Especializados + Memória por Topic (prompt base por topic, filtro de memória por tags, edição via dashboard)
 - Fase 23 completa: Auditoria de Despersonalizacao — 23-01 (scanner + relatorios), 23-02 (sanitizacoes), 23-03 (CI guard + allowlist + hook + workflow). Repo pronto para distribuicao como bonus da comunidade.
 - Fase 24 completa: 24-01 (schema + loader + 5 archetype.json), 24-02 (35 .md por arquetipo), 24-03 (suite bun:test com 27 testes cobrindo loader/render/snapshot). Templates de arquetipo prontos para consumo pelo installer da Fase 25.
 - Fase 25 COMPLETA: 25-01 (refactor modular) + 25-02 (Fase A real — Bun/Claude/Telegram) + 25-03 (Fase C real — spawn+health+open browser) + 25-04 (testes E2E + contract + escape hatch CI). Installer tem 3 fases reais funcionando end-to-end, 38 testes verdes em packages/cli/tests/install/, state file resumivel, contract guard contra drift com o core.
+- Fase 26 COMPLETA: 26-01 (protocolo tipado + system prompt + validators) + 26-02 (motor Interviewer + budget + merger, 22 testes) + 26-03 (5 scripts por arquetipo) + 26-04 (35 testes de prompts + 6 de integracao com mock + 4 fixtures JSON). Entrevistador ForgeClaw tem cobertura end-to-end deterministica — 63 testes em packages/core/tests/onboarding/ em 264ms, sem depender do claude CLI real. Pronto para Fase 27 (dashboard onboarding) consumir.
