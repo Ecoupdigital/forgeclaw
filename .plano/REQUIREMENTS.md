@@ -76,10 +76,10 @@
 - [x] GATE-01: Repositorio `Ecoupdigital/forgeclaw` com visibility=private no GitHub — completed in 29-01 via PATCH na GitHub API com PAT da org
 - [x] GATE-02: Arquivo LICENSE source-available proibindo redistribuicao e revenda — completed in 29-01 (commit 2b7b840)
 - [x] GATE-03: package.json raiz + packages/cli/package.json com campo `license` apontando para LICENSE — completed in 29-01 (commit 09066a5)
-- [ ] GATE-04: Script CLI `ops/gate/access.ts` com subcomandos grant/revoke/list/audit, zero-deps alem de Bun built-ins
-- [ ] GATE-05: Script grava audit log append-only em `ops/gate/access-log.jsonl` (1 JSON por linha)
-- [ ] GATE-06: Script grava mapeamento membro<->github em `ops/gate/members.jsonl`
-- [ ] GATE-07: Runbook `ops/gate/README-GATE.md` documenta setup, cada comando e cenarios comuns (assinatura, cancelamento, auditoria mensal)
+- [x] GATE-04: Script CLI `ops/gate/access.ts` com subcomandos grant (PUT collaborators, permission=pull, 201 invite ou 204 ja era), revoke (DELETE, 204 removed ou 404 noop), list (GET affiliation=direct paginado), audit (le access-log.jsonl com --tail=N), zero-deps alem de Bun built-ins — completed in 29-02 (commit 66ef332)
+- [x] GATE-05: Script grava audit log append-only em `ops/gate/access-log.jsonl` (1 JSON object por linha: ts, actor, action, target, result, status_code, message, meta) + `ops/gate/members.jsonl` em cada grant — completed in 29-02 (commit 66ef332)
+- [x] GATE-06: Script grava mapeamento membro<->github em `ops/gate/members.jsonl` (ts, github_username, member_email, note, status=invited) append-only; `ops/gate/gate.env.example` com 4 vars; `.gitignore` protege gate.env + access-log.jsonl + members.jsonl — completed in 29-02 (commits 34611bc + 66ef332)
+- [x] GATE-07: Runbook `ops/gate/README-GATE.md` documenta Setup (PAT scope), cada comando com exemplos, 3 cenarios (assinatura nova, cancelamento, auditoria mensal), limitacoes v1; suite vitest `access.test.ts` com 4 testes deterministicos (help, missing token, invalid username, empty audit) sem mutacao real no GitHub — completed in 29-02 (commits 6221d55 + 0bc5dc0). Task 5 smoke test E2E com conta GitHub alt DEFERRED como checkpoint humano — runbook em .plano/fases/29-.../deferred-items.md
 - [ ] GATE-08: Documento `ops/gate/V2-ROADMAP.md` define arquitetura do gate automatizado e criterios de saida para migrar v1 -> v2
 - [ ] GATE-09: ACCESS.md na raiz do repo explica ao membro como obter e perder acesso
 

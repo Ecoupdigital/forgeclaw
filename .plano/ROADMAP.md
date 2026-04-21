@@ -325,7 +325,7 @@
 **Objetivo:** Estabelecer um gate v1 simples e pragmatico para controlar quem tem acesso ao codigo do ForgeClaw, agora distribuido como beneficio da comunidade Dominando AutoIA. Repo privatizado, licenca source-available, script CLI idempotente de invite/revoke via GitHub API, runbook operacional e roadmap escrito da v2 automatica (sem implementar v2 agora).
 **Requisitos:** [GATE-01, GATE-02, GATE-03, GATE-04, GATE-05, GATE-06, GATE-07, GATE-08, GATE-09]
 **Depende de:** Nenhuma fase anterior e bloqueante (pode rodar em paralelo com 23-28).
-**Planos:** 3 planos (29-01 Licenca+Privacidade, 29-02 Script CLI, 29-03 Roadmap V2+Rastreabilidade)
+**Planos:** 3 planos (2 completos, 1 pendente) — 29-01 Licenca+Privacidade, 29-02 Script CLI, 29-03 Roadmap V2+Rastreabilidade
 **Criterios de Sucesso:**
   1. Repo github.com/Ecoupdigital/forgeclaw com visibility=private confirmado via API
   2. Arquivo LICENSE source-available commit na raiz, README e package.json apontam para ele
@@ -337,8 +337,8 @@
   8. ACCESS.md na raiz orienta membro a como ganhar e perder acesso em 3 passos
 
   - [x] 29-01 — LICENSE + privatizacao repo + ACCESS.md + README ajustado (commits 2b7b840, 09066a5, 0341170, 95d176f, a7345f0)
-  - [ ] 29-02 — Script invite/revoke manual de collaborators GitHub (pendente — desbloqueado: repo ja privado)
-  - [ ] 29-03 — (pendente)
+  - [x] 29-02 — Script CLI forgeclaw-access grant/revoke/list/audit + README-GATE runbook + testes vitest (commits 34611bc, 66ef332, 6221d55, 0bc5dc0) — Task 5 (smoke test E2E com conta GitHub alt) DEFERRED como checkpoint humano, runbook em .plano/fases/29-.../deferred-items.md
+  - [ ] 29-03 — V2 webhook automatizado + rastreabilidade (pendente)
 
 ### Fase 30: Docs e Distribuição — reescrever README como guia de boas-vindas ao membro, quick reference das nove abas do dashboard, roteiro de vídeo walkthrough de install em cinco minutos
 
