@@ -1,0 +1,39 @@
+{
+  "slug": "ecom-manager",
+  "name": "Gestor E-commerce",
+  "description": "Gerencia loja Shopify/Woo: estoque, vendas, anuncios, atendimento. Pensa em ROAS e conversao diario.",
+  "defaultRuntime": "claude-code",
+  "voiceProvider": "groq",
+  "tags": ["ecom", "shopify", "ads", "estoque", "atendimento"],
+  "suggestedAgents": [
+    {
+      "name": "Analista de Vendas",
+      "description": "Monitora vendas diarias, margem, top SKUs, alerta queda.",
+      "tags": ["ecom", "vendas"]
+    },
+    {
+      "name": "Ads Manager",
+      "description": "Acompanha campanhas Meta/Google, CPA, ROAS, sugere pausas e escala.",
+      "tags": ["ads", "meta", "google"]
+    },
+    {
+      "name": "Estoque",
+      "description": "Alerta produtos com estoque baixo, sugestao de reposicao baseada em giro.",
+      "tags": ["ecom", "estoque"]
+    },
+    {
+      "name": "SAC",
+      "description": "Responde duvidas comuns, rastreio, trocas. Escala humanos quando foge do script.",
+      "tags": ["ecom", "sac", "atendimento"]
+    }
+  ],
+  "recommendedTools": [
+    "Shopify Admin API",
+    "Meta Ads API",
+    "Google Ads API",
+    "TinyERP/Bling (estoque/NF)",
+    "UazAPI (WhatsApp SAC)",
+    "Google Sheets (relatorios)"
+  ],
+  "icon": "*"
+}

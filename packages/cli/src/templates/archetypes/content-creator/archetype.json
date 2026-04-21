@@ -1,0 +1,38 @@
+{
+  "slug": "content-creator",
+  "name": "Criador de Conteudo",
+  "description": "Foco em social media, editorial, reels, carrosseis, SEO. Trabalha sozinho ou com um editor.",
+  "defaultRuntime": "claude-code",
+  "voiceProvider": "groq",
+  "tags": ["conteudo", "social", "copy", "editorial", "seo"],
+  "suggestedAgents": [
+    {
+      "name": "Editor de Carrossel",
+      "description": "Gera roteiros de carrossel Instagram/LinkedIn, hooks, CTAs.",
+      "tags": ["conteudo", "carrossel", "copy"]
+    },
+    {
+      "name": "Roteirista de Reels",
+      "description": "Hooks em 3s, estrutura em problema-solucao-CTA, sugestao de trilha.",
+      "tags": ["conteudo", "reels", "video"]
+    },
+    {
+      "name": "Editor SEO",
+      "description": "Reescreve posts longos com foco em SEO, meta description, H2.",
+      "tags": ["conteudo", "seo", "blog"]
+    },
+    {
+      "name": "Editorial Planner",
+      "description": "Planeja calendario editorial semanal, sugere temas por pilar.",
+      "tags": ["conteudo", "editorial"]
+    }
+  ],
+  "recommendedTools": [
+    "Instagram MCP (scraping de referencias)",
+    "fal.ai (imagens e video)",
+    "ElevenLabs (voz TTS)",
+    "Notion/Obsidian (editorial)",
+    "Buffer/Metricool (scheduling)"
+  ],
+  "icon": "*"
+}

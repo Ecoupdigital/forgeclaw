@@ -1,0 +1,34 @@
+{
+  "slug": "solo-builder",
+  "name": "Solo Builder",
+  "description": "Dev indie que constroi produtos pessoais usando Claude Code, poucos clientes, muita execucao tecnica.",
+  "defaultRuntime": "claude-code",
+  "voiceProvider": "groq",
+  "tags": ["dev", "indie", "vibecoding", "produto", "side-project"],
+  "suggestedAgents": [
+    {
+      "name": "Code Agent",
+      "description": "Escreve, revisa, debuga e refatora codigo. Conhece a stack do projeto atual.",
+      "tags": ["dev", "code"]
+    },
+    {
+      "name": "Shipper",
+      "description": "Foco em deploy, releases, changelog. Sugere cortes pra embarcar mais rapido.",
+      "tags": ["dev", "ship", "deploy"]
+    },
+    {
+      "name": "Ideia Lab",
+      "description": "Brainstorm de produtos, validacao rapida, positioning.",
+      "tags": ["produto", "ideacao"]
+    }
+  ],
+  "recommendedTools": [
+    "GitHub CLI (gh)",
+    "Shell (Bun/Node/Python)",
+    "Obsidian (vault local)",
+    "Docker/Compose",
+    "Coolify ou Vercel",
+    "Context7 MCP (docs de bibliotecas)"
+  ],
+  "icon": "*"
+}

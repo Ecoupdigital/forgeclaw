@@ -1,0 +1,26 @@
+{
+  "slug": "generic",
+  "name": "Generico",
+  "description": "Fallback neutro. Util quando o perfil nao se encaixa nos outros 4 ou durante testes.",
+  "defaultRuntime": "claude-code",
+  "voiceProvider": "groq",
+  "tags": ["geral"],
+  "suggestedAgents": [
+    {
+      "name": "General Assistant",
+      "description": "Ajudante padrao. Responde perguntas, executa tarefas, sem persona forte.",
+      "tags": ["geral"]
+    },
+    {
+      "name": "Task Runner",
+      "description": "Executa comandos, le arquivos, faz pesquisa. Minimo de personalidade.",
+      "tags": ["geral", "task"]
+    }
+  ],
+  "recommendedTools": [
+    "Shell",
+    "Obsidian (opcional)",
+    "GitHub CLI (opcional)"
+  ],
+  "icon": "*"
+}

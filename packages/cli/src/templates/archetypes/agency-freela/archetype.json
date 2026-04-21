@@ -1,0 +1,39 @@
+{
+  "slug": "agency-freela",
+  "name": "Agencia / Freela",
+  "description": "Multiplos clientes simultaneos, processos repetiveis, relatorios semanais e financeiro basico.",
+  "defaultRuntime": "claude-code",
+  "voiceProvider": "groq",
+  "tags": ["cliente", "agencia", "freela", "relatorio", "financeiro"],
+  "suggestedAgents": [
+    {
+      "name": "Gestor de Clientes",
+      "description": "Acompanha status de cada cliente, gera relatorios semanais, pendencias.",
+      "tags": ["cliente", "relatorio"]
+    },
+    {
+      "name": "Comercial",
+      "description": "Propostas, escopo, negociacao. NAO faz follow-up automatico sem aprovar.",
+      "tags": ["comercial", "proposta"]
+    },
+    {
+      "name": "Financeiro",
+      "description": "Cobranca, NFS-e, controle de recebiveis. Integra com Asaas/Conta Azul quando configurado.",
+      "tags": ["financeiro", "cobranca"]
+    },
+    {
+      "name": "Projetos",
+      "description": "Roadmaps e planos por cliente, milestones, bloqueios.",
+      "tags": ["projeto", "cliente"]
+    }
+  ],
+  "recommendedTools": [
+    "Asaas MCP (cobrancas e NFS-e)",
+    "GitHub CLI (gh) por cliente",
+    "Obsidian (pasta por cliente)",
+    "Notion/ClickUp (gestao)",
+    "Google Drive (documentos)",
+    "WhatsApp via UazAPI (comunicacao)"
+  ],
+  "icon": "*"
+}
