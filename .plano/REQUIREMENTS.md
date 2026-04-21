@@ -191,3 +191,8 @@
 - [x] DASH-ONB-02: proxy.ts com gate 4 (sem sentinel -> redirect /onboarding) e gate 5 (com sentinel + /onboarding -> redirect /) + endpoint publico GET /api/onboarding/health + scaffold /onboarding layout+page — completed in 27-01
 - [x] DASH-ONB-03: 6 rotas REST auth-gated (/start, /message, /state, /preview, /approve, /skip) consumindo Interviewer (fase 26) via store singleton in-memory; preview HarnessDiff computado em snapshot via previewDiff; aprovar via POST /approve (applyDiff + markOnboarded source=interview) ou POST /skip (markOnboarded source=skipped) — completed in 27-02 (trocou SSE por request-response — first-run e turn-taking, streaming ficaria dentro de /message)
 - [ ] DASH-ONB-04: UI split-pane (chat conversacional esquerda + preview ao vivo dos 7 harness files direita) + integracao com installer handoff (buildOnboardingUrl token cookie swap) — planejado pra 27-03/27-04
+
+## Gate de Acesso pela Comunidade (GATE)
+- [x] GATE-01: Repo `github.com/Ecoupdigital/forgeclaw` privatizado (visibility=private, anonimo retorna 404 em API e HTML) — completed in 29-01 via PATCH na GitHub API com PAT da org
+- [x] GATE-02: LICENSE source-available (ForgeClaw Community Source License v1.0) na raiz, package.json root+cli declarando `license: SEE LICENSE IN LICENSE`, README.md secao License alinhada sem mentira de MIT — completed in 29-01 (commits 2b7b840, 09066a5, 0341170)
+- [x] GATE-03: ACCESS.md documentando fluxo de entrada (assinar comunidade -> GitHub username -> 48h manual invite -> aceitar), uso permitido/proibido, termination (7d remove access, 30d delete copies, rights to user-built systems preserved), suporte — completed in 29-01 (commit 95d176f)

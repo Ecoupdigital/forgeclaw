@@ -322,10 +322,14 @@
 
 ### Fase 29: Gate de Acesso pela Comunidade — v1 simples com repo privado e invite manual no GitHub ao assinar comunidade, documentação de fluxo de concessão e revogação
 
-**Objetivo:** [A ser planejado]
-**Requisitos**: TBD
+**Objetivo:** Estabelecer o gate de acesso do ForgeClaw como benefício da comunidade Dominando AutoIA: repo privado, licença source-available, ACCESS.md, e script manual de invite/revoke de collaborators do GitHub
+**Requisitos**: GATE-01, GATE-02, GATE-03
 **Depende de:** Fase 28
-**Planos:** 0 planos
+**Planos:** 3 planos (1 completo, 2 pendentes)
+
+  - [x] 29-01 — LICENSE + privatizacao repo + ACCESS.md + README ajustado (commits 2b7b840, 09066a5, 0341170, 95d176f, a7345f0)
+  - [ ] 29-02 — Script invite/revoke manual de collaborators GitHub (pendente — desbloqueado: repo ja privado)
+  - [ ] 29-03 — (pendente)
 
 ### Fase 30: Docs e Distribuição — reescrever README como guia de boas-vindas ao membro, quick reference das nove abas do dashboard, roteiro de vídeo walkthrough de install em cinco minutos
 
