@@ -7,9 +7,9 @@
 
 ## Posicao Atual
 **Fase:** 23-auditoria-de-despersonalizacao
-**Plano Atual:** 23-02 de 03 — completo
-**Status:** Fase 23 em andamento (2/3 planos)
-**Progresso:** [██████░░░░] 67%
+**Plano Atual:** 23-03 de 03 — completo
+**Status:** Fase 23 completa (3/3 planos)
+**Progresso:** [██████████] 100%
 
 ## Contexto Acumulado
 
@@ -42,6 +42,11 @@
 - [2026-04-21][23-02] Systemd units (`ops/*.service`) deixam de ser source-of-truth — installer ja gera via packages/cli/src/utils/service.ts. Repo mantem apenas `*.service.example` com placeholders {{USER}}, {{HOME}}, {{REPO_DIR}}, {{BUN_BIN}}.
 - [2026-04-21][23-02] Scanner self-exclude: `scripts/audit-personal-context.ts` adicionado ao IGNORE_FILE_NAMES do proprio scanner (self-match dos regex literais).
 - [2026-04-21][23-02] Resultado pos-sanitizacao: 0 findings critical em codigo distribuivel, 1 finding medium aceitavel (cron-form-sheet.tsx sobre ~/.claude/skills/ — acoplamento de design legitimo com runtime padrao Claude Code). Reducao 1280 -> 1208.
+- [2026-04-21][23-03] Scanner ganhou modo `--ci`: le `.audit-personal-allowlist.txt`, filtra findings critical fora de .plano/node_modules/.git, exit 0/1. Contrato simples para CI: sem markdown/json, apenas stdout/stderr + exit code. Allowlist usa match EXATO por file:line:category — line shift quebra match e forca re-revisao (desejado sobre fuzzy).
+- [2026-04-21][23-03] GitHub Actions workflow `.github/workflows/audit-personal-context.yml` roda em push e PR para main (oven-sh/setup-bun@v2). Em falha gera relatorio completo e sobe como artifact com retencao de 14d.
+- [2026-04-21][23-03] Pre-commit hook `.githooks/pre-commit` e OPT-IN (nao forca core.hooksPath). Habilitado via `git config core.hooksPath .githooks`. Graceful fallback se bun nao instalado. Bypass via `git commit --no-verify` documentado.
+- [2026-04-21][23-03] Path-based whitelisting escolhido sobre category-based: .plano/, node_modules/, .git/ ignorados por prefixo. Mais simples e garante que tokens nunca escapam mesmo em historico.
+- [2026-04-21][23-03] Teste de regressao E2E validado: inject `/home/vault` em packages/core/ -> AUDIT FAIL exit 1; adicionar ao allowlist -> AUDIT PASS exit 0; remover arquivo + entry -> AUDIT PASS exit 0. Gate funciona end-to-end.
 
 ### Bloqueios
 Nenhum
@@ -50,9 +55,9 @@ Nenhum
 - `packages/dashboard/src/components/sessions-tab.tsx:185` — TopicInfo.createdAt missing (pre-existente, registrado em .plano/fases/08-dashboard-web/deferred-items.md)
 
 ## Continuidade de Sessao
-Ultima parada: Completado 23-02-PLAN.md (Remocoes e Sanitizacoes Efetivas) -- 10 tarefas atomicas, 10 commits, 0 findings critical em codigo distribuivel pos-scanner. Arquivos sanitizados: janitor.md, writer.md, memory-manager.ts, context-builder.ts (+ novo campo vaultDailyLogPath em types.ts), mock-data.ts, install.ts, README.md, STATE.md. Arquivos expurgados: .playwright-mcp/, 2 screenshots, .continue-aqui.md. Systemd units convertidos para templates `.example`. Cluster de 4 fallbacks `05-pessoal/daily-log` corrigidos via desvio (Regra 2). Commits: 167b1af, c835d1b, 42dbfc3, 5fd1899, e9ab788, 399397b, 4afe67f, f67b43a, 980b66f, 8b7fff3.
-Proximas acoes: Executar 23-03-PLAN.md (CI guard — adicionar Github Action que roda o scanner a cada PR, com whitelist para .plano/ e scripts/audit-personal-context.ts).
+Ultima parada: Completado 23-03-PLAN.md (Guard Rails Anti-Regressao) -- 6 tarefas atomicas, 5 commits, gate E2E validado. Novo modo `--ci` no scanner, GitHub Actions workflow em push/PR, pre-commit hook opt-in, allowlist auditavel, README documentado. Commits: 5c047a4 (scanner --ci), 9bfb2b8 (allowlist), 8d9a633 (npm script), ded25ff (GH Actions), 54b4fec (hook + README). Fase 23 completa: repo distribuivel sem PII + CI guard contra regressao.
+Proximas acoes: Comecar Fase 24 (Templates por arquetipo: 5 perfis — solo-builder, criador-de-conteudo, agencia-freela, gestor, e-commerce — com harness generico por arquetipo).
 
 ### Evolucao do Roadmap
 - Fase 22 adicionada: Agentes Especializados + Memória por Topic (prompt base por topic, filtro de memória por tags, edição via dashboard)
-- Fase 23 iniciada: Auditoria de Despersonalizacao — 23-01 completo (scanner + relatorios), 23-02 completo (sanitizacoes), 23-03 pendente (CI guard).
+- Fase 23 completa: Auditoria de Despersonalizacao — 23-01 (scanner + relatorios), 23-02 (sanitizacoes), 23-03 (CI guard + allowlist + hook + workflow). Repo pronto para distribuicao como bonus da comunidade.
