@@ -6,6 +6,7 @@ import { status } from './commands/status'
 import { logs } from './commands/logs'
 import { exportData } from './commands/export'
 import { token } from './commands/token'
+import { refine, VALID_SECTIONS, type RefineSection } from './commands/refine'
 import type { ArchetypeSlug } from './templates/archetypes'
 
 const VALID_SLUGS: ArchetypeSlug[] = [
@@ -15,6 +16,56 @@ const VALID_SLUGS: ArchetypeSlug[] = [
   'ecom-manager',
   'generic',
 ]
+
+function isArchetypeSlug(v: unknown): v is ArchetypeSlug {
+  return typeof v === 'string' && VALID_SLUGS.includes(v as ArchetypeSlug)
+}
+
+function isRefineSection(v: unknown): v is RefineSection {
+  return typeof v === 'string' && VALID_SECTIONS.includes(v as RefineSection)
+}
+
+interface RefineFlags {
+  archetype?: ArchetypeSlug
+  section?: RefineSection
+  reset: boolean
+  rollback: boolean
+}
+
+/**
+ * Parse `refine`-specific flags. Unknown flags are silently ignored so
+ * `--bogus=x` does not crash. Invalid values for known flags (`--archetype=foo`,
+ * `--section=XYZ`) abort with a clear error listing valid options.
+ */
+function parseRefineFlags(argv: string[]): RefineFlags {
+  const out: RefineFlags = { reset: false, rollback: false }
+  for (const a of argv) {
+    if (!a.startsWith('--')) continue
+    const [key, ...rest] = a.slice(2).split('=')
+    const value = rest.length > 0 ? rest.join('=') : true
+    if (key === 'reset' && value === true) {
+      out.reset = true
+    } else if (key === 'rollback' && value === true) {
+      out.rollback = true
+    } else if (key === 'archetype' && typeof value === 'string') {
+      if (!isArchetypeSlug(value)) {
+        console.error(`Invalid --archetype value: ${value}`)
+        console.error(`Valid: ${VALID_SLUGS.join(', ')}`)
+        process.exit(1)
+      }
+      out.archetype = value
+    } else if (key === 'section' && typeof value === 'string') {
+      if (!isRefineSection(value)) {
+        console.error(`Invalid --section value: ${value}`)
+        console.error(`Valid: ${VALID_SECTIONS.join(', ')}`)
+        process.exit(1)
+      }
+      out.section = value
+    }
+    // unknown flags: ignore silently
+  }
+  return out
+}
 
 function parseFlags(argv: string[]): {
   resume: boolean
@@ -45,7 +96,13 @@ function parseFlags(argv: string[]): {
 
 const command = process.argv[2]
 const extraArgs = process.argv.slice(3)
-const flags = parseFlags(extraArgs)
+// Only parse install-scoped flags when the command actually is install/update.
+// Other commands (notably `refine`) own their flag parsing and reuse names
+// like `--archetype` with the same valid slugs but different semantics.
+const flags =
+  command === 'install' || command === 'update'
+    ? parseFlags(extraArgs)
+    : { resume: false, noHandoff: false as boolean }
 
 function showHelp(): void {
   console.log(`
@@ -62,6 +119,11 @@ function showHelp(): void {
     token       Show your dashboard login token
     export      Create backup of all ForgeClaw data (.tar.gz)
     logs        Tail bot logs in real-time
+    refine      Refine harness without reinstalling (re-run interviewer)
+                  --archetype=<slug>  Switch archetype (preserves DB/memory)
+                  --section=<NAME>    Refine single section (SOUL|USER|AGENTS|TOOLS|MEMORY|STYLE|HEARTBEAT)
+                  --reset             Reset harness to archetype template
+                  --rollback          Restore a previous backup
 
   Install flags:
     --resume                       Resume from last incomplete phase (~/.forgeclaw/.install-state.json)
@@ -74,6 +136,10 @@ function showHelp(): void {
     forgeclaw install --resume
     forgeclaw update
     forgeclaw status
+    forgeclaw refine
+    forgeclaw refine --section=USER
+    forgeclaw refine --archetype=content-creator
+    forgeclaw refine --rollback
 `)
 }
 
@@ -108,6 +174,16 @@ switch (command) {
   case 'logs':
     await logs()
     break
+  case 'refine': {
+    const refineFlags = parseRefineFlags(extraArgs)
+    await refine({
+      archetype: refineFlags.archetype,
+      section: refineFlags.section,
+      reset: refineFlags.reset,
+      rollback: refineFlags.rollback,
+    })
+    break
+  }
   default:
     showHelp()
     break
