@@ -134,3 +134,13 @@ docs/support-channel.md:15:personal_company  # exemplo de link pra docs: URL do 
 docs/support-channel.md:15:private_repo_url  # exemplo de link pra docs: URL do repo privado oficial
 docs/support-channel.md:25:personal_name  # canal dev: Jonathan como staff principal do debate de arquitetura
 docs/support-channel.md:65:personal_name  # rotina semanal: mantenedor faz triagem de issues e PRs
+
+# docs/video-script.md (PLAN 30-03) — roteiro do video walkthrough de 5 min.
+# Linha 33: item do checklist de privacidade INSTRUI o gravador a NAO mostrar
+# paths pessoais como /home/vault (mencao e pra bloquear vazamento, nao vazamento).
+# Linha 73: `git clone https://github.com/Ecoupdigital/forgeclaw.git` e a instrucao
+# legitima pra membro que ja tem acesso ao repo privado (Fase 29). Mesmo padrao
+# das entries README.md:22 e docs/getting-started.md:29.
+docs/video-script.md:33:hardcoded_path  # checklist de privacidade: item instrui gravador a NAO mostrar paths pessoais
+docs/video-script.md:73:personal_company  # roteiro 3a: URL oficial do repo privado para membros que ja tem acesso
+docs/video-script.md:73:private_repo_url  # roteiro 3a: URL oficial do repo privado para membros que ja tem acesso
