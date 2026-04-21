@@ -19,3 +19,5 @@ bun.lock
 ops/gate/gate.env
 ops/gate/access-log.jsonl
 ops/gate/members.jsonl
+.npmrc
+**/.npmrc
