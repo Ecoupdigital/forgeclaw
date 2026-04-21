@@ -185,3 +185,9 @@
 - [ ] AGT-06: ContextBuilder prependa system_prompt do agente ao harness e filtra memória por tags quando memory_mode='filtered'
 - [ ] AGT-07: text.ts e ws-server.ts carregam agente do topic e passam config ao ContextBuilder
 - [ ] AGT-08: Retrieval de memória filtra por memory_domain_filter (memory_refs.entity_name) quando agente tem memory_mode='filtered'
+
+## Dashboard First-run Onboarding (DASH-ONB)
+- [x] DASH-ONB-01: Sentinel `~/.forgeclaw/.onboarded` (JSON atomic write via tmp+renameSync) + helpers lib/onboarding-state.ts (isOnboarded/markOnboarded/readOnboardedMeta/clearOnboarded) — completed in 27-01
+- [x] DASH-ONB-02: proxy.ts com gate 4 (sem sentinel -> redirect /onboarding) e gate 5 (com sentinel + /onboarding -> redirect /) + endpoint publico GET /api/onboarding/health + scaffold /onboarding layout+page — completed in 27-01
+- [ ] DASH-ONB-03: POST /api/onboarding/interview com SSE stream consumindo Interviewer (fase 26), preview HarnessDiff em memoria, aceitar/rejeitar via POST /api/onboarding/confirm que roda merger.applyDiff + markOnboarded — planejado pra 27-02/27-03
+- [ ] DASH-ONB-04: UI split-pane (chat conversacional esquerda + preview ao vivo dos 7 harness files direita) + integracao com installer handoff (buildOnboardingUrl token cookie swap) — planejado pra 27-03/27-04

@@ -3,13 +3,13 @@
 ## Referencia do Projeto
 **Projeto:** ForgeClaw
 **Valor Central:** O Claude Code deve responder de forma confiavel via Telegram com isolamento perfeito entre topicos
-**Foco Atual:** Fase 26 — Persona Entrevistador ForgeClaw
+**Foco Atual:** Fase 27 — Dashboard First-run Onboarding
 
 ## Posicao Atual
-**Fase:** 26-persona-entrevistador-forgeclaw (COMPLETE)
-**Plano Atual:** 26-04 de 04 COMPLETO (Fase 26 totalmente fechada — 4/4 planos com SUMMARY)
-**Status:** Ready to execute Fase 27 (dashboard first-run onboarding)
-**Progresso:** [██████████] 100%
+**Fase:** 27-dashboard-first-run-onboarding
+**Plano Atual:** 27-01 de 04 COMPLETO (sentinel + proxy + health endpoint + scaffold de /onboarding)
+**Status:** In progress
+**Progresso:** [██░░░░░░░░] 25%
 
 ## Contexto Acumulado
 
@@ -112,6 +112,14 @@
 - [2026-04-21][26-04] Happy path valida cadeia completa Interviewer -> Response -> applyDiff -> disco. Apos 3 turnos, readFileSync de USER.md mostra `nome: Ana` e `empresa: Acme` (placeholders substituidos). Prova que o pipeline funciona sem trapacas.
 - [2026-04-21][26-04] Reporter `basic` do vitest 4.1.3 foi removido (causa ERR_LOAD_URL). Fix: rodar sem `--reporter=basic` (default funciona). Vitest precisa ser invocado da raiz do monorepo, nao de packages/core (include do config e `packages/*/tests/**`).
 - [2026-04-21][26-04] Fase 26 COMPLETA. 4/4 planos fechados. Entrevistador ForgeClaw funcional end-to-end: protocolo tipado (26-01) + motor/budget/merger (26-02) + 5 scripts por arquetipo (26-03) + 63 testes deterministicos (26-04). Zero deps externas novas. Pronto para Fase 27 (dashboard first-run onboarding) consumir via `Interviewer` + `previewDiff` + `applyDiff`.
+- [2026-04-21][27-01] First-run gate via sentinel `~/.forgeclaw/.onboarded` (JSON com source discriminado installer/interview/skipped + at/atEpoch/archetype/summary). Write atomico tmp+renameSync; read sync via existsSync no proxy edge runtime. OnboardedMeta reusavel em Fase 27-04 (marcar done) e Fase 28 (refine sabe quando re-entrevistar).
+- [2026-04-21][27-01] proxy.ts ganha gates 4 e 5 APOS o gate de auth: sem sentinel + fora de /onboarding -> redirect /onboarding; com sentinel + em /onboarding -> redirect /. Ordem: public -> api -> auth-cookie -> onboarding. Matcher preservado. Page/api routes sem mudanca.
+- [2026-04-21][27-01] /api/onboarding/health e publico (SEM requireApiAuth) — CLI installer (25-03) polla ANTES do login, nao tem cookie ainda. Payload sem segredo. Dynamic import de @forgeclaw/core com try/catch: em dev server do Next.js (turbopack), `bun:sqlite` nao resolve -> interviewerError populado, endpoint nao crasha. Em producao com `next build` (webpack) deve resolver.
+- [2026-04-21][27-01] Layout /onboarding/layout.tsx faz isOnboarded() SSR defensivamente -> redirect("/") se sentinel existir. Belt-and-suspenders contra race com proxy. Page.tsx e stub ate 27-03 implementar split-pane chat+preview.
+- [2026-04-21][27-01] [Regra 3] Adicionado `@forgeclaw/core: workspace:*` em packages/dashboard/package.json — plano assumia mas nao existia. Mesmo blocker resolvido em 25-01 pro CLI.
+- [2026-04-21][27-01] [Regra 3] Teste movido de src/lib/__tests__/ (path do plano) pra tests/ — vitest.config.ts raiz usa `include: ['packages/*/tests/**']`. Seguindo convencao do repo (packages/core/tests/, packages/cli/tests/).
+- [2026-04-21][27-01] [Regra 1] process.env.HOME NAO isola testes — os.homedir() em Node e Bun le do passwd entry, nao do env. Trocado por vi.mock('node:os') que substitui homedir() por tmpdir per-teste, combinado com vi.resetModules() no beforeEach pra re-avaliar FORGECLAW_DIR/SENTINEL_PATH a cada import dinamico. 9 testes verdes em 234ms.
+- [2026-04-21][27-01] Runtime E2E validado com dashboard real em localhost:4040: 8 probes HTTP cobrindo todos os gates (sem cookie -> /login; com cookie + sentinel -> /; com cookie sem sentinel -> /onboarding; /api/onboarding/health publico -> 200 JSON completo). Sentinel real foi removido e restaurado durante o teste.
 
 ### Bloqueios
 Nenhum
@@ -121,8 +129,8 @@ Nenhum
 - `packages/cli/src/commands/install.ts:22` — `Cannot find module '@forgeclaw/core'` (pre-existente, validado via git stash). Registrado em `.plano/fases/24-.../deferred-items.md`. Acao sugerida: adicionar `@forgeclaw/core: workspace:*` em packages/cli/package.json como primeira tarefa de 25-01.
 
 ## Continuidade de Sessao
-Ultima parada: Fase 26 COMPLETA. 26-04 fechado nesta sessao. Suite onboarding cresceu de 22 para 63 testes (4 arquivos) rodando em 264ms. Entrega 26-04: 6 arquivos novos em packages/core/tests/onboarding/ (prompts.test.ts 218l/35 testes cobrindo extractor+validators+loader; interviewer.test.ts 247l/6 testes de integracao com vi.mock do ClaudeRunner; 4 fixtures JSON cobrindo happy/budget-cutoff/model-abort/malformed-response). Commits 26-04: 4607d80 (prompts tests), 6eb02cd (fixtures), 151c5e3 (interviewer integration). Typecheck zero erros em onboarding/. Audit CI PASS. Desvios registrados no SUMMARY: (1) vitest 4.1.3 removeu reporter `basic` — rodar sem flag; (2) vitest exige cwd=raiz do monorepo pra resolver `include: packages/*/tests/**`.
-Proximas acoes: Fase 27 (dashboard first-run onboarding) — rota /onboarding com chat conversacional (esquerda) + preview live do harness (direita) consumindo `Interviewer` + `previewDiff` do @forgeclaw/core. Fixtures deste plano (26-04) podem virar seed de demo no dashboard. Depois 28 (forgeclaw refine) -> 29 (gate comunidade) -> 30 (docs+distribuicao) -> 31 (alpha).
+Ultima parada: 27-01 COMPLETO. First-run gate do dashboard operacional end-to-end. 6 commits atomicos, 5 arquivos novos + 2 modificados. Suite dashboard ganhou primeiro teste vitest (9 testes em 234ms). Runtime E2E validado com 8 probes HTTP no dashboard real (todos os gates do proxy + /api/onboarding/health publico retornando 200 JSON). Entregas: lib/onboarding-state.ts, proxy.ts com gates 4/5, /onboarding/layout.tsx, /onboarding/page.tsx, /api/onboarding/health/route.ts, tests/onboarding-state.test.ts, package.json com @forgeclaw/core workspace dep. Commits: 417ff13, 3e80db9, 91eba2c, 281573b, 7a8c13a, 771ec1c. SUMMARY em .plano/fases/27-.../27-01-SUMMARY.md. Desvios documentados (3 auto-fixes Regra 1/3). Out-of-scope: `interviewerReady: false` em dev server do Next.js (bun:sqlite nao resolve em turbopack) — tratado com graceful fallback, sera resolvido em prod (webpack) ou em 27-02 (refator loadInterviewerBase pra nao importar chain do bun:sqlite).
+Proximas acoes: 27-02 (API de entrevista) — POST /api/onboarding/interview que aceita turnos do usuario, roda Interviewer (fase 26) em background, stream de SSE dos events, aplica HarnessDiff via merger ao confirmar, chama markOnboarded({source:'interview', archetype, summary}) ao final. Depois 27-03 (UI split-pane chat+preview) e 27-04 (wire completo com installer + seguro). Depois fases 28-31 (refine, gate comunidade, docs, alpha).
 
 ### Evolucao do Roadmap
 - Fase 22 adicionada: Agentes Especializados + Memória por Topic (prompt base por topic, filtro de memória por tags, edição via dashboard)
@@ -130,3 +138,4 @@ Proximas acoes: Fase 27 (dashboard first-run onboarding) — rota /onboarding co
 - Fase 24 completa: 24-01 (schema + loader + 5 archetype.json), 24-02 (35 .md por arquetipo), 24-03 (suite bun:test com 27 testes cobrindo loader/render/snapshot). Templates de arquetipo prontos para consumo pelo installer da Fase 25.
 - Fase 25 COMPLETA: 25-01 (refactor modular) + 25-02 (Fase A real — Bun/Claude/Telegram) + 25-03 (Fase C real — spawn+health+open browser) + 25-04 (testes E2E + contract + escape hatch CI). Installer tem 3 fases reais funcionando end-to-end, 38 testes verdes em packages/cli/tests/install/, state file resumivel, contract guard contra drift com o core.
 - Fase 26 COMPLETA: 26-01 (protocolo tipado + system prompt + validators) + 26-02 (motor Interviewer + budget + merger, 22 testes) + 26-03 (5 scripts por arquetipo) + 26-04 (35 testes de prompts + 6 de integracao com mock + 4 fixtures JSON). Entrevistador ForgeClaw tem cobertura end-to-end deterministica — 63 testes em packages/core/tests/onboarding/ em 264ms, sem depender do claude CLI real. Pronto para Fase 27 (dashboard onboarding) consumir.
+- Fase 27 em andamento: 27-01 COMPLETO (sentinel .onboarded + proxy gates + /api/onboarding/health + scaffold /onboarding). Dashboard faz first-run gate sync no edge runtime. CLI installer (25-03) pode pollar /api/onboarding/health publicamente antes do login. 9 testes vitest verdes. Faltam 27-02 (API de entrevista), 27-03 (UI split-pane), 27-04 (wire final + seguro).

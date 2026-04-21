@@ -301,10 +301,14 @@
 
 ### Fase 27: Dashboard First-run Onboarding — rota onboarding com chat conversacional à esquerda e preview ao vivo dos arquivos do harness à direita até existir sentinel .onboarded
 
-**Objetivo:** [A ser planejado]
-**Requisitos**: TBD
+**Objetivo:** First-run gate + UI conversacional no dashboard que entrevista o usuario (arquetipo da Fase 24) e aplica HarnessDiff ao vivo (motor da Fase 26).
+**Requisitos**: DASH-ONB-01, DASH-ONB-02, DASH-ONB-03, DASH-ONB-04
 **Depende de:** Fase 26
-**Planos:** 0 planos
+**Planos:** 1/4 plans complete
+  - [x] 27-01 — Sentinel `.onboarded`, middleware redirect, health endpoint (commits 417ff13, 3e80db9, 91eba2c, 281573b, 7a8c13a, 771ec1c)
+  - [ ] 27-02 — API de entrevista (POST /api/onboarding/interview + SSE stream)
+  - [ ] 27-03 — UI split-pane (chat conversacional esquerda, preview harness direita)
+  - [ ] 27-04 — Wiring final: confirmar/aplicar diff, markOnboarded, integracao com installer handoff
 
 ### Fase 28: Comando forgeclaw refine — CLI command que reexecuta a entrevista depois do install pra refinar harness sem reinstalar o produto
 
