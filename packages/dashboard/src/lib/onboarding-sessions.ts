@@ -20,6 +20,11 @@ import {
   HARNESS_FILES_ALL,
 } from "@forgeclaw/core";
 import { HARNESS_DIR } from "./onboarding-state";
+import {
+  saveSnapshot,
+  loadSnapshot,
+  clearSnapshot,
+} from "./onboarding-persistence";
 import type {
   OnboardingSessionSnapshot,
   OnboardingMessageDTO,
@@ -77,6 +82,24 @@ class OnboardingSessionStoreImpl {
       try { this.active.itv.abort("Session destroyed"); } catch { /* ignore */ }
     }
     this.active = null;
+    try { clearSnapshot(); } catch { /* ignore */ }
+  }
+
+  /**
+   * Read-only rehydration: if no in-memory session but disk has one, return
+   * the persisted snapshot with rehydrated=true. UI can use this to show
+   * the last known state and offer resume/restart/approve.
+   */
+  loadPersistedIfNoActive(): OnboardingSessionSnapshot | null {
+    if (this.active) return null;
+    const persisted = loadSnapshot();
+    if (!persisted) return null;
+    return {
+      ...persisted.snapshot,
+      errorMessage:
+        persisted.snapshot.errorMessage ??
+        "Sessao retomada de uma execucao anterior. Envie uma nova mensagem pra continuar (nova pergunta inicial) ou aprove o diff atual.",
+    };
   }
 
   /** Update cached question (called after start/answer). */
@@ -237,6 +260,7 @@ export async function runStart(): Promise<OnboardingSessionSnapshot> {
   }
   const snapshot = store.toSnapshot();
   if (!snapshot) throw new Error("Snapshot unavailable after start");
+  try { saveSnapshot(snapshot); } catch { /* best-effort persist */ }
   return snapshot;
 }
 
@@ -254,16 +278,32 @@ export async function runAnswer(
   }
   const snapshot = store.toSnapshot();
   if (!snapshot) throw new Error("Snapshot unavailable after answer");
+  try { saveSnapshot(snapshot); } catch { /* best-effort persist */ }
   return snapshot;
 }
 
 /**
  * Load archetype from forgeclaw.config.json. Fallback to 'generic' with warn.
+ *
+ * If config is missing/invalid, prefer the archetype from the last persisted
+ * snapshot (if any) before falling back to 'generic'. This keeps a restart
+ * after a partial install pointing at the right profile.
  */
 async function resolveArchetype(): Promise<ArchetypeSlug> {
   const CONFIG_PATH = join(HARNESS_DIR, "..", "forgeclaw.config.json");
   try {
     if (!existsSync(CONFIG_PATH)) {
+      // Prefer archetype from last persisted snapshot if config missing
+      const persisted = loadSnapshot();
+      if (persisted?.snapshot.archetype) {
+        const slug = persisted.snapshot.archetype;
+        if (
+          slug === "solo-builder" || slug === "content-creator" ||
+          slug === "agency-freela" || slug === "ecom-manager" || slug === "generic"
+        ) {
+          return slug as ArchetypeSlug;
+        }
+      }
       console.warn("[onboarding] config missing, using archetype=generic");
       return "generic";
     }
@@ -278,6 +318,17 @@ async function resolveArchetype(): Promise<ArchetypeSlug> {
       slug === "generic"
     ) {
       return slug;
+    }
+    // Prefer archetype from last persisted snapshot if config invalid
+    const persisted = loadSnapshot();
+    if (persisted?.snapshot.archetype) {
+      const pslug = persisted.snapshot.archetype;
+      if (
+        pslug === "solo-builder" || pslug === "content-creator" ||
+        pslug === "agency-freela" || pslug === "ecom-manager" || pslug === "generic"
+      ) {
+        return pslug as ArchetypeSlug;
+      }
     }
     console.warn(
       `[onboarding] config.archetype missing or invalid (${String(slug)}), using generic`,
