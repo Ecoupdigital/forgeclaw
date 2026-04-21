@@ -315,7 +315,7 @@
 **Objetivo:** CLI subcommand que reexecuta o interviewer depois do install pra refinar harness sem reinstalar, com 5 modos (default/archetype/section/reset/rollback) e sistema de backup/rollback automatico.
 **Requisitos**: CLI-REFINE-01, CLI-REFINE-02, CLI-REFINE-03, CLI-REFINE-04
 **Depende de:** Fase 27
-**Planos:** 1/3 plans executed
+**Planos:** 2/3 plans executed
   - [x] 28-01 — Comando `forgeclaw refine` + 5 modos + backup/rollback (commits 59a89e2, 806bf7f, e70f70c, 9c0b79f, 6201595, 5e2cdac)
   - [ ] 28-02 — (pendente)
   - [ ] 28-03 — (pendente)
