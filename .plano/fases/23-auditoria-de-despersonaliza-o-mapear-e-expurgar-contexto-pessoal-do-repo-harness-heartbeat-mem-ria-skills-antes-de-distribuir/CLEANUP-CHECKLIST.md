@@ -1,6 +1,8 @@
 # Cleanup Checklist — Contexto Pessoal no Repo ForgeClaw
 
-Derivado de `AUDIT-REPORT.md` em 2026-04-21 (1280 findings em 95 arquivos unicos: 428 critical, 762 high, 90 medium). Plano 23-02 executa esta lista.
+Derivado de `AUDIT-REPORT.md` em 2026-04-21 (1280 findings em 97 arquivos unicos: 428 critical, 762 high, 90 medium). Plano 23-02 executa esta lista.
+
+Nota: o scanner exclui seus proprios outputs (`AUDIT-REPORT.md`, `CLEANUP-CHECKLIST.md`, `COVERAGE-VALIDATION.md`) via `IGNORE_FILE_NAMES` pra evitar loop de auto-referencia. O ground truth aqui e a passada pos-exclusao.
 
 ## Legenda de acoes
 

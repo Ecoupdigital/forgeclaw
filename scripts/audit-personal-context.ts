@@ -29,6 +29,15 @@ const IGNORE_DIRS = new Set([
   '.gitnexus',
 ]);
 
+// Arquivos ignorados por nome — principalmente outputs do proprio scanner,
+// que senao criam loop de auto-referencia (o markdown do report cita
+// literalmente todos os snippets e regexes encontrados).
+const IGNORE_FILE_NAMES = new Set([
+  'AUDIT-REPORT.md',
+  'CLEANUP-CHECKLIST.md',
+  'COVERAGE-VALIDATION.md',
+]);
+
 // Extensoes que valem ler. Arquivos sem extensao (LICENSE, Dockerfile,
 // .service, .env) tambem entram — tratado no walker.
 const TEXT_EXTS = new Set([
@@ -132,6 +141,7 @@ async function walk(dir: string, out: string[]): Promise<void> {
     if (e.isDirectory()) {
       await walk(full, out);
     } else if (e.isFile()) {
+      if (IGNORE_FILE_NAMES.has(e.name)) continue;
       const ext = extname(e.name).toLowerCase();
       // Arquivos sem extensao sao incluidos (LICENSE, .service, Dockerfile, etc)
       if (TEXT_EXTS.has(ext) || !ext) {

@@ -1,6 +1,6 @@
 # Audit Report — Contexto Pessoal no Repo ForgeClaw
 
-Gerado em: 2026-04-21T02:32:25.088Z
+Gerado em: 2026-04-21T02:36:29.131Z
 Arquivos varridos: 333
 Findings totais: 1280
 
@@ -1765,29 +1765,29 @@ Findings totais: 1280
 
 | Linha | Sev | Categoria | Pattern | Snippet |
 |-------|-----|-----------|---------|---------|
-| 76 | critical | personal_name | `\bJonathan\b` | `// personal_client — nomes de clientes/projetos do Jonathan` |
-| 77 | critical | personal_client | `\b(lfpro\|LFpro\|LF\s?Pro\|gestor-lfpro)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(lfpro\|LFpro\|LF\s?Pro\|gestor-lfpro)\b/g },` |
-| 77 | critical | personal_client | `\b(lfpro\|LFpro\|LF\s?Pro\|gestor-lfpro)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(lfpro\|LFpro\|LF\s?Pro\|gestor-lfpro)\b/g },` |
-| 77 | critical | personal_client | `\b(lfpro\|LFpro\|LF\s?Pro\|gestor-lfpro)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(lfpro\|LFpro\|LF\s?Pro\|gestor-lfpro)\b/g },` |
-| 78 | critical | personal_client | `\b(kovvy\|Kovvy\|clearify\|Clearify)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(kovvy\|Kovvy\|clearify\|Clearify)\b/g },` |
-| 78 | critical | personal_client | `\b(kovvy\|Kovvy\|clearify\|Clearify)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(kovvy\|Kovvy\|clearify\|Clearify)\b/g },` |
-| 78 | critical | personal_client | `\b(kovvy\|Kovvy\|clearify\|Clearify)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(kovvy\|Kovvy\|clearify\|Clearify)\b/g },` |
-| 78 | critical | personal_client | `\b(kovvy\|Kovvy\|clearify\|Clearify)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(kovvy\|Kovvy\|clearify\|Clearify)\b/g },` |
-| 80 | critical | personal_client | `\b(bv-otica\|bv_otica\|BV\s?[O\u00D3]tica)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(bv-otica\|bv_otica\|BV\s?[OÓ]tica)\b/gi },` |
-| 80 | critical | personal_client | `\b(bv-otica\|bv_otica\|BV\s?[O\u00D3]tica)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(bv-otica\|bv_otica\|BV\s?[OÓ]tica)\b/gi },` |
-| 81 | critical | personal_client | `\b(foco-real\|focoreal)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(foco-real\|focoreal)\b/gi },` |
-| 81 | critical | personal_client | `\b(foco-real\|focoreal)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(foco-real\|focoreal)\b/gi },` |
-| 82 | critical | personal_client | `\b(velhos-parceiros\|velhos_parceiros)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(velhos-parceiros\|velhos_parceiros)\b/gi },` |
-| 82 | critical | personal_client | `\b(velhos-parceiros\|velhos_parceiros)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(velhos-parceiros\|velhos_parceiros)\b/gi },` |
-| 86 | critical | personal_handle | `@ForgeClawUP_bot` | `{ category: 'personal_handle', severity: 'critical', pattern: /@ForgeClawUP_bot/g },` |
-| 89 | critical | personal_name | `\bJonathan\b` | `// personal_userid — id do Jonathan e do grupo anonymous bot` |
-| 93 | critical | personal_name | `\bJonathan\b` | `// hardcoded_path — paths que so existem na maquina do Jonathan` |
-| 103 | critical | personal_company | `\bEcoupdigital\b` | `{ category: 'private_repo_url', severity: 'critical', pattern: /github\.com\/Ecoupdigital\/forgeclaw/gi },` |
-| 111 | critical | personal_name | `\bJonathan\b` | `// vault_structure — estrutura especifica do vault do Jonathan` |
-| 83 | high | personal_client | `\b(passini\|mybrows\|transplant\|enove)\b` | `{ category: 'personal_client', severity: 'high',     pattern: /\b(passini\|mybrows\|transplant\|enove)\b/gi },` |
-| 83 | high | personal_client | `\b(passini\|mybrows\|transplant\|enove)\b` | `{ category: 'personal_client', severity: 'high',     pattern: /\b(passini\|mybrows\|transplant\|enove)\b/gi },` |
-| 83 | high | personal_client | `\b(passini\|mybrows\|transplant\|enove)\b` | `{ category: 'personal_client', severity: 'high',     pattern: /\b(passini\|mybrows\|transplant\|enove)\b/gi },` |
-| 83 | high | personal_client | `\b(passini\|mybrows\|transplant\|enove)\b` | `{ category: 'personal_client', severity: 'high',     pattern: /\b(passini\|mybrows\|transplant\|enove)\b/gi },` |
-| 95 | high | hardcoded_path | `\/home\/projects\/(?!ForgeClaw\b)[A-Za-z0-9_-]+` | `// /home/projects/X (outros projetos privados)` |
-| 97 | high | hardcoded_path | `\/home\/projects\/ForgeClaw\b` | `// /home/projects/ForgeClaw presente em systemd — precisa ser parametrizado` |
-| 112 | medium | vault_structure | `\b0\d-(inbox\|projetos\|clientes\|skills\|empresa\|pessoal\|conte[u\u00FA]do\|conhecimentos)\b` | `{ category: 'vault_structure', severity: 'high',   pattern: /05-pessoal\/daily-log/g },` |
+| 85 | critical | personal_name | `\bJonathan\b` | `// personal_client — nomes de clientes/projetos do Jonathan` |
+| 86 | critical | personal_client | `\b(lfpro\|LFpro\|LF\s?Pro\|gestor-lfpro)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(lfpro\|LFpro\|LF\s?Pro\|gestor-lfpro)\b/g },` |
+| 86 | critical | personal_client | `\b(lfpro\|LFpro\|LF\s?Pro\|gestor-lfpro)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(lfpro\|LFpro\|LF\s?Pro\|gestor-lfpro)\b/g },` |
+| 86 | critical | personal_client | `\b(lfpro\|LFpro\|LF\s?Pro\|gestor-lfpro)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(lfpro\|LFpro\|LF\s?Pro\|gestor-lfpro)\b/g },` |
+| 87 | critical | personal_client | `\b(kovvy\|Kovvy\|clearify\|Clearify)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(kovvy\|Kovvy\|clearify\|Clearify)\b/g },` |
+| 87 | critical | personal_client | `\b(kovvy\|Kovvy\|clearify\|Clearify)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(kovvy\|Kovvy\|clearify\|Clearify)\b/g },` |
+| 87 | critical | personal_client | `\b(kovvy\|Kovvy\|clearify\|Clearify)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(kovvy\|Kovvy\|clearify\|Clearify)\b/g },` |
+| 87 | critical | personal_client | `\b(kovvy\|Kovvy\|clearify\|Clearify)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(kovvy\|Kovvy\|clearify\|Clearify)\b/g },` |
+| 89 | critical | personal_client | `\b(bv-otica\|bv_otica\|BV\s?[O\u00D3]tica)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(bv-otica\|bv_otica\|BV\s?[OÓ]tica)\b/gi },` |
+| 89 | critical | personal_client | `\b(bv-otica\|bv_otica\|BV\s?[O\u00D3]tica)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(bv-otica\|bv_otica\|BV\s?[OÓ]tica)\b/gi },` |
+| 90 | critical | personal_client | `\b(foco-real\|focoreal)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(foco-real\|focoreal)\b/gi },` |
+| 90 | critical | personal_client | `\b(foco-real\|focoreal)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(foco-real\|focoreal)\b/gi },` |
+| 91 | critical | personal_client | `\b(velhos-parceiros\|velhos_parceiros)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(velhos-parceiros\|velhos_parceiros)\b/gi },` |
+| 91 | critical | personal_client | `\b(velhos-parceiros\|velhos_parceiros)\b` | `{ category: 'personal_client', severity: 'critical', pattern: /\b(velhos-parceiros\|velhos_parceiros)\b/gi },` |
+| 95 | critical | personal_handle | `@ForgeClawUP_bot` | `{ category: 'personal_handle', severity: 'critical', pattern: /@ForgeClawUP_bot/g },` |
+| 98 | critical | personal_name | `\bJonathan\b` | `// personal_userid — id do Jonathan e do grupo anonymous bot` |
+| 102 | critical | personal_name | `\bJonathan\b` | `// hardcoded_path — paths que so existem na maquina do Jonathan` |
+| 112 | critical | personal_company | `\bEcoupdigital\b` | `{ category: 'private_repo_url', severity: 'critical', pattern: /github\.com\/Ecoupdigital\/forgeclaw/gi },` |
+| 120 | critical | personal_name | `\bJonathan\b` | `// vault_structure — estrutura especifica do vault do Jonathan` |
+| 92 | high | personal_client | `\b(passini\|mybrows\|transplant\|enove)\b` | `{ category: 'personal_client', severity: 'high',     pattern: /\b(passini\|mybrows\|transplant\|enove)\b/gi },` |
+| 92 | high | personal_client | `\b(passini\|mybrows\|transplant\|enove)\b` | `{ category: 'personal_client', severity: 'high',     pattern: /\b(passini\|mybrows\|transplant\|enove)\b/gi },` |
+| 92 | high | personal_client | `\b(passini\|mybrows\|transplant\|enove)\b` | `{ category: 'personal_client', severity: 'high',     pattern: /\b(passini\|mybrows\|transplant\|enove)\b/gi },` |
+| 92 | high | personal_client | `\b(passini\|mybrows\|transplant\|enove)\b` | `{ category: 'personal_client', severity: 'high',     pattern: /\b(passini\|mybrows\|transplant\|enove)\b/gi },` |
+| 104 | high | hardcoded_path | `\/home\/projects\/(?!ForgeClaw\b)[A-Za-z0-9_-]+` | `// /home/projects/X (outros projetos privados)` |
+| 106 | high | hardcoded_path | `\/home\/projects\/ForgeClaw\b` | `// /home/projects/ForgeClaw presente em systemd — precisa ser parametrizado` |
+| 121 | medium | vault_structure | `\b0\d-(inbox\|projetos\|clientes\|skills\|empresa\|pessoal\|conte[u\u00FA]do\|conhecimentos)\b` | `{ category: 'vault_structure', severity: 'high',   pattern: /05-pessoal\/daily-log/g },` |
