@@ -20,7 +20,13 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // --- Gate 1: Public paths ---
-  if (pathname === "/login" || pathname.startsWith("/api/auth/")) {
+  // /refine/bootstrap is the CLI auto-login entry point (see Gate 3 below)
+  // so it must be reachable without the fc-token cookie.
+  if (
+    pathname === "/login" ||
+    pathname.startsWith("/api/auth/") ||
+    pathname === "/refine/bootstrap"
+  ) {
     return NextResponse.next();
   }
 
@@ -32,6 +38,36 @@ export function proxy(request: NextRequest) {
   // --- Gate 3: Auth cookie ---
   const token = request.cookies.get(AUTH_COOKIE);
   if (!token?.value) {
+    // CLI-to-dashboard handoff: `forgeclaw refine` opens /refine?token=...
+    // so the user lands in the right page without logging in by hand. If a
+    // ?token= is present on an unauthenticated request targeting /refine or
+    // /onboarding, route through /refine/bootstrap which exchanges the
+    // query token for the fc-token cookie and redirects back. Scoped to
+    // /refine and /onboarding only — we do not want ?token= to be a valid
+    // auth vector across the whole dashboard.
+    const queryToken = request.nextUrl.searchParams.get("token");
+    const isAllowedBootstrapTarget =
+      pathname === "/refine" ||
+      pathname.startsWith("/refine/") ||
+      pathname === "/onboarding" ||
+      pathname.startsWith("/onboarding/");
+    if (
+      queryToken &&
+      isAllowedBootstrapTarget &&
+      pathname !== "/refine/bootstrap"
+    ) {
+      const bootstrap = new URL("/refine/bootstrap", request.url);
+      bootstrap.searchParams.set("token", queryToken);
+      // Preserve the original URL (path + remaining query) so bootstrap can
+      // redirect back after the cookie is set.
+      const sanitized = new URL(request.nextUrl.toString());
+      sanitized.searchParams.delete("token");
+      bootstrap.searchParams.set(
+        "next",
+        sanitized.pathname + (sanitized.search ? sanitized.search : ""),
+      );
+      return NextResponse.redirect(bootstrap);
+    }
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
