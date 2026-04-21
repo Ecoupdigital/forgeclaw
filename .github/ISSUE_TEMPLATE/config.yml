@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Suporte da Comunidade (primario)
+    url: https://comunidadeautomiaia.com.br
+    about: Acesse o canal #forgeclaw-suporte para perguntas de uso, configuracao e duvidas. Resposta mais rapida.
+  - name: Documentacao
+    url: https://github.com/Ecoupdigital/forgeclaw/tree/main/docs
+    about: Leia docs/faq.md, docs/troubleshooting.md e docs/getting-started.md antes de abrir issue.
+  - name: Como obter acesso
+    url: https://github.com/Ecoupdigital/forgeclaw/blob/main/ACCESS.md
+    about: Problemas de acesso ao repo privado? Siga o fluxo em ACCESS.md.
