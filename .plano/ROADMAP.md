@@ -315,10 +315,10 @@
 **Objetivo:** CLI subcommand que reexecuta o interviewer depois do install pra refinar harness sem reinstalar, com 5 modos (default/archetype/section/reset/rollback) e sistema de backup/rollback automatico.
 **Requisitos**: CLI-REFINE-01, CLI-REFINE-02, CLI-REFINE-03, CLI-REFINE-04
 **Depende de:** Fase 27
-**Planos:** 2/3 plans executed
+**Planos:** 3/3 plans complete
   - [x] 28-01 — Comando `forgeclaw refine` + 5 modos + backup/rollback (commits 59a89e2, 806bf7f, e70f70c, 9c0b79f, 6201595, 5e2cdac)
-  - [ ] 28-02 — (pendente)
-  - [ ] 28-03 — (pendente)
+  - [x] 28-02 — Dashboard /refine reusa Fase 27 + CLI delegation + core harness-backup refactor (commits 274b793, 86da0af, 08ede94, f69262c, d23649e, f8ddf5b)
+  - [x] 28-03 — Testes de backup/restore, section, archetype, preservacao de dados (commits 1866c5e, d9fc2a0, d9bcf7c, 07dd70d, dbd2499, e7ef853, 708793a)
 
 ### Fase 29: Gate de Acesso pela Comunidade — v1 simples com repo privado e invite manual no GitHub ao assinar comunidade, documentação de fluxo de concessão e revogação
 
