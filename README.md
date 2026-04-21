@@ -45,7 +45,7 @@ ForgeClaw transforma o Claude Code CLI num assistente pessoal acessivel por Tele
 npx forgeclaw install
 
 # Ou manualmente:
-git clone https://github.com/Ecoupdigital/forgeclaw.git
+git clone https://github.com/<your-org>/forgeclaw.git
 cd ForgeClaw
 bun install
 ```
@@ -99,7 +99,7 @@ Telegram msg → grammy → text-handler → load agent → ContextBuilder
 ### Instalacao
 
 ```bash
-git clone https://github.com/Ecoupdigital/forgeclaw.git
+git clone https://github.com/<your-org>/forgeclaw.git
 cd ForgeClaw
 bun install
 ```

@@ -19,7 +19,7 @@
 - [2026-04-09] Patterns: EventBus (CCT), SessionKey (Ductor), NDJSON streaming (GSD), JSONL monitoring (CCBot)
 - [2026-04-09] Harness system: 7 arquivos em ~/.forgeclaw/harness/, dados extraidos do Obsidian vault
 - [2026-04-09] Dashboard usa mock data — precisa integrar com @forgeclaw/core
-- [2026-04-09] Repo: github.com/Ecoupdigital/forgeclaw
+- [2026-04-09] Repo: github.com/<org>/forgeclaw
 - [Phase 10]: Bot usa Bun.spawn com cwd ao inves de --cwd flag
 - [2026-04-11][08-04] Template vars de cron ({today}, {yesterday}, {now}) expandidas em runtime via `expandTemplateVars` em cron-engine.ts; formato ISO local; DB mantem prompt literal; calculo unico por execucao (reutilizado no retry)
 - [Phase 8]: Regex frontmatter parser in /api/skills (no new deps) — gray-matter/yaml not in package
