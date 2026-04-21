@@ -68,8 +68,8 @@
 - [ ] TEST-02: Testes de integracao para fluxo completo (mensagem -> SessionManager -> ClaudeRunner -> resposta -> Telegram)
 - [ ] TEST-03: Testes E2E do bot Telegram com mock da grammy API
 - [ ] TEST-04: Testes do dashboard (componentes React + WebSocket connection)
-- [ ] DOC-01: README com visao geral da arquitetura, setup rapido, configuracao completa
-- [ ] DOC-02: Documentacao do harness system (formato de cada arquivo, exemplos, como personalizar)
+- [x] DOC-01: README com visao geral da arquitetura, setup rapido, configuracao completa — completed in 30-01 (README reescrito) e 30-02 (docs/getting-started.md tutorial end-to-end)
+- [x] DOC-02: Documentacao do harness system (formato de cada arquivo, exemplos, como personalizar) — completed in 30-02 (docs/harness-guide.md cobre os 6 arquivos + HEARTBEAT com exemplo editavel)
 - [ ] DOC-03: Documentacao da API WebSocket do dashboard (eventos, payloads, autenticacao)
 
 ## Gate de Acesso (GATE)
@@ -134,8 +134,8 @@
 | TEST-02 | Fase 10 | Pendente |
 | TEST-03 | Fase 10 | Pendente |
 | TEST-04 | Fase 10 | Pendente |
-| DOC-01 | Fase 10 | Pendente |
-| DOC-02 | Fase 10 | Pendente |
+| DOC-01 | Fase 30-01/30-02 | Concluido |
+| DOC-02 | Fase 30-02 | Concluido |
 | DOC-03 | Fase 10 | Pendente |
 | PKG-B1 | Fase 11 | Pendente |
 | PKG-B2 | Fase 11 | Pendente |

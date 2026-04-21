@@ -345,7 +345,7 @@
 **Objetivo:** Reconstruir a camada de documentação de entrada do ForgeClaw com tom de boas-vindas ao membro da comunidade, substituindo a estrutura dev-oriented pela sequência benefício → Quick Start → tabelas de referência → suporte pela comunidade. Entregar também CHANGELOG [0.2.0] cobrindo Fases 23-29, landing estática para descoberta externa, corpo técnico em `docs/` (getting-started, archetypes, dashboard-tour, harness-guide, agents, crons, troubleshooting, faq) e roteiro de vídeo walkthrough de instalação em 5 min.
 **Requisitos**: DOC-01 (README como guia de membro), DOC-02 (CHANGELOG [0.2.0]), DOC-03 (landing estática), DOC-04 (docs/ completo), DOC-05 (video-script).
 **Depende de:** Fase 29
-**Planos:** 2/4 plans executed
+**Planos:** 3/4 plans executed
 **Progresso:** [██░░░░░░░░] 25% (1/4)
   - [x] 30-01 — README de boas-vindas + CHANGELOG [0.2.0] + docs/landing.md (commits 4c0d0e6, f919e23, dc241d9, ebd5932)
   - [ ] 30-02 — Corpo técnico da documentação em docs/ (getting-started, archetypes, dashboard-tour, harness-guide, agents, crons, troubleshooting, faq)
