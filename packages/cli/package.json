@@ -1,6 +1,7 @@
 {
   "name": "forgeclaw",
   "version": "0.1.0",
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "bin": {
     "forgeclaw": "./src/index.ts"
