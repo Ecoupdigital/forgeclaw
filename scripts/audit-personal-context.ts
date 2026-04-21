@@ -32,10 +32,13 @@ const IGNORE_DIRS = new Set([
 // Arquivos ignorados por nome — principalmente outputs do proprio scanner,
 // que senao criam loop de auto-referencia (o markdown do report cita
 // literalmente todos os snippets e regexes encontrados).
+// Tambem ignora o proprio scanner: os regex literais nele (ex: /jonathan/gi)
+// batem com os proprios patterns, produzindo self-match. Esperado e nao PII.
 const IGNORE_FILE_NAMES = new Set([
   'AUDIT-REPORT.md',
   'CLEANUP-CHECKLIST.md',
   'COVERAGE-VALIDATION.md',
+  'audit-personal-context.ts',
 ]);
 
 // Extensoes que valem ler. Arquivos sem extensao (LICENSE, Dockerfile,

@@ -24,7 +24,7 @@ async function resolveDailyDir(): Promise<string> {
   if (process.env.FORGECLAW_DAILY_LOG_DIR) return process.env.FORGECLAW_DAILY_LOG_DIR;
   try {
     const config = await getConfig();
-    if (config.vaultPath) return join(config.vaultPath, '05-pessoal', 'daily-log');
+    if (config.vaultDailyLogPath) return config.vaultDailyLogPath;
   } catch {
     // Config unavailable — use safe default
   }

@@ -1123,7 +1123,7 @@ class StateStore {
 
   /**
    * Full-text search across message history.  FTS5 query syntax is sanitized
-   * so user-supplied queries like ``don-vicente`` or ``claude code``
+   * so user-supplied queries like ``project-alpha`` or ``claude code``
    * don't crash the tokenizer.
    */
   searchMessages(query: string, limit: number = 20): Array<{ messageId: number; topicId: number; content: string; createdAt: number; rank: number }> {

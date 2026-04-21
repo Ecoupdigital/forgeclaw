@@ -38,8 +38,8 @@ async function resolveDailyDir(): Promise<string> {
   if (process.env.FORGECLAW_DAILY_LOG_DIR) return process.env.FORGECLAW_DAILY_LOG_DIR;
   try {
     const config = await getConfig();
-    if (config && typeof config.vaultPath === "string") {
-      return join(config.vaultPath, "05-pessoal", "daily-log");
+    if (config && typeof config.vaultDailyLogPath === "string" && config.vaultDailyLogPath) {
+      return config.vaultDailyLogPath;
     }
   } catch {
     // fall through

@@ -166,7 +166,7 @@ Agentes permitem criar personas especificas para diferentes contextos:
 
 ```
 Agente: Financeiro
-  Prompt: "Voce e especialista financeiro. Use a skill asaas-api..."
+  Prompt: "Voce e especialista financeiro. Use a skill billing-api..."
   Memoria: Filtrada por tags ["financeiro", "clientes"]
   Runtime: Claude Code
 ```
