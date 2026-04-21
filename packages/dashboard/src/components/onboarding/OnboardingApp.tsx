@@ -5,6 +5,7 @@ import { OnboardingLayout } from "./OnboardingLayout";
 import { InterviewerChat } from "./InterviewerChat";
 import { HarnessPreview } from "./HarnessPreview";
 import { ActionsBar } from "./ActionsBar";
+import { BudgetBar } from "./BudgetBar";
 
 export function OnboardingApp() {
   const {
@@ -16,19 +17,11 @@ export function OnboardingApp() {
     sendMessage,
     approve,
     skip,
+    pause,
   } = useOnboarding({ autoStart: true });
 
-  const handlePause = () => {
-    // "Pause" pra fase 27-03 = simplesmente fechar a tab mantendo sentinel AUSENTE.
-    // 27-04 vai evoluir pra chamar /api de persistencia. Por ora: window.close()
-    // com fallback pra toast de instrucao.
-    if (typeof window !== "undefined") {
-      window.close();
-      // Se window.close nao funcionar (browser bloqueou), informar:
-      alert(
-        "Feche esta aba. A entrevista continuara quando voce voltar em http://localhost:4040/onboarding",
-      );
-    }
+  const handlePause = async () => {
+    await pause();
   };
 
   if (state.kind === "idle" || (state.kind === "loading" && !snapshot)) {
@@ -62,34 +55,39 @@ export function OnboardingApp() {
   }
 
   return (
-    <OnboardingLayout
-      chat={
-        <InterviewerChat
-          messages={snapshot.messages}
-          status={snapshot.status}
-          currentQuestion={snapshot.currentQuestion}
-          currentRationale={snapshot.currentRationale}
-          inFlight={inFlight}
-          onSend={sendMessage}
-          error={error}
-          onRetry={refresh}
+    <div className="flex h-full w-full flex-col overflow-hidden">
+      <BudgetBar budget={snapshot.budget} />
+      <div className="flex-1 overflow-hidden">
+        <OnboardingLayout
+          chat={
+            <InterviewerChat
+              messages={snapshot.messages}
+              status={snapshot.status}
+              currentQuestion={snapshot.currentQuestion}
+              currentRationale={snapshot.currentRationale}
+              inFlight={inFlight}
+              onSend={sendMessage}
+              error={error}
+              onRetry={refresh}
+            />
+          }
+          preview={
+            <HarnessPreview
+              files={snapshot.harnessFiles}
+              diffSummary={snapshot.diffSummary}
+            />
+          }
+          actions={
+            <ActionsBar
+              status={snapshot.status}
+              inFlight={inFlight}
+              onApprove={approve}
+              onSkip={skip}
+              onPause={handlePause}
+            />
+          }
         />
-      }
-      preview={
-        <HarnessPreview
-          files={snapshot.harnessFiles}
-          diffSummary={snapshot.diffSummary}
-        />
-      }
-      actions={
-        <ActionsBar
-          status={snapshot.status}
-          inFlight={inFlight}
-          onApprove={approve}
-          onSkip={skip}
-          onPause={handlePause}
-        />
-      }
-    />
+      </div>
+    </div>
   );
 }
