@@ -269,7 +269,7 @@
 **Objetivo:** Scanner automatizado + cleanup + CI guard para garantir zero PII no repo antes de distribuir via comunidade.
 **Requisitos**: TBD
 **Depende de:** Fase 22
-**Planos:** 3 planos (3/3 completos)
+**Planos:** 3/3 plans complete
   - [x] 23-01 — Auditoria automatizada de contexto pessoal (scanner + relatório + checklist)
   - [x] 23-02 — Execução do cleanup (consome CLEANUP-CHECKLIST.md)
   - [x] 23-03 — CI guard + allowlist auditável + pre-commit hook opt-in (workflow GH Actions em push/PR bloqueia regressão)
@@ -279,7 +279,7 @@
 **Objetivo:** [A ser planejado]
 **Requisitos**: TBD
 **Depende de:** Fase 23
-**Planos:** 0 planos
+**Planos:** 1/3 plans executed
 
 ### Fase 25: CLI Installer em Duas Fases — fase técnica valida Claude Code CLI autenticado e credenciais, escolha de arquétipo popula harness, sobe dashboard em modo onboarding
 

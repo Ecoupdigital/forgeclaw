@@ -3,13 +3,13 @@
 ## Referencia do Projeto
 **Projeto:** ForgeClaw
 **Valor Central:** O Claude Code deve responder de forma confiavel via Telegram com isolamento perfeito entre topicos
-**Foco Atual:** Fase 23 — Auditoria de Despersonalizacao (pre-distribuicao)
+**Foco Atual:** Fase 24 — Templates por Arquetipo
 
 ## Posicao Atual
-**Fase:** 23-auditoria-de-despersonalizacao
-**Plano Atual:** 23-03 de 03 — completo
-**Status:** Fase 23 completa (3/3 planos)
-**Progresso:** [██████████] 100%
+**Fase:** 24-templates-por-arqu-tipo
+**Plano Atual:** 24-01 de 03 — completo
+**Status:** Ready to plan
+**Progresso:** [███░░░░░░░] 33%
 
 ## Contexto Acumulado
 
@@ -47,17 +47,25 @@
 - [2026-04-21][23-03] Pre-commit hook `.githooks/pre-commit` e OPT-IN (nao forca core.hooksPath). Habilitado via `git config core.hooksPath .githooks`. Graceful fallback se bun nao instalado. Bypass via `git commit --no-verify` documentado.
 - [2026-04-21][23-03] Path-based whitelisting escolhido sobre category-based: .plano/, node_modules/, .git/ ignorados por prefixo. Mais simples e garante que tokens nunca escapam mesmo em historico.
 - [2026-04-21][23-03] Teste de regressao E2E validado: inject `/home/vault` em packages/core/ -> AUDIT FAIL exit 1; adicionar ao allowlist -> AUDIT PASS exit 0; remover arquivo + entry -> AUDIT PASS exit 0. Gate funciona end-to-end.
+- [2026-04-21][24-01] Modulo `packages/cli/src/templates/archetypes/` criado com superficie publica enxuta: types.ts (ArchetypeSlug enum + ArchetypeMeta/SuggestedAgent/PlaceholderMap/ArchetypeTemplate), loader.ts (loadArchetype, listArchetypes, renderPlaceholders, renderArchetype com validateMeta estrito), index.ts (barrel), README.md (contrato), 5 archetype.json (solo-builder/content-creator/agency-freela/ecom-manager/generic) cada um com 2-4 suggestedAgents distintos e recommendedTools especificas do perfil.
+- [2026-04-21][24-01] `ARCHETYPE_FILES` inclui HEARTBEAT.md alem dos 6 HARNESS_FILES do harness-compiler. Razao: harness-compiler concatena SOUL..STYLE em CLAUDE.md, mas HEARTBEAT e lido pelo cron-engine separadamente e faz parte do perfil do arquetipo — entao precisa ser copiado no install.
+- [2026-04-21][24-01] Tokens `{{...}}` nao-reconhecidos sao preservados no output (em vez de virar string vazia ou jogar erro). Facilita debug de templates mal-escritos durante 24-02 e abaixo: se um .md tem `{{companny}}` (typo), o token permanece visivel no harness renderizado.
+- [2026-04-21][24-01] `listArchetypes()` ignora silenciosamente arquetipos invalidos com console.warn em vez de jogar. Pensado pro caso futuro de arquetipos da comunidade: se alguem adicionar um perfil quebrado, o installer nao crasha — so nao mostra esse perfil na lista.
+- [2026-04-21][24-01] `loadArchetype()` rejeita com erro claro (`missing template file: SOUL.md`) quando qualquer um dos 7 .md falta. Garante que Fase 24-02 nao deixe arquetipo incompleto e que installer nunca escreva harness pela metade.
+- [2026-04-21][24-01] Cast de PlaceholderMap (interface) para Record<string,string> usa bridge via unknown (`as unknown as Record<string,string>`). TS strict nao aceita cast direto pois interfaces nao carregam index signature. Alternativa seria adicionar `[k:string]:string` na interface, mas isso abriria a API pra propriedades arbitrarias.
 
 ### Bloqueios
 Nenhum
 
 ### Issues Pendentes (out-of-scope)
 - `packages/dashboard/src/components/sessions-tab.tsx:185` — TopicInfo.createdAt missing (pre-existente, registrado em .plano/fases/08-dashboard-web/deferred-items.md)
+- `packages/cli/src/commands/install.ts:22` — `Cannot find module '@forgeclaw/core'` (pre-existente, validado via git stash). Registrado em `.plano/fases/24-.../deferred-items.md`. Acao sugerida: adicionar `@forgeclaw/core: workspace:*` em packages/cli/package.json como primeira tarefa de 25-01.
 
 ## Continuidade de Sessao
-Ultima parada: Completado 23-03-PLAN.md (Guard Rails Anti-Regressao) -- 6 tarefas atomicas, 5 commits, gate E2E validado. Novo modo `--ci` no scanner, GitHub Actions workflow em push/PR, pre-commit hook opt-in, allowlist auditavel, README documentado. Commits: 5c047a4 (scanner --ci), 9bfb2b8 (allowlist), 8d9a633 (npm script), ded25ff (GH Actions), 54b4fec (hook + README). Fase 23 completa: repo distribuivel sem PII + CI guard contra regressao.
-Proximas acoes: Comecar Fase 24 (Templates por arquetipo: 5 perfis — solo-builder, criador-de-conteudo, agencia-freela, gestor, e-commerce — com harness generico por arquetipo).
+Ultima parada: Completado 24-01-PLAN.md (Schema, Loader e Metadata dos Arquetipos) -- 6 tarefas executadas, 5 commits de codigo, auditoria de contexto pessoal continua verde. Modulo `packages/cli/src/templates/archetypes/` criado com API publica (loadArchetype, listArchetypes, renderPlaceholders, renderArchetype), 5 archetype.json distinguiveis entre si (3-4 agents cada, tools especificas). Commits: c843983 (types), f113d7a (loader), b2eef28 (index), c8dc869 (README), 06ec83c (5 archetype.json). Verificacoes funcionais passaram (listArchetypes retorna 5, renderPlaceholders preserva unknowns, loadArchetype rejeita missing .md corretamente).
+Proximas acoes: Executar 24-02 — criar os 35 arquivos .md (5 arquetipos x 7 arquivos: SOUL, USER, AGENTS, TOOLS, MEMORY, STYLE, HEARTBEAT) seguindo o schema deste plano. Validacao final de 24-01 (loadArchetype carregando template completo) so sera possivel apos 24-02.
 
 ### Evolucao do Roadmap
 - Fase 22 adicionada: Agentes Especializados + Memória por Topic (prompt base por topic, filtro de memória por tags, edição via dashboard)
 - Fase 23 completa: Auditoria de Despersonalizacao — 23-01 (scanner + relatorios), 23-02 (sanitizacoes), 23-03 (CI guard + allowlist + hook + workflow). Repo pronto para distribuicao como bonus da comunidade.
+- Fase 24 iniciada: 24-01 completo (schema + loader + 5 archetype.json). Faltam 24-02 (35 .md por arquetipo) e 24-03.
