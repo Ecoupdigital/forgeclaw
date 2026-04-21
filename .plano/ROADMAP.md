@@ -325,7 +325,7 @@
 **Objetivo:** Estabelecer um gate v1 simples e pragmatico para controlar quem tem acesso ao codigo do ForgeClaw, agora distribuido como beneficio da comunidade Dominando AutoIA. Repo privatizado, licenca source-available, script CLI idempotente de invite/revoke via GitHub API, runbook operacional e roadmap escrito da v2 automatica (sem implementar v2 agora).
 **Requisitos:** [GATE-01, GATE-02, GATE-03, GATE-04, GATE-05, GATE-06, GATE-07, GATE-08, GATE-09]
 **Depende de:** Nenhuma fase anterior e bloqueante (pode rodar em paralelo com 23-28).
-**Planos:** 3 planos (2 completos, 1 pendente) — 29-01 Licenca+Privacidade, 29-02 Script CLI, 29-03 Roadmap V2+Rastreabilidade
+**Planos:** 3/3 plans complete
 **Criterios de Sucesso:**
   1. Repo github.com/Ecoupdigital/forgeclaw com visibility=private confirmado via API
   2. Arquivo LICENSE source-available commit na raiz, README e package.json apontam para ele
@@ -342,10 +342,15 @@
 
 ### Fase 30: Docs e Distribuição — reescrever README como guia de boas-vindas ao membro, quick reference das nove abas do dashboard, roteiro de vídeo walkthrough de install em cinco minutos
 
-**Objetivo:** [A ser planejado]
-**Requisitos**: TBD
+**Objetivo:** Reconstruir a camada de documentação de entrada do ForgeClaw com tom de boas-vindas ao membro da comunidade, substituindo a estrutura dev-oriented pela sequência benefício → Quick Start → tabelas de referência → suporte pela comunidade. Entregar também CHANGELOG [0.2.0] cobrindo Fases 23-29, landing estática para descoberta externa, corpo técnico em `docs/` (getting-started, archetypes, dashboard-tour, harness-guide, agents, crons, troubleshooting, faq) e roteiro de vídeo walkthrough de instalação em 5 min.
+**Requisitos**: DOC-01 (README como guia de membro), DOC-02 (CHANGELOG [0.2.0]), DOC-03 (landing estática), DOC-04 (docs/ completo), DOC-05 (video-script).
 **Depende de:** Fase 29
-**Planos:** 0 planos
+**Planos:** 4 planos
+**Progresso:** [██░░░░░░░░] 25% (1/4)
+  - [x] 30-01 — README de boas-vindas + CHANGELOG [0.2.0] + docs/landing.md (commits 4c0d0e6, f919e23, dc241d9, ebd5932)
+  - [ ] 30-02 — Corpo técnico da documentação em docs/ (getting-started, archetypes, dashboard-tour, harness-guide, agents, crons, troubleshooting, faq)
+  - [ ] 30-03 — Roteiro de vídeo walkthrough de install em 5 min (docs/video-script.md)
+  - [ ] 30-04 — Quick reference das 9 abas do dashboard + polimento final
 
 ### Fase 31: Alpha com Cinco Membros da Comunidade — seleção de perfis diferentes, observação de instalação sem ajudar, coleta de friction points, iteração antes do release geral
 
