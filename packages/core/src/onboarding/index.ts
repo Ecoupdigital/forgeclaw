@@ -37,7 +37,17 @@ export {
   type ValidPlaceholderKey,
 } from './prompts';
 
-// Engine + merger + budget sao exportados pelos planos 26-02
-// export { Interviewer } from './interviewer';
-// export { applyDiff } from './merger';
-// export { createBudgetTracker } from './budget';
+// Engine + merger + budget
+export { Interviewer } from './interviewer';
+export {
+  applyDiff,
+  previewDiff,
+  applyOpToContent,
+  applyOpsToContent,
+  filterValidDiffs,
+  type MergeResult,
+} from './merger';
+export {
+  createBudgetTracker,
+  type BudgetTracker,
+} from './budget';
