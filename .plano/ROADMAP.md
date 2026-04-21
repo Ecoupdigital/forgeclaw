@@ -357,7 +357,7 @@
 **Objetivo:** Executar alpha fechado de 14 dias corridos (T-7 até D+7) com 5 membros selecionados da comunidade Dominando AutoIA como primeiros humanos fora do núcleo EcoUp a instalar o ForgeClaw. Observar sem ajudar nas primeiras 24h, coletar friction points estruturados, iterar em bugs críticos durante a semana, produzir relatório final que decide "release geral agora" ou "1 ciclo de iteração primeiro".
 **Requisitos**: ALPHA-01, ALPHA-02, ALPHA-03
 **Depende de:** Fase 30
-**Planos:** 1/3 plans executed
+**Planos:** 2/3 plans executed
   - [x] 31-01 — Seleção + Setup do Alpha: 6 artefatos copy-paste (ALPHA-CANDIDATES matriz de seleção, ALPHA-INVITE-MESSAGE 3 mensagens pt-BR, ALPHA-ONBOARDING-CALL-SCRIPT roteiro 30 min, ALPHA-FEEDBACK-TEMPLATE 28 perguntas em 5 seções, ALPHA-OBSERVATION-SHEET template diário por alpha, ALPHA-PLAYBOOK master doc T-7 até D+7) (commits 5276ca5, cbed1e8, c78aa3e, 887b2aa, cb7f14d, 6e8d3e3)
-  - [ ] 31-02 — Consolidação Pós-Alpha: agregação das 5 observation sheets + CSV do formulário em dataset estruturado
+  - [x] 31-02 — Execução + Observação + Iteração: 4 artefatos de suporte em `.plano/fases/31-*/` (DAILY-STANDUP.md log agregado T-1 a D+8, BUG-TRIAGE.md matriz crítico/médio/menor, FRICTION-LOG.md 7 categorias + top 5 slot, ALPHA-EXECUTION-RUNBOOK.md 5 seções checkboxed + verify bash inline) (commits 0529f8f, 0a4dd6e, 7564f9f). 5 tarefas `checkpoint:human-action` DEFERRED com runbook consolidado — Jonathan executa em campo durante 14 dias reais (T-2 a D+8).
   - [ ] 31-03 — Relatório Final + Decisão de Release: cálculo de métricas agregadas (T2FM, NPS, auto-sucesso, arquetipo drift, top frictions) + decisão release geral agora vs 1 ciclo de iteração primeiro
