@@ -188,19 +188,23 @@ export async function runPhaseB(
 
   // --- 9) Setup service ---
   let serviceInstalled = false;
-  const shouldSetupService = checkValue(
-    await confirm({
-      message: 'Set up ForgeClaw as a system service (auto-start on boot)?',
-      initialValue: true,
-    })
-  );
-  if (shouldSetupService) {
-    const serviceResult = await setupService(config as unknown as Record<string, unknown>);
-    if (serviceResult.success) {
-      log.success(serviceResult.message);
-      serviceInstalled = true;
-    } else {
-      log.warn(serviceResult.message);
+  if (process.env.FORGECLAW_SKIP_SERVICE === '1') {
+    log.info('Skipping service setup (FORGECLAW_SKIP_SERVICE=1).');
+  } else {
+    const shouldSetupService = checkValue(
+      await confirm({
+        message: 'Set up ForgeClaw as a system service (auto-start on boot)?',
+        initialValue: true,
+      })
+    );
+    if (shouldSetupService) {
+      const serviceResult = await setupService(config as unknown as Record<string, unknown>);
+      if (serviceResult.success) {
+        log.success(serviceResult.message);
+        serviceInstalled = true;
+      } else {
+        log.warn(serviceResult.message);
+      }
     }
   }
 
