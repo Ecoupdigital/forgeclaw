@@ -34,6 +34,7 @@
 - [2026-04-11][08-06] Sub-recorte DASH-04 fechado — 08-01..08-06 todos com SUMMARY. Fase 08 pronta para verificacao manual fim-a-fim no browser.
 - [Phase 13]: global fetch interceptor for 401 redirect (vs per-hook handling)
 - [2026-04-16][21-02] Token recorder escuta stream:done, persiste input/output/cache tokens. Activity recorder escuta session/message/cron events e emite activity:created. Ambos inicializados no boot antes do webhook dispatcher.
+- [Phase 23]: ForgeClaw será distribuído como bônus da comunidade Dominando AutoIA (R7/mes), não vendido isoladamente. Modelo: repo privado + invite manual no GitHub ao assinar. Wizard entrevistador + templates por arquétipo geram harness personalizado sem contexto pessoal do Jonathan
 
 ### Bloqueios
 Nenhum
