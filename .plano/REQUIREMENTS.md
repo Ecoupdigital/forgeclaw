@@ -72,6 +72,17 @@
 - [ ] DOC-02: Documentacao do harness system (formato de cada arquivo, exemplos, como personalizar)
 - [ ] DOC-03: Documentacao da API WebSocket do dashboard (eventos, payloads, autenticacao)
 
+## Gate de Acesso (GATE)
+- [x] GATE-01: Repositorio `Ecoupdigital/forgeclaw` com visibility=private no GitHub — completed in 29-01 via PATCH na GitHub API com PAT da org
+- [x] GATE-02: Arquivo LICENSE source-available proibindo redistribuicao e revenda — completed in 29-01 (commit 2b7b840)
+- [x] GATE-03: package.json raiz + packages/cli/package.json com campo `license` apontando para LICENSE — completed in 29-01 (commit 09066a5)
+- [ ] GATE-04: Script CLI `ops/gate/access.ts` com subcomandos grant/revoke/list/audit, zero-deps alem de Bun built-ins
+- [ ] GATE-05: Script grava audit log append-only em `ops/gate/access-log.jsonl` (1 JSON por linha)
+- [ ] GATE-06: Script grava mapeamento membro<->github em `ops/gate/members.jsonl`
+- [ ] GATE-07: Runbook `ops/gate/README-GATE.md` documenta setup, cada comando e cenarios comuns (assinatura, cancelamento, auditoria mensal)
+- [ ] GATE-08: Documento `ops/gate/V2-ROADMAP.md` define arquitetura do gate automatizado e criterios de saida para migrar v1 -> v2
+- [ ] GATE-09: ACCESS.md na raiz do repo explica ao membro como obter e perder acesso
+
 ## Rastreabilidade
 
 | Requisito | Fase | Status |
@@ -132,6 +143,15 @@
 | PKG-B4 | Fase 12 | Pendente |
 | PKG-B5 | Fase 11 | Pendente |
 | PKG-B6 | Fase 13 | Pendente |
+| GATE-01 | Fase 29 | Pendente |
+| GATE-02 | Fase 29 | Pendente |
+| GATE-03 | Fase 29 | Pendente |
+| GATE-04 | Fase 29 | Pendente |
+| GATE-05 | Fase 29 | Pendente |
+| GATE-06 | Fase 29 | Pendente |
+| GATE-07 | Fase 29 | Pendente |
+| GATE-08 | Fase 29 | Pendente |
+| GATE-09 | Fase 29 | Pendente |
 
 ## Packaging Blockers (PKG)
 - [ ] PKG-B1: Dashboard instalado como serviço de sistema (systemd/launchd) em modo produção
@@ -191,8 +211,3 @@
 - [x] DASH-ONB-02: proxy.ts com gate 4 (sem sentinel -> redirect /onboarding) e gate 5 (com sentinel + /onboarding -> redirect /) + endpoint publico GET /api/onboarding/health + scaffold /onboarding layout+page — completed in 27-01
 - [x] DASH-ONB-03: 6 rotas REST auth-gated (/start, /message, /state, /preview, /approve, /skip) consumindo Interviewer (fase 26) via store singleton in-memory; preview HarnessDiff computado em snapshot via previewDiff; aprovar via POST /approve (applyDiff + markOnboarded source=interview) ou POST /skip (markOnboarded source=skipped) — completed in 27-02 (trocou SSE por request-response — first-run e turn-taking, streaming ficaria dentro de /message)
 - [ ] DASH-ONB-04: UI split-pane (chat conversacional esquerda + preview ao vivo dos 7 harness files direita) + integracao com installer handoff (buildOnboardingUrl token cookie swap) — planejado pra 27-03/27-04
-
-## Gate de Acesso pela Comunidade (GATE)
-- [x] GATE-01: Repo `github.com/Ecoupdigital/forgeclaw` privatizado (visibility=private, anonimo retorna 404 em API e HTML) — completed in 29-01 via PATCH na GitHub API com PAT da org
-- [x] GATE-02: LICENSE source-available (ForgeClaw Community Source License v1.0) na raiz, package.json root+cli declarando `license: SEE LICENSE IN LICENSE`, README.md secao License alinhada sem mentira de MIT — completed in 29-01 (commits 2b7b840, 09066a5, 0341170)
-- [x] GATE-03: ACCESS.md documentando fluxo de entrada (assinar comunidade -> GitHub username -> 48h manual invite -> aceitar), uso permitido/proibido, termination (7d remove access, 30d delete copies, rights to user-built systems preserved), suporte — completed in 29-01 (commit 95d176f)
