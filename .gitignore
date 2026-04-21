@@ -5,3 +5,12 @@ dist/
 .env
 .env.*
 bun.lock
+
+# Playwright MCP snapshots — contêm dados reais de sessão
+.playwright-mcp/
+
+# Screenshots/debug PNGs da raiz — podem conter dados reais
+/*.png
+
+# Arquivos de handoff pessoal — não distribuir
+.continue-aqui.md
