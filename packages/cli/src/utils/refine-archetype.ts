@@ -37,12 +37,21 @@ export const ARCHETYPE_LABELS: Record<Archetype, string> = {
   generic: 'Generico (comecar do zero)',
 }
 
-function getConfigPath(): string {
-  return join(homedir(), '.forgeclaw', 'forgeclaw.config.json')
+/**
+ * Every path-deriving helper accepts an optional `forgeclawDir` override so
+ * tests can point at a tmp dir without relying on `process.env.HOME` (Bun
+ * caches `homedir()` at process start).
+ */
+function getForgeclawDir(override?: string): string {
+  return override ?? join(homedir(), '.forgeclaw')
 }
 
-function getHarnessDir(): string {
-  return join(homedir(), '.forgeclaw', 'harness')
+function getConfigPath(override?: string): string {
+  return join(getForgeclawDir(override), 'forgeclaw.config.json')
+}
+
+function getHarnessDir(override?: string): string {
+  return join(getForgeclawDir(override), 'harness')
 }
 
 interface ConfigShape {
@@ -50,8 +59,8 @@ interface ConfigShape {
   [k: string]: unknown
 }
 
-function readConfig(): ConfigShape | null {
-  const p = getConfigPath()
+function readConfig(forgeclawDir?: string): ConfigShape | null {
+  const p = getConfigPath(forgeclawDir)
   if (!existsSync(p)) return null
   try {
     return JSON.parse(readFileSync(p, 'utf-8')) as ConfigShape
@@ -68,8 +77,8 @@ function readConfig(): ConfigShape | null {
  *   - the file is unparseable
  *   - the `archetype` field is absent or not one of ARCHETYPE_SLUGS
  */
-export function getCurrentArchetype(): Archetype | null {
-  const cfg = readConfig()
+export function getCurrentArchetype(forgeclawDir?: string): Archetype | null {
+  const cfg = readConfig(forgeclawDir)
   if (!cfg) return null
   const value = cfg.archetype
   if (typeof value !== 'string') return null
@@ -83,15 +92,15 @@ export function getCurrentArchetype(): Archetype | null {
  *
  * Throws when the config file is missing (run `forgeclaw install` first).
  */
-export function setArchetype(archetype: Archetype): void {
-  const p = getConfigPath()
+export function setArchetype(archetype: Archetype, forgeclawDir?: string): void {
+  const p = getConfigPath(forgeclawDir)
   if (!existsSync(p)) {
     throw new Error('Config not found — run forgeclaw install first')
   }
   if (!ARCHETYPE_SLUGS.includes(archetype)) {
     throw new Error(`Invalid archetype: ${archetype}`)
   }
-  const current = readConfig() ?? {}
+  const current = readConfig(forgeclawDir) ?? {}
   const merged = { ...current, archetype }
   writeFileSync(p, JSON.stringify(merged, null, 2), 'utf-8')
   try {
@@ -109,9 +118,12 @@ export function setArchetype(archetype: Archetype): void {
  *
  * @returns Record keyed by full filename ('SOUL.md', 'USER.md', ...).
  */
-export function loadArchetypeTemplates(archetype: Archetype): Record<string, string> {
+export function loadArchetypeTemplates(
+  archetype: Archetype,
+  forgeclawDir?: string,
+): Record<string, string> {
   const template = loadArchetype(archetype)
-  const cfg = readConfig() ?? {}
+  const cfg = readConfig(forgeclawDir) ?? {}
   const placeholders: PlaceholderMap = {
     userName: typeof cfg.userName === 'string' ? cfg.userName : '',
     company: typeof cfg.company === 'string' ? cfg.company : '',
@@ -129,8 +141,8 @@ export function loadArchetypeTemplates(archetype: Archetype): Record<string, str
  * files that do not exist so downstream consumers can treat the dict as
  * stable-shaped.
  */
-export function readCurrentHarness(): Record<string, string> {
-  const dir = getHarnessDir()
+export function readCurrentHarness(forgeclawDir?: string): Record<string, string> {
+  const dir = getHarnessDir(forgeclawDir)
   const out: Record<string, string> = {}
   for (const fname of ARCHETYPE_FILES) {
     const p = join(dir, fname)

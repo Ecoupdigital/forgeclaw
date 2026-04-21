@@ -14,20 +14,23 @@ import { homedir } from 'node:os'
 /**
  * Backup utilities for ~/.forgeclaw/harness.
  *
- * All homedir() reads happen INSIDE functions (not at module load) so tests
- * can mutate process.env.HOME per-test and get fresh paths.
+ * The default forgeclaw dir is derived from `homedir()` at call-time but
+ * every function accepts an optional override (`forgeclawDir`) so tests
+ * can redirect to a tmpdir without relying on `process.env.HOME` mutation
+ * (Bun caches `homedir()` at process start, so HOME mutation does not
+ * propagate).
  */
 
-function getForgeclawDir(): string {
-  return join(homedir(), '.forgeclaw')
+function getForgeclawDir(override?: string): string {
+  return override ?? join(homedir(), '.forgeclaw')
 }
 
-function getHarnessDir(): string {
-  return join(getForgeclawDir(), 'harness')
+function getHarnessDir(override?: string): string {
+  return join(getForgeclawDir(override), 'harness')
 }
 
-function getBackupsDir(): string {
-  return join(getForgeclawDir(), 'harness-backups')
+function getBackupsDir(override?: string): string {
+  return join(getForgeclawDir(override), 'harness-backups')
 }
 
 export interface BackupInfo {
@@ -81,14 +84,15 @@ function buildTimestampId(): string {
  * Throws if the harness dir does not exist (user must run `forgeclaw install`
  * first). Writes a `metadata.json` inside the backup for listing purposes.
  *
- * @param reason Human-readable reason persisted in metadata.json.
+ * @param reason        Human-readable reason persisted in metadata.json.
+ * @param forgeclawDir  Optional override for the forgeclaw base dir (tests).
  */
-export function createBackup(reason: string): BackupInfo {
-  const harnessDir = getHarnessDir()
+export function createBackup(reason: string, forgeclawDir?: string): BackupInfo {
+  const harnessDir = getHarnessDir(forgeclawDir)
   if (!existsSync(harnessDir)) {
     throw new Error('Harness dir does not exist — run forgeclaw install first')
   }
-  const backupsDir = getBackupsDir()
+  const backupsDir = getBackupsDir(forgeclawDir)
   mkdirSync(backupsDir, { recursive: true })
 
   // Reason is used as prefix for pre-restore/auto backups so they're
@@ -134,9 +138,11 @@ export function createBackup(reason: string): BackupInfo {
  *
  * Reads metadata.json when present; falls back to parsing the dir name +
  * mtime when missing or corrupt.
+ *
+ * @param forgeclawDir Optional override for the forgeclaw base dir (tests).
  */
-export function listBackups(): BackupInfo[] {
-  const backupsDir = getBackupsDir()
+export function listBackups(forgeclawDir?: string): BackupInfo[] {
+  const backupsDir = getBackupsDir(forgeclawDir)
   if (!existsSync(backupsDir)) return []
 
   const out: BackupInfo[] = []
@@ -193,16 +199,19 @@ export function listBackups(): BackupInfo[] {
  *
  * The restored harness does NOT contain the `metadata.json` — it is pruned
  * so the harness itself stays clean.
+ *
+ * @param id            Backup id (dir name under harness-backups/).
+ * @param forgeclawDir  Optional override for the forgeclaw base dir (tests).
  */
-export function restoreBackup(id: string): void {
-  const backupsDir = getBackupsDir()
+export function restoreBackup(id: string, forgeclawDir?: string): void {
+  const backupsDir = getBackupsDir(forgeclawDir)
   const src = join(backupsDir, id)
   if (!existsSync(src)) {
     throw new Error(`Backup not found: ${id}`)
   }
   // Safety net: snapshot current state BEFORE restoring.
   try {
-    createBackup(`pre-restore-${id}`)
+    createBackup(`pre-restore-${id}`, forgeclawDir)
   } catch (err) {
     // If harness dir doesn't exist yet, pre-restore backup is not possible;
     // that's fine — continue with the restore.
@@ -210,7 +219,7 @@ export function restoreBackup(id: string): void {
     if (!msg.includes('Harness dir does not exist')) throw err
   }
 
-  const harnessDir = getHarnessDir()
+  const harnessDir = getHarnessDir(forgeclawDir)
   rmSync(harnessDir, { recursive: true, force: true })
   cpSync(src, harnessDir, { recursive: true })
   // Prune metadata.json from the restored harness (backup-only artifact).
