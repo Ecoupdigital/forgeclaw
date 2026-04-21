@@ -31,9 +31,10 @@ export class MemoryManager {
     this.dailyDir = dir;
   }
 
-  // Jonathan is in BRT (UTC-3). The server runs UTC. We format dates/times
-  // in BRT so the daily log matches his wall clock and the "day boundary"
-  // happens at midnight BRT instead of midnight UTC.
+  // The server runs UTC. We format dates/times in BRT (UTC-3) so the daily log
+  // matches the user's wall clock and the "day boundary" happens at midnight
+  // BRT instead of midnight UTC. TODO: make the timezone offset configurable
+  // (tracked by HIG-H10 — timezone configurable in forgeclaw.config.json).
   private brtNow(): Date {
     // Shift UTC clock by -3h so we can use UTC getters as if they were BRT.
     return new Date(Date.now() - 3 * 60 * 60 * 1000);
