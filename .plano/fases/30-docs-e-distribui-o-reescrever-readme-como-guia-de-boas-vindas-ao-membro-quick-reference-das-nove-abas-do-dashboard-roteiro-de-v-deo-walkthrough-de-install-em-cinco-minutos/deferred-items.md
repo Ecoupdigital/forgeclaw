@@ -54,6 +54,27 @@ bun run scripts/capture-screenshots.ts
 git checkout package.json bun.lockb
 ```
 
+### AVISO DE PRIVACIDADE (descoberto em 2026-04-21)
+
+Tentativa de captura via Playwright MCP no dashboard PRODUTIVO do dono revelou que o instance popula cada aba com dados pessoais reais — nomes de topicos, conversas de agentes (Thor/Jarvis/Codex Lab), paths do vault, estrategias de conteudo, etc. Screenshots da instance de producao NAO servem pra doc publica.
+
+**Caminho correto:** subir uma instance FRESH do ForgeClaw num `~/.forgeclaw-demo/` separado, com:
+
+- `dashboardToken` diferente do de producao
+- Arquetipo `generic` selecionado (sem customizacao)
+- Zero sessoes/crons/memorias pre-existentes
+- Bot Telegram diferente (opcional)
+
+Comando sugerido:
+
+```bash
+FORGECLAW_HOME=~/.forgeclaw-demo bun run cli install --archetype=generic --no-handoff
+FORGECLAW_HOME=~/.forgeclaw-demo bun run --cwd packages/dashboard dev
+# dashboard sobe na porta 4040, mas usa ~/.forgeclaw-demo/ como source
+```
+
+Depois roda o script de captura contra essa instance. Screenshots ficam genericos e publicaveis.
+
 Isso deixa 13 PNGs em `docs/screenshots/`:
 `dashboard-home.png`, `tab-sessoes.png`, `tab-automacoes.png`, `tab-memoria.png`, `tab-agentes.png`, `tab-tokens.png`, `tab-atividade.png`, `tab-webhooks.png`, `tab-config.png`, `tab-personalidade.png`, `agents-overview.png`, `crons-overview.png`, `harness-editor.png`.
 

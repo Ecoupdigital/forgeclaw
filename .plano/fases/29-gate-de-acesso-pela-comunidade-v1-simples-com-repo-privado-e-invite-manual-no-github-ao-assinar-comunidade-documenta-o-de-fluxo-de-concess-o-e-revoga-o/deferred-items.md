@@ -19,6 +19,31 @@ Nenhum desses pre-requisitos e automatizavel por agente. O CLI ja foi validado e
 
 O que falta: provar que `grant` + `revoke` + `revoke idempotente` rodam end-to-end com invite real chegando em inbox real.
 
+### BUG CRITICO DESCOBERTO — PAT sem escopo de Administration (2026-04-21)
+
+Smoke test parcial rodado sem conta externa revelou que o PAT atual em `ops/gate/gate.env` NAO TEM escopo pra `grant`/`revoke`:
+
+```
+list → OK (Ecoupdigital admin)
+grant Ecoupdigital → 422 "Repository owner cannot be a collaborator" (esperado — owner)
+grant forgeclaw-smoke-fake-user-xyz-404 → 403 "Resource not accessible by personal access token"
+revoke forgeclaw-smoke-fake-user-xyz-404 → 403 "Resource not accessible by personal access token"
+```
+
+O 403 no grant de usuario fake deveria ter sido 404 "user not found". O fato de ter vindo 403 prova que o PAT nao tem permissao de gravar collaborators — o endpoint inteiro esta bloqueado.
+
+**Implicacao:** produto esta QUEBRADO pra fluxo principal. Se o Jonathan tentar convidar o primeiro membro da comunidade hoje, vai dar 403.
+
+**Correcao (obrigatoria antes do alpha):**
+
+1. Ir em https://github.com/settings/personal-access-tokens/new (fine-grained) ou https://github.com/settings/tokens (classic)
+2. Se fine-grained: escolher repo `Ecoupdigital/forgeclaw` + permissao `Administration: Read and write` + `Metadata: Read`
+3. Se classic: escopo `repo` (tudo) funciona
+4. Substituir o valor de `GITHUB_TOKEN=` em `/home/projects/ForgeClaw/ops/gate/gate.env`
+5. Re-rodar `bun run ops/gate/access.ts grant <conta-teste>` — agora deve funcionar
+
+Registrar em `members.jsonl` so depois que um grant real passar com sucesso.
+
 ---
 
 ## Runbook para o Jonathan rodar o smoke test
