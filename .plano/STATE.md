@@ -7,9 +7,9 @@
 
 ## Posicao Atual
 **Fase:** 24-templates-por-arqu-tipo
-**Plano Atual:** 24-01 de 03 — completo
+**Plano Atual:** 24-02 de 03 — completo
 **Status:** Ready to plan
-**Progresso:** [███░░░░░░░] 33%
+**Progresso:** [██████░░░░] 67%
 
 ## Contexto Acumulado
 
@@ -53,6 +53,10 @@
 - [2026-04-21][24-01] `listArchetypes()` ignora silenciosamente arquetipos invalidos com console.warn em vez de jogar. Pensado pro caso futuro de arquetipos da comunidade: se alguem adicionar um perfil quebrado, o installer nao crasha — so nao mostra esse perfil na lista.
 - [2026-04-21][24-01] `loadArchetype()` rejeita com erro claro (`missing template file: SOUL.md`) quando qualquer um dos 7 .md falta. Garante que Fase 24-02 nao deixe arquetipo incompleto e que installer nunca escreva harness pela metade.
 - [2026-04-21][24-01] Cast de PlaceholderMap (interface) para Record<string,string> usa bridge via unknown (`as unknown as Record<string,string>`). TS strict nao aceita cast direto pois interfaces nao carregam index signature. Alternativa seria adicionar `[k:string]:string` na interface, mas isso abriria a API pra propriedades arbitrarias.
+- [2026-04-21][24-02] Placeholders universais restritos a USER.md por arquetipo. Os outros 6 .md (SOUL, AGENTS, TOOLS, MEMORY, STYLE, HEARTBEAT) usam placeholders somente quando precisam de contexto real (workingDir em TOOLS/HEARTBEAT, vaultPath em TOOLS, today em MEMORY). Reduz acoplamento entre perfil e dados de usuario.
+- [2026-04-21][24-02] Tom de voz validado por distinguibilidade: cada SOUL.md tem header unico com slug, conjunto proprio de principios numericos, e frase de comportamento especifica. Nenhum copy-paste — solo-builder fala em 'ship', content-creator em 'hook/CTA', agency em 'cliente/prazo', ecom em 'ROAS/margem', generic em 'neutro/seguro'.
+- [2026-04-21][24-02] HEARTBEAT por arquetipo modela rotina real do perfil: solo-builder tem monitoring a cada 60min, content-creator tem pauta-ideacao-weekly-retro, agency-freela tem rotina mensal (dia 1) pra financeiro, ecom-manager tem 3 checkpoints diarios (8h/13h/19h) + weekly, generic tem minimo de 2 crons.
+- [2026-04-21][24-02] Generic mantem 2 suggestedAgents e 2 crons propositalmente enxutos. E fallback — se usuario nao se encaixa, recebe minimo viavel sem ruido de sugestoes de outros perfis.
 
 ### Bloqueios
 Nenhum
@@ -62,8 +66,8 @@ Nenhum
 - `packages/cli/src/commands/install.ts:22` — `Cannot find module '@forgeclaw/core'` (pre-existente, validado via git stash). Registrado em `.plano/fases/24-.../deferred-items.md`. Acao sugerida: adicionar `@forgeclaw/core: workspace:*` em packages/cli/package.json como primeira tarefa de 25-01.
 
 ## Continuidade de Sessao
-Ultima parada: Completado 24-01-PLAN.md (Schema, Loader e Metadata dos Arquetipos) -- 6 tarefas executadas, 5 commits de codigo, auditoria de contexto pessoal continua verde. Modulo `packages/cli/src/templates/archetypes/` criado com API publica (loadArchetype, listArchetypes, renderPlaceholders, renderArchetype), 5 archetype.json distinguiveis entre si (3-4 agents cada, tools especificas). Commits: c843983 (types), f113d7a (loader), b2eef28 (index), c8dc869 (README), 06ec83c (5 archetype.json). Verificacoes funcionais passaram (listArchetypes retorna 5, renderPlaceholders preserva unknowns, loadArchetype rejeita missing .md corretamente).
-Proximas acoes: Executar 24-02 — criar os 35 arquivos .md (5 arquetipos x 7 arquivos: SOUL, USER, AGENTS, TOOLS, MEMORY, STYLE, HEARTBEAT) seguindo o schema deste plano. Validacao final de 24-01 (loadArchetype carregando template completo) so sera possivel apos 24-02.
+Ultima parada: Completado 24-02-PLAN.md (Conteudo dos 5 Arquetipos -- 35 arquivos .md) -- 6 tarefas executadas, 5 commits de conteudo (Tarefa 6 foi validacao puramente automatizada), auditoria de contexto pessoal continua verde. Cada arquetipo (solo-builder/content-creator/agency-freela/ecom-manager/generic) tem 7 arquivos .md com tom distinto, agentes espelhando archetype.json.suggestedAgents, HEARTBEAT com dialeto suportado. Commits: e551960 (solo-builder), 287cf90 (content-creator), 5e43d9d (agency-freela), 6104589 (ecom-manager), efd561f (generic). `loadArchetype(slug)` agora funciona fim-a-fim para os 5 — antes rejeitava com "missing template file". `renderArchetype` substitui placeholders em USER.md corretamente. Total: 30138 chars de conteudo, 0 dado pessoal.
+Proximas acoes: Executar 24-03 (ultimo plano da fase 24) — provavel validacao fim-a-fim dos templates + integracao com harness-compiler, fechando a fase. Depois disso, Fase 25 (CLI installer) pode consumir loadArchetype + renderArchetype.
 
 ### Evolucao do Roadmap
 - Fase 22 adicionada: Agentes Especializados + Memória por Topic (prompt base por topic, filtro de memória por tags, edição via dashboard)

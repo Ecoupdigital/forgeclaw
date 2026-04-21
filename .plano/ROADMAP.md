@@ -279,7 +279,7 @@
 **Objetivo:** [A ser planejado]
 **Requisitos**: TBD
 **Depende de:** Fase 23
-**Planos:** 1/3 plans executed
+**Planos:** 2/3 plans executed
 
 ### Fase 25: CLI Installer em Duas Fases — fase técnica valida Claude Code CLI autenticado e credenciais, escolha de arquétipo popula harness, sobe dashboard em modo onboarding
 
