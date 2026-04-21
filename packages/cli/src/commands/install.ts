@@ -175,7 +175,7 @@ export async function install(options: InstallOptions = {}): Promise<void> {
   const workingDir = checkValue(
     await text({
       message: 'Projects directory:',
-      initialValue: (existingConfig.workingDir as string) ?? '/root/projects',
+      initialValue: (existingConfig.workingDir as string) ?? join(homedir(), 'projects'),
       validate(value) {
         if (!value) return 'Directory is required'
         if (!existsSync(value)) return `Directory does not exist: ${value}`
@@ -196,7 +196,8 @@ export async function install(options: InstallOptions = {}): Promise<void> {
     vaultPath = checkValue(
       await text({
         message: 'Vault path:',
-        initialValue: (existingConfig.vaultPath as string) ?? '/root/obsidian',
+        initialValue: (existingConfig.vaultPath as string) ?? '',
+        placeholder: '~/obsidian (optional)',
         validate(value) {
           if (!value) return 'Vault path is required'
         },
