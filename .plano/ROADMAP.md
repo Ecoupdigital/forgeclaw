@@ -304,7 +304,7 @@
 **Objetivo:** First-run gate + UI conversacional no dashboard que entrevista o usuario (arquetipo da Fase 24) e aplica HarnessDiff ao vivo (motor da Fase 26).
 **Requisitos**: DASH-ONB-01, DASH-ONB-02, DASH-ONB-03, DASH-ONB-04
 **Depende de:** Fase 26
-**Planos:** 3/5 plans executed
+**Planos:** 5/5 plans complete
   - [x] 27-01 — Sentinel `.onboarded`, middleware redirect, health endpoint (commits 417ff13, 3e80db9, 91eba2c, 281573b, 7a8c13a, 771ec1c)
   - [x] 27-02 — API Routes (start/message/state/preview/approve/skip) + store singleton + DTOs (commits 0bdcead, c201c8b, 23526c3, 8ab5e75, ad30cdb, ed497ad)
   - [ ] 27-03 — UI split-pane (chat conversacional esquerda, preview harness direita)
@@ -312,10 +312,13 @@
 
 ### Fase 28: Comando forgeclaw refine — CLI command que reexecuta a entrevista depois do install pra refinar harness sem reinstalar o produto
 
-**Objetivo:** [A ser planejado]
-**Requisitos**: TBD
+**Objetivo:** CLI subcommand que reexecuta o interviewer depois do install pra refinar harness sem reinstalar, com 5 modos (default/archetype/section/reset/rollback) e sistema de backup/rollback automatico.
+**Requisitos**: CLI-REFINE-01, CLI-REFINE-02, CLI-REFINE-03, CLI-REFINE-04
 **Depende de:** Fase 27
-**Planos:** 0 planos
+**Planos:** 1/3 plans executed
+  - [x] 28-01 — Comando `forgeclaw refine` + 5 modos + backup/rollback (commits 59a89e2, 806bf7f, e70f70c, 9c0b79f, 6201595, 5e2cdac)
+  - [ ] 28-02 — (pendente)
+  - [ ] 28-03 — (pendente)
 
 ### Fase 29: Gate de Acesso pela Comunidade — v1 simples com repo privado e invite manual no GitHub ao assinar comunidade, documentação de fluxo de concessão e revogação
 
