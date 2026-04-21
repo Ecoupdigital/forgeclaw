@@ -16,7 +16,8 @@
     "test": "bunx --bun vitest run",
     "test:watch": "bunx --bun vitest",
     "audit:personal": "bun run scripts/audit-personal-context.ts",
-    "audit:personal:json": "bun run scripts/audit-personal-context.ts --json"
+    "audit:personal:json": "bun run scripts/audit-personal-context.ts --json",
+    "audit:personal:ci": "bun run scripts/audit-personal-context.ts --ci"
   },
   "engines": {
     "bun": ">=1.1.0"
