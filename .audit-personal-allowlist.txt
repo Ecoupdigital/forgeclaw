@@ -104,3 +104,26 @@ ops/gate/V2-ROADMAP.md:155:personal_name  # metricas v1: tempo gasto pelo operad
 # filesystem em vez de respeitar .gitignore. REPO_OWNER=Ecoupdigital e o
 # default oficial, ja documentado em gate.env.example.
 ops/gate/gate.env:2:personal_company  # arquivo local gitignored: REPO_OWNER default do repo oficial
+
+# .github/* (PLAN 30-04) — templates de issue/PR e SUPPORT.md reconhecidos pelo
+# GitHub. As URLs apontam pro repo privado oficial (mesmo contrato da Fase 29)
+# e as referencias a Jonathan identificam o mantenedor publico do projeto.
+# Mesmo padrao semantico das entries de README.md:106 e ACCESS.md:37.
+.github/ISSUE_TEMPLATE/config.yml:7:personal_company  # contact_link: URL do repo privado oficial para documentacao
+.github/ISSUE_TEMPLATE/config.yml:7:private_repo_url  # contact_link: URL do repo privado oficial para documentacao
+.github/ISSUE_TEMPLATE/config.yml:10:personal_company  # contact_link: URL do repo privado oficial para ACCESS.md
+.github/ISSUE_TEMPLATE/config.yml:10:private_repo_url  # contact_link: URL do repo privado oficial para ACCESS.md
+.github/ISSUE_TEMPLATE/feature.md:34:personal_name  # checklist de voluntariado: identifica o mantenedor (Jonathan/staff)
+.github/SUPPORT.md:3:personal_name  # primeiro paragrafo: descreve a comunidade Dominando AutoIA como canal primario
+.github/SUPPORT.md:30:personal_name  # politica de resposta: identifica mantenedor que revisa issues
+
+# docs/support-channel.md (PLAN 30-04) — guia operacional dos canais da
+# comunidade. As referencias a Jonathan identificam o mantenedor publico e o
+# staff; a URL do repo oficial aparece em exemplo de linkagem pra docs.
+# Mesmo padrao das entries de README.md e ACCESS.md.
+docs/support-channel.md:3:personal_name  # guia operacional: identifica mantenedor (Jonathan) e staff (Luan)
+docs/support-channel.md:13:personal_name  # canal suporte: Jonathan e 1-2 membros experientes como staff
+docs/support-channel.md:15:personal_company  # exemplo de link pra docs: URL do repo privado oficial
+docs/support-channel.md:15:private_repo_url  # exemplo de link pra docs: URL do repo privado oficial
+docs/support-channel.md:25:personal_name  # canal dev: Jonathan como staff principal do debate de arquitetura
+docs/support-channel.md:65:personal_name  # rotina semanal: mantenedor faz triagem de issues e PRs
