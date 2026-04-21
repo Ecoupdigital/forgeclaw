@@ -42,3 +42,16 @@ packages/cli/tests/archetypes/loader.test.ts:95:personal_client  # blacklist int
 packages/cli/tests/archetypes/loader.test.ts:96:personal_client  # blacklist intencional: teste garante que 'LFpro' NAO aparece em nenhum template
 packages/cli/tests/archetypes/loader.test.ts:97:personal_client  # blacklist intencional: teste garante que 'LF Pro' NAO aparece em nenhum template
 packages/cli/tests/archetypes/loader.test.ts:99:personal_client  # blacklist intencional: teste garante que 'Clearify' NAO aparece em nenhum template
+
+# LICENSE, ACCESS.md, README.md (secao License) — documentos legais/de acesso
+# que PRECISAM identificar o detentor dos direitos autorais e o repositorio
+# privado oficial. Nao sao vazamento, sao o proprio contrato do gate da Fase 29.
+LICENSE:3:personal_company  # copyright holder legitimo: EcoUp Digital e o detentor da licenca
+LICENSE:4:personal_name  # copyright holder legitimo: Jonathan Renan Outeiro como pessoa fisica
+LICENSE:30:personal_company  # clausula anti-misrepresentation: lista nomes protegidos (ForgeClaw, EcoUp Digital, Dominando AutoIA)
+ACCESS.md:9:personal_company  # documento de acesso: referencia ao repo privado oficial Ecoupdigital/forgeclaw
+ACCESS.md:9:private_repo_url  # documento de acesso: link para repo privado oficial Ecoupdigital/forgeclaw
+ACCESS.md:37:personal_name  # suporte: membros da comunidade conhecem Jonathan pelo primeiro nome, nao e vazamento
+README.md:49:personal_company  # Quick Start: URL oficial do repo privado para membros que ja tem acesso
+README.md:49:private_repo_url  # Quick Start: URL oficial do repo privado para membros que ja tem acesso
+README.md:336:personal_company  # secao License: attribution legitima do copyright holder
