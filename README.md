@@ -1,336 +1,106 @@
 # ForgeClaw
 
-> Your Personal AI Command Center -- controle o Claude Code via Telegram e Dashboard Web.
-
-ForgeClaw transforma o Claude Code CLI num assistente pessoal acessivel por Telegram, com streaming em tempo real, memoria persistente, agentes especializados e tarefas agendadas. Zero custo de API -- roda direto com sua assinatura Claude Max.
-
-## Features
-
-### Core
-- **Bot Telegram** -- sessoes isoladas por topico, streaming em tempo real, fila de mensagens, botoes inline
-- **Dashboard Web** -- chat, sessoes, crons, memoria, agentes, tokens, atividade, webhooks, harness editor
-- **CLI Installer** -- onboarding interativo com deteccao de dependencias e setup de servico
-- **Motor Claude Code CLI** -- `Bun.spawn` com output `stream-json`, retry automatico, abort gracioso
-- **Multi-Runtime** -- Claude Code e Codex compartilham 100% da memoria, troca sem perder contexto
-
-### Agentes Especializados
-- **Agentes por Topic** -- cada topic do Telegram pode ter um agente com prompt e comportamento proprio
-- **Controle de Memoria** -- 3 modos: Global (tudo), Filtrado (por tags) ou Nenhuma (zero acesso)
-- **CRUD via Dashboard** -- criar, editar, deletar agentes na aba Agentes
-- **Vinculacao a Topics** -- dropdown no sidebar pra associar agente ao topic
-
-### Memoria
-- **Memoria Persistente** -- daily logs automaticos + compilacao para MEMORY.md
-- **FTS5 Search** -- busca full-text nas memorias e mensagens
-- **Filtro por Tags** -- agentes filtrados so acessam memorias com tags correspondentes
-- **Janitor Automatico** -- roda as 23h55, destila fatos permanentes, limpa ruido
-- **Obsidian Vault** -- integra com vault existente pra contexto extra
-
-### Automacao
-- **Crons Proativos** -- HEARTBEAT.md com schedule em portugues natural, hot-reload
-- **Webhooks Outbound** -- notificacoes HTTP com HMAC-SHA256, retry e circuit breaker
-- **Token Tracking** -- uso por sessao/dia com breakdown cache vs fresh tokens
-- **Activity Feed** -- timeline do sistema em tempo real com filtros por tipo
-
-### Multimidia
-- **Voz** -- transcricao via Whisper (Groq ou OpenAI)
-- **Arquivos** -- PDF, imagens, ZIP, tar.gz enviados ao Claude com contexto
-- **Outbound** -- arquivos gerados pelo Claude enviados de volta no Telegram
-- **Formatacao** -- Markdown convertido pra HTML Telegram (headers, listas, code blocks, links)
-
-## Quick Start
-
-O ForgeClaw e distribuido como beneficio da comunidade **Dominando AutoIA**. O repositorio e privado — veja [ACCESS.md](./ACCESS.md) para entender como obter acesso como membro.
-
-Para quem ja tem acesso ao repositorio:
-
-```bash
-# Clone (requer que voce esteja autenticado no GitHub e seja collaborator do repo)
-git clone https://github.com/Ecoupdigital/forgeclaw.git
-cd forgeclaw
-bun install
-
-# Instalar / onboarding
-bun run --filter forgeclaw dev -- install
-```
-
-> Nota: o antigo fluxo `npx forgeclaw install` ficara indisponivel enquanto o pacote nao estiver publicado num registry controlado. Ver Fase 32+ do roadmap para o mirror npm com license-key check.
-
-## Arquitetura
-
-Monorepo com 4 packages:
-
-```
-packages/
-  core/        @forgeclaw/core       Motor (runner, sessions, store, crons, memory, agents)
-  bot/         @forgeclaw/bot        Bot Telegram (grammy + streaming + agentes)
-  dashboard/   @forgeclaw/dashboard  Dashboard Web (Next.js 16, React 19, Tailwind 4)
-  cli/         forgeclaw             CLI installer com onboarding interativo
-```
-
-### Fluxo de dados
-
-```
-Telegram msg → grammy → text-handler → load agent → ContextBuilder
-                                                        ├─ harness (SOUL, USER, TOOLS, MEMORY, STYLE)
-                                                        ├─ agent system_prompt (prepended)
-                                                        ├─ memory retrieval (global/filtered/none)
-                                                        └─ vault pointer
-                                                    → ClaudeRunner (Bun.spawn claude CLI)
-                                                    → streaming response → Telegram + Dashboard
-```
-
-## Tech Stack
-
-| Camada | Tecnologia |
-|--------|-----------|
-| Runtime | Bun >= 1.1 |
-| Linguagem | TypeScript 5.7 |
-| Bot | grammy 1.42 + @grammyjs/runner + @grammyjs/auto-retry |
-| Dashboard | Next.js 16 + React 19 + Tailwind 4 + shadcn/ui |
-| Database | SQLite (bun:sqlite core, better-sqlite3 dashboard) com WAL mode |
-| Crons | croner 9.x + HEARTBEAT.md parser |
-| Voice | Groq Whisper / OpenAI Whisper API |
-| CLI UX | @clack/prompts |
-| Servico | systemd (Linux) / launchd (macOS) |
-
-## Setup (Desenvolvimento)
-
-### Pre-requisitos
-
-- [Bun](https://bun.sh) >= 1.1
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) instalado e autenticado
-- Bot Telegram criado via [@BotFather](https://t.me/BotFather)
-
-### Instalacao
-
-```bash
-git clone https://github.com/<your-org>/forgeclaw.git
-cd ForgeClaw
-bun install
-```
-
-### Configuracao
-
-Crie o arquivo `~/.forgeclaw/forgeclaw.config.json`:
-
-```json
-{
-  "botToken": "123456:ABC-DEF...",
-  "allowedUsers": [123456789],
-  "workingDir": "/home/usuario/projects",
-  "vaultPath": "/home/usuario/obsidian",
-  "voiceProvider": "groq",
-  "claudeModel": "sonnet"
-}
-```
-
-| Campo | Tipo | Obrigatorio | Descricao |
-|-------|------|-------------|-----------|
-| `botToken` | string | Sim | Token do bot Telegram (obter em @BotFather) |
-| `allowedUsers` | number[] | Sim | IDs de usuarios autorizados |
-| `allowedGroups` | number[] | Nao | IDs de grupos Telegram autorizados |
-| `workingDir` | string | Nao | Diretorio base dos projetos. Default: `~/forgeclaw-projects` |
-| `vaultPath` | string | Nao | Caminho do Obsidian Vault |
-| `voiceProvider` | string | Nao | `"groq"` (recomendado), `"openai"` ou `"none"` |
-| `claudeModel` | string | Nao | Modelo Claude a usar (ex: `"sonnet"`, `"opus"`, `"haiku"`) |
-| `defaultRuntime` | string | Nao | `"claude-code"` (default) ou `"codex"` |
-| `dashboardToken` | string | Auto | Token de autenticacao do dashboard (gerado no install) |
-
-### Rodar
-
-```bash
-# Bot Telegram
-bun run dev:bot
-
-# Dashboard (porta 4040)
-bun run dev:dashboard
-
-# Ambos
-bun run dev
-```
-
-## Dashboard
-
-O dashboard roda em `localhost:4040` com 9 abas:
-
-| Aba | Funcao |
-|-----|--------|
-| **Sessoes** | Chat com topics, historico, streaming bidirecional |
-| **Automacoes** | CRUD de cron jobs, logs de execucao, run-now |
-| **Memoria** | Entradas de memoria, busca FTS5, audit trail |
-| **Agentes** | CRUD de agentes especializados (prompt, memoria, runtime) |
-| **Tokens** | Uso de tokens por dia/sessao, breakdown cache vs fresh |
-| **Atividade** | Feed de eventos do sistema com filtros |
-| **Webhooks** | Webhooks outbound com HMAC, delivery logs, retry |
-| **Configuracoes** | Config do bot (read-only) |
-| **Personalidade** | Editor do harness CLAUDE.md |
-
-## Agentes Especializados
-
-Agentes permitem criar personas especificas para diferentes contextos:
-
-```
-Agente: Financeiro
-  Prompt: "Voce e especialista financeiro. Use a skill billing-api..."
-  Memoria: Filtrada por tags ["financeiro", "clientes"]
-  Runtime: Claude Code
-```
-
-### Modos de Memoria
-
-| Modo | Comportamento |
-|------|---------------|
-| **Global** | Injeta toda a memoria (padrao) |
-| **Filtrado** | Filtra por tags via memory_refs.entity_name |
-| **Nenhuma** | Zero memoria injetada -- agente limpo |
-
-### Como funciona
-
-1. Crie um agente na aba **Agentes** do dashboard
-2. No sidebar de **Sessoes**, vincule o agente a um topic via dropdown
-3. Mensagens naquele topic usam o prompt e filtro de memoria do agente
-4. O prompt do agente e prepended ao harness -- nao substitui
-
-## Estrutura de Dados
-
-Tudo fica em `~/.forgeclaw/`:
-
-```
-~/.forgeclaw/
-  forgeclaw.config.json    # Configuracao principal
-  db/
-    forgeclaw.db           # SQLite -- sessoes, mensagens, topicos, crons, agentes, tokens, activities, webhooks
-  harness/
-    SOUL.md                # Identidade e principios da IA
-    USER.md                # Perfil do usuario
-    AGENTS.md              # Agentes disponiveis e routing
-    TOOLS.md               # Ferramentas disponiveis
-    MEMORY.md              # Memoria consolidada (longo prazo)
-    STYLE.md               # Guia de estilo de comunicacao
-  memory/
-    DAILY/
-      2026-04-09.md        # Log diario com timestamps
-  logs/
-    bot.log                # Log do bot
-```
-
-## Harness System
-
-O Harness e o sistema de personalidade do ForgeClaw. Sao 6 arquivos markdown injetados como system prompt:
-
-| Arquivo | Funcao |
-|---------|--------|
-| `SOUL.md` | Identidade, principios, tom de comunicacao |
-| `USER.md` | Perfil do usuario (nome, empresa, preferencias) |
-| `AGENTS.md` | Agentes disponiveis e regras de routing |
-| `TOOLS.md` | Ferramentas disponiveis (built-in, MCP, integracoes) |
-| `MEMORY.md` | Memoria de longo prazo (compilada dos daily logs) |
-| `STYLE.md` | Guia de estilo -- formatacao, emoji, linguagem |
-
-Cache por mtime -- se o arquivo nao mudou, nao rele do disco.
-
-## Crons (HEARTBEAT.md)
-
-O `~/.forgeclaw/HEARTBEAT.md` define tarefas agendadas com schedule em portugues natural:
-
-```markdown
-## Todo dia as 23h30 -> topico: Daily Review
-
-- Revise o log diario e compile insights para MEMORY.md
-- Liste tarefas pendentes para amanha
-
-## Toda segunda as 8h -> topico: Weekly Planning
-
-- Analise o progresso da semana anterior
-- Sugira prioridades para esta semana
-
-## A cada 30 minutos -> topico: Monitoring
-
-- Verifique se os servicos estao rodando
-```
-
-### Schedules suportados
-
-| Formato | Exemplo |
-|---------|---------|
-| `Todo dia as Xh` | `Todo dia as 8h` |
-| `Toda hora` | `Toda hora` |
-| `Toda segunda as Xh` | `Toda segunda as 9h` |
-| `A cada N minutos` | `A cada 30 minutos` |
-| Cron expression | `*/5 * * * *` |
-
-Hot-reload automatico quando o HEARTBEAT.md e editado.
-
-## Webhooks
-
-Configure webhooks outbound pra integrar com outros sistemas:
-
-- **Eventos**: session.created, cron.fired, cron.result, message.incoming, memory.created, etc.
-- **Seguranca**: HMAC-SHA256 no header `X-ForgeClaw-Signature`
-- **Retry**: backoff exponencial (1s, 4s, 16s) com circuit breaker apos 5 falhas
-- **Logs**: historico de entregas com status code e tentativas
-
-## Comandos do Bot
-
-| Comando | Descricao |
+Seu comando central de IA pessoal, conectado ao Claude Code.
+
+Voce fala no Telegram, o Claude responde do seu computador. Um dashboard web mostra tudo que ele esta fazendo em tempo real. E quando voce dorme, ele continua rodando tarefas agendadas que voce mesmo criou.
+
+ForgeClaw e o produto de acesso exclusivo da comunidade [Dominando AutoIA](https://comunidadeautomiaia.com.br). Nao esta a venda separadamente.
+
+## Por que voce vai usar
+
+- **Fala com sua IA de qualquer lugar.** Mandou uma mensagem no Telegram do onibus? O Claude ja esta mexendo no seu projeto quando voce chegar em casa.
+- **Ela lembra de voce.** Daily logs automaticos, memoria de longo prazo, contexto do seu trabalho. Voce nao precisa reexplicar quem voce e toda conversa.
+- **Voce tem agentes especialistas.** Um para codigo, um para copy, um para financeiro. Cada topic do Telegram com sua persona. Sem mistura.
+- **Ela trabalha sozinha.** Crons em portugues ("todo dia as 23h faca daily review") que rodam no horario, buscam contexto e te respondem no topic certo.
+- **Tudo seu, na sua maquina.** Zero custo de API — roda com sua assinatura Claude. Seus dados ficam no seu disco.
+
+## Quick Start (4 passos)
+
+1. **Receba seu acesso.** Voce entra no canal da comunidade e pede no #forgeclaw-suporte. Entra em 24h. [Como obter acesso](ACCESS.md).
+2. **Instale em 5 minutos.** Abra o terminal e rode:
+   ```bash
+   git clone https://github.com/Ecoupdigital/forgeclaw.git
+   cd forgeclaw
+   bun install
+   bun run cli install
+   ```
+   O instalador pergunta tudo que precisa: qual arquetipo voce e (Solo Builder, Criador, Agencia, E-commerce, Generico), token do bot Telegram, dados da sua stack.
+3. **Conecte seu bot.** O instalador abre o browser na tela de onboarding. Voce conversa com o ForgeClaw respondendo umas perguntas e ele monta a personalidade (harness) sozinho.
+4. **Fale com ele.** Abre o Telegram, procura pelo seu bot, manda a primeira mensagem. Pronto.
+
+[Veja o walkthrough em video de 5 min](docs/video-script.md) (roteiro; video gravado apos o alpha).
+
+[Guia completo com screenshots](docs/getting-started.md)
+
+## O que voce recebe
+
+| O que | Para que |
+|-------|----------|
+| **Bot Telegram** | Fala com o Claude de qualquer lugar. Topics viram sessoes isoladas (financeiro, codigo, conteudo). |
+| **Dashboard web** | 9 abas: chat, sessoes, crons, memoria, agentes, tokens, atividade, webhooks, personalidade. Roda local, so voce acessa. |
+| **5 arquetipos prontos** | Solo Builder, Criador de Conteudo, Agencia/Freela, Gestor E-commerce, Generico. Escolhe no install, harness ja vem configurado. |
+| **Agentes especializados** | Cada topic pode ter um agente com prompt proprio e memoria filtrada por tags. |
+| **Crons em portugues** | "Toda segunda as 8h -> topico Weekly Planning" no arquivo HEARTBEAT.md. Hot reload, roda sem restart. |
+| **Memoria persistente** | Daily logs + consolidacao automatica em MEMORY.md. Busca FTS5 no dashboard. |
+| **Voz** | Manda audio no Telegram, vira texto (Whisper Groq ou OpenAI), Claude responde. |
+| **Arquivos** | PDF, imagem, ZIP — tudo entra no contexto. Arquivos gerados voltam pra voce no chat. |
+| **Webhooks** | HMAC-SHA256, retry com backoff. Conecta em qualquer sistema externo. |
+
+## Tech stack (rapido)
+
+Se voce quer saber o que esta rodando na sua maquina: Bun + TypeScript no motor, grammy no bot Telegram, Next.js 16 + React 19 + Tailwind 4 no dashboard, SQLite (bun:sqlite + WAL) no banco, Claude Code CLI no cerebro. Tudo monorepo, 4 packages: `core`, `bot`, `dashboard`, `cli`.
+
+Voce nao precisa saber nada disso para usar. E se quiser modificar, o codigo esta todo comentado.
+
+## Comandos que voce vai usar
+
+No Telegram:
+
+| Comando | O que faz |
 |---------|-----------|
 | `/start` | Inicializa sessao e mostra ajuda |
-| `/new` | Nova sessao (limpa contexto anterior) |
-| `/stop` | Aborta tarefa em execucao |
-| `/status` | Status da sessao, contexto usado, fila |
-| `/project` | Lista projetos e permite trocar |
-| `/help` | Mostra todos os comandos |
+| `/new` | Abre sessao nova (limpa contexto) |
+| `/stop` | Aborta a tarefa em execucao |
+| `/status` | Mostra fila, contexto usado |
+| `/project` | Troca o projeto em que o Claude esta trabalhando |
+| `!` (prefixo) | Interrompe a resposta atual e manda um prompt novo |
 
-### Prefixos especiais
+No terminal:
 
-| Prefixo | Efeito |
-|---------|--------|
-| `!` | Interrompe tarefa atual e envia novo prompt |
+| Comando | O que faz |
+|---------|-----------|
+| `forgeclaw install` | Instalador em 3 fases (tecnica + arquetipo + handoff pro dashboard) |
+| `forgeclaw refine` | Reexecuta a entrevista para ajustar o harness sem reinstalar |
+| `forgeclaw status` | Status de todos os componentes |
+| `forgeclaw logs` | Tail em tempo real do log do bot |
+| `forgeclaw export` | Gera .tar.gz com db + config + harness + memory (backup) |
+| `forgeclaw uninstall` | Remove tudo (com confirmacao dupla) |
 
-## Scripts
+## Documentacao completa
 
-| Script | Descricao |
-|--------|-----------|
-| `bun run dev` | Roda bot + dashboard em paralelo |
-| `bun run dev:bot` | Roda so o bot com watch |
-| `bun run dev:dashboard` | Roda so o dashboard (porta 4040) |
-| `bun run build` | Build de producao de todos os packages |
-| `bun run start` | Inicia o bot em producao |
-| `bun run typecheck` | Type-check de todos os packages |
+Para cada pergunta voce tem um documento dedicado em [docs/](docs/):
 
-## Developer Tooling
+| Se voce quer | Leia |
+|--------------|------|
+| Instalar passo-a-passo com imagens | [docs/getting-started.md](docs/getting-started.md) |
+| Entender qual arquetipo escolher | [docs/archetypes.md](docs/archetypes.md) |
+| Conhecer as 9 abas do dashboard | [docs/dashboard-tour.md](docs/dashboard-tour.md) |
+| Editar o harness (personalidade da sua IA) | [docs/harness-guide.md](docs/harness-guide.md) |
+| Criar agentes especializados | [docs/agents.md](docs/agents.md) |
+| Criar tarefas agendadas | [docs/crons.md](docs/crons.md) |
+| Resolver um erro | [docs/troubleshooting.md](docs/troubleshooting.md) |
+| Perguntas frequentes | [docs/faq.md](docs/faq.md) |
 
-### Personal context audit
+## Suporte
 
-O repo inclui um scanner que detecta vazamento de contexto pessoal em codigo
-distribuido (nomes proprios, paths hardcoded, handles privados, tokens, URLs
-internas). O objetivo e manter o ForgeClaw portavel para qualquer usuario da
-comunidade.
-
-```bash
-bun run audit:personal          # gera AUDIT-REPORT.md completo (stdout ou --out=<path>)
-bun run audit:personal:json     # mesma varredura, saida JSON
-bun run audit:personal:ci       # modo CI — exit 0 se limpo, exit 1 se regressao
-```
-
-O modo `--ci` roda automaticamente em push e PR para `main` via
-[`.github/workflows/audit-personal-context.yml`](./.github/workflows/audit-personal-context.yml).
-Falsos positivos conhecidos vivem em
-[`.audit-personal-allowlist.txt`](./.audit-personal-allowlist.txt) (formato
-`<file>:<line>:<category>  # <justificativa>`).
-
-Para habilitar o pre-commit hook local (opt-in):
-
-```bash
-git config core.hooksPath .githooks
-```
-
-Isso bloqueia commits locais quando o audit falha. Desabilitar com
-`git config --unset core.hooksPath`. Bypass pontual via `git commit --no-verify`.
+- **Duvida ou bug?** Pergunta no canal `#forgeclaw-suporte` da [comunidade Dominando AutoIA](https://comunidadeautomiaia.com.br). Voce vai ter resposta rapida e direta.
+- **Issues no GitHub?** Use so pra reportar bugs ja confirmados (o canal da comunidade e o caminho primario; issues sao acompanhados como segundo nivel).
+- **Acesso suspenso ou problemas de billing?** Fale no mesmo canal da comunidade.
 
 ## License
 
-ForgeClaw Community Source License v1.0 — uso permitido para membros ativos da comunidade Dominando AutoIA. Redistribuicao publica, revenda ou oferta como servico a terceiros sao proibidas. Veja [LICENSE](./LICENSE) para o texto completo.
+Ver arquivo [LICENSE](LICENSE). ForgeClaw Community Source License v1.0 — uso individual autorizado, sem redistribuicao ou revenda.
 
-Copyright (c) 2026 EcoUp Digital. Todos os direitos reservados.
+---
+
+_ForgeClaw e um produto exclusivo da [comunidade Dominando AutoIA](https://comunidadeautomiaia.com.br). Construido por [Jonathan Renan](https://instagram.com/jonathanrenan.ia) / EcoUp Digital._
