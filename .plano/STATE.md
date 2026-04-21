@@ -3,13 +3,13 @@
 ## Referencia do Projeto
 **Projeto:** ForgeClaw
 **Valor Central:** O Claude Code deve responder de forma confiavel via Telegram com isolamento perfeito entre topicos
-**Foco Atual:** Fase 25 — CLI Installer em Duas Fases
+**Foco Atual:** Fase 26 — Persona Entrevistador ForgeClaw
 
 ## Posicao Atual
-**Fase:** 25-cli-installer-em-duas-fases (COMPLETA)
-**Plano Atual:** 25-04 de 04 — todos completos
-**Status:** Fase 25 fechada. Proxima: 26 (Persona entrevistador)
-**Progresso:** [██████████] 100%
+**Fase:** 26-persona-entrevistador-forgeclaw (IN PROGRESS)
+**Plano Atual:** 26-01 de 04 COMPLETO
+**Status:** Ready to plan 26-02
+**Progresso:** [██▌░░░░░░░] 25%
 
 ## Contexto Acumulado
 
@@ -83,6 +83,16 @@
 - [2026-04-21][25-04] `test.each(ALL_SLUGS.map(s => [s]))` sobre 5 arquetipos em vez de 5 describe blocks — evita drift quando adicionar arquetipo novo (so atualizar ALL_SLUGS, teste corre automatico). 5 testes em 390ms.
 - [2026-04-21][25-04] phase-b-integration.test.ts usa `monorepoRoot: process.cwd()` em vez de tmp dir — garante que o `bun install` interno ao runPhaseB (passo 8 best-effort) encontre node_modules ja cacheado. Testes passam em 740ms em vez de 30s+.
 - [2026-04-21][25-04] Fase 25 COMPLETA. 4/4 planos fechados. Installer tem 3 fases reais (A/B/C) + 38 testes em packages/cli/tests/install/ + escape hatch CI. Passamos de install.ts monolitico de 435 linhas (zero testes) pra 6 modulos especializados + suite verde em 8.7s.
+- [2026-04-21][26-01] Modulo `packages/core/src/onboarding/` criado com 5 arquivos: types.ts (protocolo tipado — InterviewResponse discriminado por status, HarnessDiff com 4 DiffOp cirurgicas, BudgetConfig/BudgetStatus, InterviewState, 3 typed errors, DEFAULT_BUDGET 30/80k/20k/15min), interviewer.md (system prompt FIXO versionado no repo com 7 regras inegociaveis + 3 exemplos JSON + whitelist de 6 placeholders + lista dos 7 harness files + self-check checklist), prompts.ts (loadInterviewerPrompt/loadInterviewerBase/loadScript com cache module-level, extractJsonBlock com fallback bare-json, validateInterviewResponse/validateHarnessDiff/validateDiffOp com typed errors), index.ts (barrel), README.md (arquitetura/protocolo/diff/budget/integracoes futuras).
+- [2026-04-21][26-01] System prompt em .md separado em vez de inline TS string: permite edicao sem recompilar types, grep-friendly, review diff limpo em PR. Cache module-level porque prompt nao muda em runtime; `_resetPromptCache()` exposto so pra testes.
+- [2026-04-21][26-01] InterviewResponse e discriminated union por `status: 'asking' | 'done' | 'aborted'` em vez de 2-3 campos opcionais. Forca narrowing no TS e elimina estados ambiguos ("asking + harnessDiff preenchido simultaneamente").
+- [2026-04-21][26-01] HarnessDiff usa 4 DiffOps cirurgicas (append/replace/replace_section/set_placeholder) em vez de overwrite de arquivo inteiro. Template base do arquetipo (Fase 24) permanece funcional mesmo com diff vazio. `replace_section.header` exige prefixo `## ` (H2) pra impedir troca de H1 (identidade) ou H3 (dependencias de contexto).
+- [2026-04-21][26-01] VALID_PLACEHOLDER_KEYS e whitelist unica (userName/company/role/workingDir/vaultPath/timezone) validada em validateDiffOp. `today` e injecao automatica (nao emitivel pelo entrevistador).
+- [2026-04-21][26-01] Zero deps novas — usa node:fs/node:path/node:url + Bun runtime. Seguindo padrao do restante do @forgeclaw/core.
+- [2026-04-21][26-01] extractJsonBlock tem 2 niveis: (1) regex em bloco fenced ```json ... ```, (2) fallback de JSON.parse direto do texto completo. Protege contra modelos que omitem a fence markdown.
+- [2026-04-21][26-01] Runtime smoke test (bun -e) com 15 checks validou end-to-end: loaders, cache, extractor com fenced/bare/invalid, validators em todos os 3 status, rejeicao de file invalido + placeholder fora da whitelist + replace_section sem H2, aceitacao das 6 keys, HARNESS_FILES_ALL.length=7, DEFAULT_BUDGET correto.
+- [2026-04-21][26-01] Typecheck do core: zero erros em onboarding/**. 8 erros pre-existentes em runners/* e conflito MemoryManager em index.ts seguem out-of-scope.
+- [2026-04-21][26-01] Audit personal context CI: PASS. Zero critical findings em codigo distribuivel.
 
 ### Bloqueios
 Nenhum
@@ -92,8 +102,8 @@ Nenhum
 - `packages/cli/src/commands/install.ts:22` — `Cannot find module '@forgeclaw/core'` (pre-existente, validado via git stash). Registrado em `.plano/fases/24-.../deferred-items.md`. Acao sugerida: adicionar `@forgeclaw/core: workspace:*` em packages/cli/package.json como primeira tarefa de 25-01.
 
 ## Continuidade de Sessao
-Ultima parada: Completado 25-04-PLAN.md (Testes E2E e Contratos do Installer). 5 tarefas, 4 commits. Criados packages/cli/tests/install/state.test.ts (9 cases cobrindo readState/writeState/clearState/createFreshState + JSON invalido + versao/phase invalidos + perms 0600), packages/cli/tests/install/phase-b-integration.test.ts (runPhaseB com archetype=generic/solo-builder em tmp dir, verifica 7 harness files + USER.md substituido + config.json com campo archetype + state phase=b-complete), packages/cli/tests/install/e2e-contract.test.ts (test.each sobre 5 arquetipos validando forgeclaw.config.json contra shape ForgeClawConfig). Modificado phase-b-archetype.ts: escape hatch FORGECLAW_SKIP_SERVICE=1 no bloco 9 (setup service) — producao inalterada, CI pula prompt bloqueante. Suite completa `packages/cli/tests/install/`: 38 tests / 0 fail / 124 expect calls / 8.7s. Typecheck zero erros em escopo (commands/install, tests/install, utils/open-url). Audit PASS. Commits: 2281c4f (escape hatch), 3a8d88a (state.test.ts), 91847a0 (phase-b-integration.test.ts), 87884f7 (e2e-contract.test.ts).
-Proximas acoes: Fase 25 COMPLETA. Avancar para Fase 26 (Persona entrevistador ForgeClaw — system prompt fixo no produto com roteiro por arquetipo, output em diff estruturado do harness, bounded em turnos e tokens). Roadmap pos-25: 26 (entrevistador) -> 27 (dashboard first-run onboarding) -> 28 (forgeclaw refine) -> 29 (gate de acesso pela comunidade) -> 30 (docs+distribuicao) -> 31 (alpha com 5 membros).
+Ultima parada: Completado 26-01-PLAN.md (Protocolo, Tipos e System Prompt do Entrevistador). 7 tarefas, 6 commits. Criado modulo novo `packages/core/src/onboarding/` com: types.ts (239 linhas — HarnessFile/ArchetypeSlug/InterviewTurn/DiffOp/FileDiff/HarnessDiff/BudgetConfig/BudgetStatus/InterviewStatus/InterviewState/InterviewResponse/InterviewerOptions/DEFAULT_BUDGET + 3 typed errors), interviewer.md (128 linhas — system prompt fixo versionado com 7 regras + 3 exemplos JSON + self-check), prompts.ts (221 linhas — loadInterviewerPrompt/loadInterviewerBase/loadScript com cache, extractJsonBlock com fallback, validateInterviewResponse/validateHarnessDiff/validateDiffOp com InterviewResponseParseError+InterviewDiffValidationError, VALID_PLACEHOLDER_KEYS whitelist de 6 keys), index.ts (43 linhas — barrel), README.md (112 linhas — arquitetura/protocolo/diff/budget/integracoes). Editado packages/core/src/index.ts: +1 linha `export * from './onboarding'`. Commits: 83c7985 (types), dcd2c8c (interviewer.md), f4baf05 (prompts), ee5c0ae (barrel), 11932c8 (README), 04620a7 (core barrel). Runtime smoke test 15/15 checks. Typecheck zero erros em onboarding/**. Audit CI PASS.
+Proximas acoes: 26-02 (motor Interviewer + merger.ts + budget.ts — consome types/prompts/validators da 26-01). 26-03 (scripts por arquetipo em onboarding/scripts/ — loadScript ja pronto pra carrega-los). 26-04 (testes do motor). Depois 27 (dashboard first-run onboarding) -> 28 (forgeclaw refine) -> 29 (gate comunidade) -> 30 (docs+distribuicao) -> 31 (alpha).
 
 ### Evolucao do Roadmap
 - Fase 22 adicionada: Agentes Especializados + Memória por Topic (prompt base por topic, filtro de memória por tags, edição via dashboard)
