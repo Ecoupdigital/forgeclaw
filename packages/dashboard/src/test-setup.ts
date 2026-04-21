@@ -4,11 +4,14 @@ import "@testing-library/jest-dom/vitest";
 // vitest needs them for route handler tests that parse Request bodies.
 import { TextDecoder, TextEncoder } from "node:util";
 
-if (typeof globalThis.TextEncoder === "undefined") {
-  // @ts-expect-error polyfill
-  globalThis.TextEncoder = TextEncoder;
+const globalAny = globalThis as unknown as {
+  TextEncoder: typeof TextEncoder;
+  TextDecoder: typeof TextDecoder;
+};
+
+if (typeof globalAny.TextEncoder === "undefined") {
+  globalAny.TextEncoder = TextEncoder;
 }
-if (typeof globalThis.TextDecoder === "undefined") {
-  // @ts-expect-error polyfill
-  globalThis.TextDecoder = TextDecoder;
+if (typeof globalAny.TextDecoder === "undefined") {
+  globalAny.TextDecoder = TextDecoder;
 }

@@ -297,7 +297,7 @@ describe("onboarding API routes", () => {
     const good = await msgMod.POST(
       new Request("http://localhost/msg", {
         method: "POST",
-        body: JSON.stringify({ text: "Jonathan" }),
+        body: JSON.stringify({ text: "test-user" }),
         headers: { "Content-Type": "application/json" },
       }),
     );
@@ -315,7 +315,7 @@ describe("onboarding API routes", () => {
     await msgMod.POST(
       new Request("http://localhost/msg", {
         method: "POST",
-        body: JSON.stringify({ text: "Jonathan" }),
+        body: JSON.stringify({ text: "test-user" }),
         headers: { "Content-Type": "application/json" },
       }),
     );
