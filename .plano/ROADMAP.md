@@ -286,7 +286,7 @@
 **Objetivo:** [A ser planejado]
 **Requisitos**: TBD
 **Depende de:** Fase 24
-**Planos:** 3/4 plans executed
+**Planos:** 4/4 plans complete
   - [x] 25-01 — Refatorar install.ts em Fases A/B/C + flag --resume
   - [x] 25-02 — Fase A real: detecção de deps + verificação de Claude CLI autenticado
   - [x] 25-03 — Fase C real: handoff pro dashboard (spawn + browser open)

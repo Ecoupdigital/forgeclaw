@@ -6,10 +6,10 @@
 **Foco Atual:** Fase 25 — CLI Installer em Duas Fases
 
 ## Posicao Atual
-**Fase:** 25-cli-installer-em-duas-fases
-**Plano Atual:** 25-02 e 25-03 de 04 — ambos completos (wave paralela consolidada)
-**Status:** Ready to execute 25-04
-**Progresso:** [███████▌░░] 75%
+**Fase:** 25-cli-installer-em-duas-fases (COMPLETA)
+**Plano Atual:** 25-04 de 04 — todos completos
+**Status:** Fase 25 fechada. Proxima: 26 (Persona entrevistador)
+**Progresso:** [██████████] 100%
 
 ## Contexto Acumulado
 
@@ -78,6 +78,11 @@
 - [2026-04-21][25-02] `validateBotToken` faz round-trip real a `https://api.telegram.org/bot<token>/getMe` com AbortSignal.timeout(5000). Status 401 -> reason 'Invalid bot token'. Prompt wrapper faz loop de re-pergunta que pre-preenche com o valor rejeitado (UX: editar em vez de re-digitar).
 - [2026-04-21][25-02] `validateDirectoryExists` NAO cria o path — apenas existsSync + statSync.isDirectory. Mudanca intencional em relacao ao fluxo antigo que fazia mkdir implicito: o installer fica honesto sobre state do FS, caller decide explicitamente se vai criar.
 - [2026-04-21][25-02] ValidationResult<T> e discriminated union ({ok:true, data?:T} | {ok:false, reason:string}). Padrao replicavel em outros modulos do installer pra forcar narrowing no TS e mensagens acionaveis.
+- [2026-04-21][25-04] Escape hatch `FORGECLAW_SKIP_SERVICE=1` adicionado a phase-b-archetype.ts (secao 9 — setup service). Envolve o `confirm` + `setupService` em branch env-var. Producao ignora (mesmo comportamento), CI pula o prompt bloqueante. Escolhido sobre mock de @clack/prompts (opcao A vs B do plano) — menos fragil, reutilizavel, alinha com padrao de env-vars do restante do installer.
+- [2026-04-21][25-04] Contract test (`e2e-contract.test.ts`) reimplementa validacao inline em `assertValidForgeClawConfig` em vez de importar `validateConfig` do core. Motivo: evita qualquer side-effect de build que exista em packages/core (hoje nao ha, mas futuro-proofing), e o shape minimo que interessa (botToken/allowedUsers/voiceProvider/defaultRuntime/archetype) e pequeno o suficiente pra manter inline.
+- [2026-04-21][25-04] `test.each(ALL_SLUGS.map(s => [s]))` sobre 5 arquetipos em vez de 5 describe blocks — evita drift quando adicionar arquetipo novo (so atualizar ALL_SLUGS, teste corre automatico). 5 testes em 390ms.
+- [2026-04-21][25-04] phase-b-integration.test.ts usa `monorepoRoot: process.cwd()` em vez de tmp dir — garante que o `bun install` interno ao runPhaseB (passo 8 best-effort) encontre node_modules ja cacheado. Testes passam em 740ms em vez de 30s+.
+- [2026-04-21][25-04] Fase 25 COMPLETA. 4/4 planos fechados. Installer tem 3 fases reais (A/B/C) + 38 testes em packages/cli/tests/install/ + escape hatch CI. Passamos de install.ts monolitico de 435 linhas (zero testes) pra 6 modulos especializados + suite verde em 8.7s.
 
 ### Bloqueios
 Nenhum
@@ -87,11 +92,11 @@ Nenhum
 - `packages/cli/src/commands/install.ts:22` — `Cannot find module '@forgeclaw/core'` (pre-existente, validado via git stash). Registrado em `.plano/fases/24-.../deferred-items.md`. Acao sugerida: adicionar `@forgeclaw/core: workspace:*` em packages/cli/package.json como primeira tarefa de 25-01.
 
 ## Continuidade de Sessao
-Ultima parada: Completado 25-02-PLAN.md (Fase A real — deteccao de Bun, Claude auth, Bot token via Telegram) em paralelo com 25-03. 6 tarefas, 5 commits. Criados packages/cli/src/commands/install/validators.ts (compareSemver + validateBotTokenShape + validateBotToken async com AbortSignal.timeout + validateTelegramUserId + validateDirectoryExists; todos devolvem ValidationResult<T> discriminado) e packages/cli/src/commands/install/diagnostics.ts (checkBun com compareSemver vs MIN_BUN_VERSION=1.1.0, checkClaudeInstalled via which, checkClaudeAuth rodando `claude --print ping` com runWithTimeout 8s + regex case-insensitive /login|unauthoriz|invalid api key|not authenticated|no credentials/ no stderr). phase-a-technical.ts teve stubs substituidos por cascata real (Bun -> Bun>=1.1 -> claude -> claude auth), cada falha retornando reason + --resume hint. Prompt de botToken ganhou loop while(true) com validateBotToken(raw) e pre-preenchimento do valor rejeitado em re-ask. Prompt de workingDir usa validateDirectoryExists. Testes: 17 unit tests em validators.test.ts + 3 integration tests em diagnostics.test.ts = 22 tests verdes. Typecheck zero erros no escopo. audit:personal:ci PASS. Commits: 4ba5646 (validators), 25dc77f (diagnostics), 21099c5 (phase-a wiring), a88d1c6 (validators tests), 04e30d4 (diagnostics tests).
-Proximas acoes: Executar 25-04 (testes E2E do installer) — ja que 25-02 e 25-03 fecharam ambos os stubs em paralelo, o installer tem as 3 fases (A/B/C) funcionando end-to-end. Fase 25-04 deve testar o fluxo completo com Bun/Claude/Telegram mockados + resume state.
+Ultima parada: Completado 25-04-PLAN.md (Testes E2E e Contratos do Installer). 5 tarefas, 4 commits. Criados packages/cli/tests/install/state.test.ts (9 cases cobrindo readState/writeState/clearState/createFreshState + JSON invalido + versao/phase invalidos + perms 0600), packages/cli/tests/install/phase-b-integration.test.ts (runPhaseB com archetype=generic/solo-builder em tmp dir, verifica 7 harness files + USER.md substituido + config.json com campo archetype + state phase=b-complete), packages/cli/tests/install/e2e-contract.test.ts (test.each sobre 5 arquetipos validando forgeclaw.config.json contra shape ForgeClawConfig). Modificado phase-b-archetype.ts: escape hatch FORGECLAW_SKIP_SERVICE=1 no bloco 9 (setup service) — producao inalterada, CI pula prompt bloqueante. Suite completa `packages/cli/tests/install/`: 38 tests / 0 fail / 124 expect calls / 8.7s. Typecheck zero erros em escopo (commands/install, tests/install, utils/open-url). Audit PASS. Commits: 2281c4f (escape hatch), 3a8d88a (state.test.ts), 91847a0 (phase-b-integration.test.ts), 87884f7 (e2e-contract.test.ts).
+Proximas acoes: Fase 25 COMPLETA. Avancar para Fase 26 (Persona entrevistador ForgeClaw — system prompt fixo no produto com roteiro por arquetipo, output em diff estruturado do harness, bounded em turnos e tokens). Roadmap pos-25: 26 (entrevistador) -> 27 (dashboard first-run onboarding) -> 28 (forgeclaw refine) -> 29 (gate de acesso pela comunidade) -> 30 (docs+distribuicao) -> 31 (alpha com 5 membros).
 
 ### Evolucao do Roadmap
 - Fase 22 adicionada: Agentes Especializados + Memória por Topic (prompt base por topic, filtro de memória por tags, edição via dashboard)
 - Fase 23 completa: Auditoria de Despersonalizacao — 23-01 (scanner + relatorios), 23-02 (sanitizacoes), 23-03 (CI guard + allowlist + hook + workflow). Repo pronto para distribuicao como bonus da comunidade.
 - Fase 24 completa: 24-01 (schema + loader + 5 archetype.json), 24-02 (35 .md por arquetipo), 24-03 (suite bun:test com 27 testes cobrindo loader/render/snapshot). Templates de arquetipo prontos para consumo pelo installer da Fase 25.
-- Fase 25 em andamento (3/4): 25-01 (refactor modular) + 25-02 (Fase A real — Bun/Claude/Telegram) + 25-03 (Fase C real — spawn+health+open browser) completos. Instalador agora executa cascata completa com deteccao de ambiente, validacao live de bot token e handoff pro dashboard. 25-04 (E2E tests) pendente.
+- Fase 25 COMPLETA: 25-01 (refactor modular) + 25-02 (Fase A real — Bun/Claude/Telegram) + 25-03 (Fase C real — spawn+health+open browser) + 25-04 (testes E2E + contract + escape hatch CI). Installer tem 3 fases reais funcionando end-to-end, 38 testes verdes em packages/cli/tests/install/, state file resumivel, contract guard contra drift com o core.
