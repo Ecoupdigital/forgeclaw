@@ -1,0 +1,39 @@
+name: Audit Personal Context
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  audit:
+    name: Scan repository for personal context leaks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Run personal context audit (CI mode)
+        run: bun run audit:personal:ci
+
+      - name: Generate full report on failure
+        if: failure()
+        run: |
+          bun run audit:personal --out=audit-report.md
+          echo "::error::Personal context audit failed. See audit-report artifact."
+        continue-on-error: true
+
+      - name: Upload report artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-report
+          path: audit-report.md
+          retention-days: 14
