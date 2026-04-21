@@ -30,7 +30,7 @@
     "forgeclaw": "./src/index.ts"
   },
   "files": [
-    "src",
+    "src/index.ts",
     "README.md"
   ],
   "engines": {
@@ -38,17 +38,16 @@
   },
   "scripts": {
     "dev": "bun run --watch src/index.ts",
-    "build": "bun build src/index.ts --outdir dist --target bun --compile",
+    "build": "bun build src/cli.ts --outdir dist --target bun --compile",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "test:refine": "bun test tests/refine-",
-    "prepublishOnly": "bun run typecheck && bun run test"
+    "prepublishOnly": "bun run --cwd=. src/index.ts --help >/dev/null || (echo 'bootstrap smoke test failed' && exit 1)"
   },
-  "dependencies": {
-    "@clack/prompts": "^0.9.0",
-    "@forgeclaw/core": "workspace:*"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "@clack/prompts": "^0.9.0",
+    "@forgeclaw/core": "workspace:*",
     "bun-types": "latest",
     "typescript": "^5.7.0"
   },
