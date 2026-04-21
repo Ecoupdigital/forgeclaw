@@ -304,7 +304,7 @@
 **Objetivo:** First-run gate + UI conversacional no dashboard que entrevista o usuario (arquetipo da Fase 24) e aplica HarnessDiff ao vivo (motor da Fase 26).
 **Requisitos**: DASH-ONB-01, DASH-ONB-02, DASH-ONB-03, DASH-ONB-04
 **Depende de:** Fase 26
-**Planos:** 2/5 plans executed
+**Planos:** 3/5 plans executed
   - [x] 27-01 — Sentinel `.onboarded`, middleware redirect, health endpoint (commits 417ff13, 3e80db9, 91eba2c, 281573b, 7a8c13a, 771ec1c)
   - [x] 27-02 — API Routes (start/message/state/preview/approve/skip) + store singleton + DTOs (commits 0bdcead, c201c8b, 23526c3, 8ab5e75, ad30cdb, ed497ad)
   - [ ] 27-03 — UI split-pane (chat conversacional esquerda, preview harness direita)
