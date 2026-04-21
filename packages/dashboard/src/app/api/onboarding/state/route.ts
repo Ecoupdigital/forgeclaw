@@ -7,12 +7,16 @@ export async function GET(request: Request) {
   if (!auth.ok) return auth.response;
 
   const store = getStore();
-  const snapshot = store.toSnapshot();
-  if (!snapshot) {
-    return Response.json(
-      { error: "No active session", code: "NO_SESSION" } satisfies OnboardingApiError,
-      { status: 404 },
-    );
+  const activeSnapshot = store.toSnapshot();
+  if (activeSnapshot) {
+    return Response.json(activeSnapshot);
   }
-  return Response.json(snapshot);
+  const persisted = store.loadPersistedIfNoActive();
+  if (persisted) {
+    return Response.json(persisted);
+  }
+  return Response.json(
+    { error: "No active session", code: "NO_SESSION" } satisfies OnboardingApiError,
+    { status: 404 },
+  );
 }
