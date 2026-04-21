@@ -345,16 +345,19 @@
 **Objetivo:** Reconstruir a camada de documentação de entrada do ForgeClaw com tom de boas-vindas ao membro da comunidade, substituindo a estrutura dev-oriented pela sequência benefício → Quick Start → tabelas de referência → suporte pela comunidade. Entregar também CHANGELOG [0.2.0] cobrindo Fases 23-29, landing estática para descoberta externa, corpo técnico em `docs/` (getting-started, archetypes, dashboard-tour, harness-guide, agents, crons, troubleshooting, faq) e roteiro de vídeo walkthrough de instalação em 5 min.
 **Requisitos**: DOC-01 (README como guia de membro), DOC-02 (CHANGELOG [0.2.0]), DOC-03 (landing estática), DOC-04 (docs/ completo), DOC-05 (video-script).
 **Depende de:** Fase 29
-**Planos:** 3/4 plans executed
-**Progresso:** [██░░░░░░░░] 25% (1/4)
+**Planos:** 4/4 plans complete
+**Progresso:** [██████████] 100% (4/4)
   - [x] 30-01 — README de boas-vindas + CHANGELOG [0.2.0] + docs/landing.md (commits 4c0d0e6, f919e23, dc241d9, ebd5932)
-  - [ ] 30-02 — Corpo técnico da documentação em docs/ (getting-started, archetypes, dashboard-tour, harness-guide, agents, crons, troubleshooting, faq)
-  - [ ] 30-03 — Roteiro de vídeo walkthrough de install em 5 min (docs/video-script.md)
-  - [ ] 30-04 — Quick reference das 9 abas do dashboard + polimento final
+  - [x] 30-02 — Corpo técnico da documentação em docs/ (getting-started, archetypes, dashboard-tour, harness-guide, agents, crons, troubleshooting, faq) — 9 arquivos, 10 commits
+  - [x] 30-03 — Roteiro de vídeo walkthrough de install em 5 min (docs/video-script.md) + manifesto de 34 screenshots + script capture-screenshots.ts com fallback Playwright (commits 2310c4b, 0792476, 3f5ada7, 2d2650c, 8577d81) — Task 4 (captura real) DEFERRED com runbook em .plano/fases/30-.../deferred-items.md
+  - [x] 30-04 — Templates .github/ (ISSUE_TEMPLATE bug/feature + config.yml + PR template) + SUPPORT.md + docs/support-channel.md (commits 63d1dc6, 7f540c0, f9b92ff, 42b64b2, a4e5d37, c6f6938, ec88c1b)
 
 ### Fase 31: Alpha com Cinco Membros da Comunidade — seleção de perfis diferentes, observação de instalação sem ajudar, coleta de friction points, iteração antes do release geral
 
-**Objetivo:** [A ser planejado]
-**Requisitos**: TBD
+**Objetivo:** Executar alpha fechado de 14 dias corridos (T-7 até D+7) com 5 membros selecionados da comunidade Dominando AutoIA como primeiros humanos fora do núcleo EcoUp a instalar o ForgeClaw. Observar sem ajudar nas primeiras 24h, coletar friction points estruturados, iterar em bugs críticos durante a semana, produzir relatório final que decide "release geral agora" ou "1 ciclo de iteração primeiro".
+**Requisitos**: ALPHA-01, ALPHA-02, ALPHA-03
 **Depende de:** Fase 30
-**Planos:** 0 planos
+**Planos:** 1/3 plans executed
+  - [x] 31-01 — Seleção + Setup do Alpha: 6 artefatos copy-paste (ALPHA-CANDIDATES matriz de seleção, ALPHA-INVITE-MESSAGE 3 mensagens pt-BR, ALPHA-ONBOARDING-CALL-SCRIPT roteiro 30 min, ALPHA-FEEDBACK-TEMPLATE 28 perguntas em 5 seções, ALPHA-OBSERVATION-SHEET template diário por alpha, ALPHA-PLAYBOOK master doc T-7 até D+7) (commits 5276ca5, cbed1e8, c78aa3e, 887b2aa, cb7f14d, 6e8d3e3)
+  - [ ] 31-02 — Consolidação Pós-Alpha: agregação das 5 observation sheets + CSV do formulário em dataset estruturado
+  - [ ] 31-03 — Relatório Final + Decisão de Release: cálculo de métricas agregadas (T2FM, NPS, auto-sucesso, arquetipo drift, top frictions) + decisão release geral agora vs 1 ciclo de iteração primeiro
