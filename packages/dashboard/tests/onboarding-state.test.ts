@@ -8,25 +8,32 @@ import { join } from "node:path";
 // We vi.mock('node:os') to force homedir() to return a per-test tmpdir so we
 // NEVER touch the real ~/.forgeclaw. FORGECLAW_DIR / SENTINEL_PATH are
 // computed at module load, so we vi.resetModules() + re-mock per test.
+//
+// CRITICAL: `vi.mock` is auto-hoisted above top-level `let`/`const`, so any
+// variable referenced inside the factory closure must be wrapped in
+// `vi.hoisted()` — otherwise it reads `undefined` and the mock silently
+// falls back to actual homedir (which in this sandbox is /root, where the
+// real ~/.forgeclaw.onboarded may exist and pollute assertions).
 
-let tmpHome: string;
+const mocks = vi.hoisted(() => ({ tmpHome: "" }));
 
 vi.mock("node:os", async () => {
   const actual = await vi.importActual<typeof import("node:os")>("node:os");
   return {
     ...actual,
-    homedir: () => tmpHome,
+    default: { ...actual, homedir: () => mocks.tmpHome },
+    homedir: () => mocks.tmpHome,
   };
 });
 
 beforeEach(() => {
-  tmpHome = mkdtempSync(join(tmpdir(), "fc-onb-state-"));
+  mocks.tmpHome = mkdtempSync(join(tmpdir(), "fc-onb-state-"));
   vi.resetModules();
 });
 
 afterEach(() => {
   try {
-    rmSync(tmpHome, { recursive: true, force: true });
+    rmSync(mocks.tmpHome, { recursive: true, force: true });
   } catch {
     /* ignore */
   }
@@ -35,7 +42,7 @@ afterEach(() => {
 describe("onboarding-state (with isolated HOME)", () => {
   it("isOnboarded returns false when sentinel absent", async () => {
     const mod = await import("../src/lib/onboarding-state");
-    expect(mod.FORGECLAW_DIR.startsWith(tmpHome)).toBe(true);
+    expect(mod.FORGECLAW_DIR.startsWith(mocks.tmpHome)).toBe(true);
     expect(mod.isOnboarded()).toBe(false);
     expect(mod.readOnboardedMeta()).toBeNull();
   });
