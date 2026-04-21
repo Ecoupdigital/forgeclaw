@@ -55,3 +55,20 @@ ACCESS.md:37:personal_name  # suporte: membros da comunidade conhecem Jonathan p
 README.md:49:personal_company  # Quick Start: URL oficial do repo privado para membros que ja tem acesso
 README.md:49:private_repo_url  # Quick Start: URL oficial do repo privado para membros que ja tem acesso
 README.md:336:personal_company  # secao License: attribution legitima do copyright holder
+
+# ops/gate/* (PLAN 29-02) — script operacional e docs do gate de acesso.
+# Por definicao, o script opera SOBRE o repo privado oficial Ecoupdigital/forgeclaw
+# e e executado pelo detentor dos direitos autorais (Jonathan). As referencias
+# ao owner/repo sao o contrato operacional do script, nao vazamento.
+ops/gate/access.ts:5:personal_company  # docstring: identifica o repo alvo oficial do gate de acesso
+ops/gate/access.ts:71:personal_company  # default config: owner do repo privado oficial, overridable via REPO_OWNER env
+ops/gate/access.ts:287:personal_company  # usage message: documenta o default do REPO_OWNER
+ops/gate/gate.env.example:4:personal_company  # template: documenta escopo do PAT no repo privado oficial
+ops/gate/gate.env.example:8:personal_company  # template: documenta default do REPO_OWNER/REPO_NAME
+ops/gate/gate.env.example:9:personal_company  # template: valor default do REPO_OWNER
+ops/gate/README-GATE.md:3:personal_company  # runbook: nomeia o repo alvo oficial do gate
+ops/gate/README-GATE.md:5:personal_name  # runbook: identifica o operador humano do fluxo manual v1
+ops/gate/README-GATE.md:9:personal_company  # runbook setup: instrui scope do PAT no repo privado oficial
+ops/gate/README-GATE.md:41:personal_company  # runbook grant: path da API PUT collaborators do repo oficial
+ops/gate/README-GATE.md:55:personal_company  # runbook revoke: path da API DELETE collaborators do repo oficial
+ops/gate/README-GATE.md:116:personal_name  # runbook limitacoes: descreve dependencia do operador humano v1

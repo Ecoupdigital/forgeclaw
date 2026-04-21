@@ -22,6 +22,7 @@ export default defineConfig({
           include: [
             'packages/core/tests/**/*.test.{ts,tsx}',
             'packages/bot/tests/**/*.test.{ts,tsx}',
+            'ops/gate/**/*.test.ts',
           ],
           environment: 'node',
         },
