@@ -41,6 +41,13 @@ import {
   ARCHETYPE_LABELS,
   type Archetype,
 } from '../utils/refine-archetype'
+import {
+  isDashboardRunning,
+  openDashboardRefine,
+  waitForCompletion,
+  readDashboardToken,
+  type RefineMode,
+} from '../utils/refine-dashboard'
 
 /**
  * Harness section name accepted by `--section`. Matches the harness file
@@ -70,6 +77,12 @@ export interface RefineOptions {
   section?: RefineSection
   reset?: boolean
   rollback?: boolean
+  /**
+   * Force terminal UX even when the dashboard is running. Useful for CI,
+   * remote shells, or users who prefer the TUI. When false (default), the
+   * CLI probes the dashboard and delegates when available.
+   */
+  terminal?: boolean
 }
 
 function cancelled(): never {
@@ -94,12 +107,40 @@ function sectionToFile(section: RefineSection): HarnessFile {
  * Entry-point for `forgeclaw refine`. Dispatches to one of five modes based
  * on flags. First-match wins in the order: rollback > reset > archetype >
  * section > default.
+ *
+ * When the dashboard is running (probe at localhost:4040), default/archetype/
+ * section/reset modes are delegated to the web UI (`/refine?mode=...`).
+ * Rollback is always terminal — picking a backup from a select is faster in
+ * the shell than loading a page. `--terminal` forces the terminal UX for
+ * every mode.
  */
 export async function refine(options: RefineOptions = {}): Promise<void> {
   try {
+    // Rollback is always terminal — the UX is a single select, cheaper in TUI.
     if (options.rollback) {
       await runRollback()
-    } else if (options.reset) {
+      return
+    }
+
+    // User explicitly opted out of the dashboard.
+    if (!options.terminal) {
+      const dashboardUp = await isDashboardRunning()
+      if (dashboardUp) {
+        const token = readDashboardToken()
+        if (!token) {
+          log.warn(
+            'Dashboard esta rodando mas dashboardToken nao foi encontrado em ~/.forgeclaw/forgeclaw.config.json. Usando modo terminal.',
+          )
+          // fall through to terminal flow
+        } else {
+          await runViaDashboard(options, token)
+          return
+        }
+      }
+      // dashboard down -> silent fallback to terminal
+    }
+
+    if (options.reset) {
       await runReset()
     } else if (options.archetype) {
       await runArchetypeChange(options.archetype)
@@ -116,6 +157,59 @@ export async function refine(options: RefineOptions = {}): Promise<void> {
     }
     process.exit(1)
   }
+}
+
+/**
+ * Delegates the refine flow to the running dashboard:
+ *   1. Build the /refine URL (mode + archetype/section + auth token)
+ *   2. Best-effort open the browser (user can copy URL manually otherwise)
+ *   3. Block here with a spinner until the dashboard writes
+ *      ~/.forgeclaw/.refining-done
+ *   4. Report the outcome and exit 0 (or exit 1 on error)
+ */
+async function runViaDashboard(
+  options: RefineOptions,
+  token: string,
+): Promise<void> {
+  intro('ForgeClaw Refine — via Dashboard')
+
+  const mode: RefineMode = options.reset
+    ? 'reset'
+    : options.archetype
+      ? 'archetype'
+      : options.section
+        ? 'section'
+        : 'default'
+
+  const url = await openDashboardRefine({
+    mode,
+    archetype: options.archetype,
+    section: options.section,
+    token,
+  })
+  log.info(`Abrindo dashboard: ${url}`)
+  log.info('Se o navegador nao abriu, cole a URL acima no seu browser.')
+  log.info('Use `forgeclaw refine --terminal` pra forcar a UX de terminal.')
+
+  const s = spinner()
+  s.start('Aguardando voce completar o refine no dashboard...')
+  const result = await waitForCompletion()
+  s.stop('Refine concluido.')
+
+  if (result.status === 'applied') {
+    const backupInfo = result.backupId ? ` (backup: ${result.backupId})` : ''
+    log.success(`Mudancas aplicadas${backupInfo}.`)
+    outro('Rollback: forgeclaw refine --rollback')
+    return
+  }
+  if (result.status === 'cancelled') {
+    log.warn('Cancelado pelo usuario no dashboard. Nenhuma mudanca foi aplicada.')
+    outro('')
+    return
+  }
+  // status === 'error'
+  log.error(`Erro reportado pelo dashboard: ${result.error ?? 'desconhecido'}`)
+  process.exit(1)
 }
 
 // ---------- Mode implementations ----------

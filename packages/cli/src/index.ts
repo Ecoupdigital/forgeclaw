@@ -30,6 +30,7 @@ interface RefineFlags {
   section?: RefineSection
   reset: boolean
   rollback: boolean
+  terminal: boolean
 }
 
 /**
@@ -38,7 +39,11 @@ interface RefineFlags {
  * `--section=XYZ`) abort with a clear error listing valid options.
  */
 function parseRefineFlags(argv: string[]): RefineFlags {
-  const out: RefineFlags = { reset: false, rollback: false }
+  const out: RefineFlags = {
+    reset: false,
+    rollback: false,
+    terminal: false,
+  }
   for (const a of argv) {
     if (!a.startsWith('--')) continue
     const [key, ...rest] = a.slice(2).split('=')
@@ -47,6 +52,8 @@ function parseRefineFlags(argv: string[]): RefineFlags {
       out.reset = true
     } else if (key === 'rollback' && value === true) {
       out.rollback = true
+    } else if (key === 'terminal' && value === true) {
+      out.terminal = true
     } else if (key === 'archetype' && typeof value === 'string') {
       if (!isArchetypeSlug(value)) {
         console.error(`Invalid --archetype value: ${value}`)
@@ -120,10 +127,12 @@ function showHelp(): void {
     export      Create backup of all ForgeClaw data (.tar.gz)
     logs        Tail bot logs in real-time
     refine      Refine harness without reinstalling (re-run interviewer)
+                  Opens dashboard /refine when available, falls back to terminal.
                   --archetype=<slug>  Switch archetype (preserves DB/memory)
                   --section=<NAME>    Refine single section (SOUL|USER|AGENTS|TOOLS|MEMORY|STYLE|HEARTBEAT)
                   --reset             Reset harness to archetype template
-                  --rollback          Restore a previous backup
+                  --rollback          Restore a previous backup (terminal only)
+                  --terminal          Force terminal UX (skip dashboard)
 
   Install flags:
     --resume                       Resume from last incomplete phase (~/.forgeclaw/.install-state.json)
@@ -139,6 +148,7 @@ function showHelp(): void {
     forgeclaw refine
     forgeclaw refine --section=USER
     forgeclaw refine --archetype=content-creator
+    forgeclaw refine --terminal
     forgeclaw refine --rollback
 `)
 }
@@ -181,6 +191,7 @@ switch (command) {
       section: refineFlags.section,
       reset: refineFlags.reset,
       rollback: refineFlags.rollback,
+      terminal: refineFlags.terminal,
     })
     break
   }
