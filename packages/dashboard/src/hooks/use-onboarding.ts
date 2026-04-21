@@ -32,6 +32,10 @@ export interface UseOnboardingResult {
   approve: () => Promise<void>;
   /** Skip interview: creates sentinel with source=skipped + redirects to /. */
   skip: () => Promise<void>;
+  /** Pause interview: persists snapshot + aborts in-memory session. */
+  pause: () => Promise<void>;
+  /** Resume interview: re-creates Interviewer with same archetype. */
+  resume: () => Promise<void>;
 }
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -196,11 +200,54 @@ export function useOnboarding(options: { autoStart?: boolean } = {}): UseOnboard
     }
   }, [handleError]);
 
+  const pause = useCallback(async () => {
+    setInFlight(true);
+    setError(null);
+    try {
+      await fetchJson<{ ok: boolean }>("/api/onboarding/pause", {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+      // After pause the store is destroyed; refresh to get persisted snapshot
+      await refresh();
+    } catch (err) {
+      handleError(err, "Failed to pause");
+    } finally {
+      if (mountedRef.current) setInFlight(false);
+    }
+  }, [refresh, handleError]);
+
+  const resume = useCallback(async () => {
+    setInFlight(true);
+    setError(null);
+    try {
+      const snapshot = await fetchJson<OnboardingSessionSnapshot>(
+        "/api/onboarding/resume",
+        { method: "POST", body: JSON.stringify({}) },
+      );
+      setReady(snapshot);
+    } catch (err) {
+      handleError(err, "Failed to resume");
+    } finally {
+      if (mountedRef.current) setInFlight(false);
+    }
+  }, [setReady, handleError]);
+
   // Bootstrap on mount
   useEffect(() => {
     void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Poll /state while status === 'thinking' (detects crash or slow completion).
+  useEffect(() => {
+    if (state.kind !== "ready") return;
+    if (state.snapshot.status !== "thinking") return;
+    const interval = setInterval(() => {
+      void refresh();
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [state, refresh]);
 
   return {
     state,
@@ -212,5 +259,7 @@ export function useOnboarding(options: { autoStart?: boolean } = {}): UseOnboard
     sendMessage,
     approve,
     skip,
+    pause,
+    resume,
   };
 }
