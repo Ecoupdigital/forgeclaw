@@ -19,3 +19,4 @@ export * from './harness-compiler';
 export * from './webhook-dispatcher';
 export * from './token-recorder';
 export * from './activity-recorder';
+export * from './onboarding';
