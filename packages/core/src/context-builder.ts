@@ -31,14 +31,16 @@ export class ContextBuilder {
     this.harnessLoader = harnessLoader;
   }
 
-  async build(userMessage: string, _chatId: number, topicId: number, sessionId?: string | null, agent?: AgentConfig | null): Promise<string> {
+  async build(userMessage: string, _chatId: number, topicId: number, sessionId?: string | null, agent?: AgentConfig | null): Promise<{ prompt: string; agentSystemPrompt?: string }> {
     const parts: string[] = [];
 
-    // 0. Agent system prompt -- prepended BEFORE everything else so it acts
-    //    as a persona/instruction layer that wraps the entire context.
-    if (agent?.systemPrompt) {
-      parts.push(`# Agente: ${agent.name}\n\n${agent.systemPrompt}`);
-    }
+    // Agent system prompt -- returned separately so the handler can inject it
+    // via --append-system-prompt (system-layer) instead of prepending to the
+    // user message. Putting a multi-KB persona in the user turn trips the
+    // Anthropic safety classifier (pattern: "user claims to be an agent").
+    const agentSystemPrompt = agent?.systemPrompt
+      ? `# Agent: ${agent.name}\n\n${agent.systemPrompt}`
+      : undefined;
 
     // 1. Stat line: tiny, always present, ~50 tokens
     const stat = await this.buildStatLine();
@@ -70,8 +72,10 @@ export class ContextBuilder {
     const stateContent = await this.loadTopicState(topicId);
     if (stateContent) parts.push(stateContent);
 
-    if (parts.length === 0) return userMessage;
-    return parts.join('\n\n') + '\n\n---\n\n' + userMessage;
+    const prompt = parts.length === 0
+      ? userMessage
+      : parts.join('\n\n') + '\n\n---\n\n' + userMessage;
+    return { prompt, agentSystemPrompt };
   }
 
   /**
@@ -81,9 +85,8 @@ export class ContextBuilder {
   private async buildStatLine(): Promise<string> {
     try {
       const dailyDir = process.env.FORGECLAW_DAILY_LOG_DIR
-        ?? (this.config.vaultPath
-          ? path.join(this.config.vaultPath, '05-pessoal', 'daily-log')
-          : path.join(homedir(), '.forgeclaw', 'memory', 'daily'));
+        ?? this.config.vaultDailyLogPath
+        ?? path.join(homedir(), '.forgeclaw', 'memory', 'daily');
       const today = this.isoDate(new Date());
       const dailyFilePath = `${dailyDir}/${today}.md`;
 

@@ -14,6 +14,13 @@ export interface ForgeClawConfig {
   allowedGroups?: number[];
   workingDir: string;
   vaultPath?: string;
+  /**
+   * Optional path to the user's vault daily log directory. When present,
+   * the memory stat line uses this path to count today's events. When absent,
+   * falls back to ~/.forgeclaw/memory/daily. Does NOT enforce any vault
+   * structure — the user is responsible for populating it.
+   */
+  vaultDailyLogPath?: string;
   voiceProvider?: 'groq' | 'openai' | 'none';
   claudeModel?: string;
   maxConcurrentSessions?: number;
