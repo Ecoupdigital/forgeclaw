@@ -1,17 +1,48 @@
 {
   "name": "forgeclaw",
   "version": "0.1.0",
+  "description": "Seu comando central de IA pessoal — controle o Claude Code via Telegram e Dashboard Web.",
   "license": "SEE LICENSE IN LICENSE",
+  "author": "Jonathan Renan <jonathan.outeiro@gmail.com>",
+  "homepage": "https://github.com/Ecoupdigital/forgeclaw#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ecoupdigital/forgeclaw.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/Ecoupdigital/forgeclaw/issues"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "telegram",
+    "assistant",
+    "agent",
+    "automation",
+    "bot",
+    "cli",
+    "ai",
+    "command-center"
+  ],
   "type": "module",
   "bin": {
     "forgeclaw": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "bun": ">=1.1.0"
   },
   "scripts": {
     "dev": "bun run --watch src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun --compile",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "test:refine": "bun test tests/refine-"
+    "test:refine": "bun test tests/refine-",
+    "prepublishOnly": "bun run typecheck && bun run test"
   },
   "dependencies": {
     "@clack/prompts": "^0.9.0",
@@ -20,5 +51,8 @@
   "devDependencies": {
     "bun-types": "latest",
     "typescript": "^5.7.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -144,3 +144,15 @@ docs/support-channel.md:65:personal_name  # rotina semanal: mantenedor faz triag
 docs/video-script.md:33:hardcoded_path  # checklist de privacidade: item instrui gravador a NAO mostrar paths pessoais
 docs/video-script.md:73:personal_company  # roteiro 3a: URL oficial do repo privado para membros que ja tem acesso
 docs/video-script.md:73:private_repo_url  # roteiro 3a: URL oficial do repo privado para membros que ja tem acesso
+README.md:104:personal_company  # Atribuicao legitima de autoria no README publico
+README.md:104:personal_name     # Atribuicao legitima de autoria no README publico
+ACCESS.md:51:private_repo_url          # Link publico pro repo (ja e publico)
+ops/gate/ARCHIVED.md:26:personal_company  # Referencia a org no arquivo arquivado
+packages/cli/package.json:6:personal_name     # Autor do pacote npm (publico e legitimo)
+packages/cli/package.json:7:personal_company  # Homepage oficial do pacote
+packages/cli/package.json:7:private_repo_url  # URL do repo no npm (agora publico)
+packages/cli/package.json:10:personal_company # Repository field npm (publico)
+packages/cli/package.json:10:private_repo_url # Repository field npm (publico)
+packages/cli/package.json:14:personal_company # Bugs URL npm
+packages/cli/package.json:14:private_repo_url # Bugs URL npm
+ACCESS.md:51:personal_company  # Nome da org no link publico do repo

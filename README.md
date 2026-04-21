@@ -14,19 +14,17 @@ ForgeClaw e o produto de acesso exclusivo da comunidade [Dominando AutoIA](https
 - **Ela trabalha sozinha.** Crons em portugues ("todo dia as 23h faca daily review") que rodam no horario, buscam contexto e te respondem no topic certo.
 - **Tudo seu, na sua maquina.** Zero custo de API — roda com sua assinatura Claude. Seus dados ficam no seu disco.
 
-## Quick Start (4 passos)
+## Quick Start (3 passos)
 
-1. **Receba seu acesso.** Voce entra no canal da comunidade e pede no #forgeclaw-suporte. Entra em 24h. [Como obter acesso](ACCESS.md).
-2. **Instale em 5 minutos.** Abra o terminal e rode:
+1. **Instale em um comando.** Abra o terminal e rode:
    ```bash
-   git clone https://github.com/Ecoupdigital/forgeclaw.git
-   cd forgeclaw
-   bun install
-   bun run cli install
+   npx forgeclaw install
    ```
    O instalador pergunta tudo que precisa: qual arquetipo voce e (Solo Builder, Criador, Agencia, E-commerce, Generico), token do bot Telegram, dados da sua stack.
-3. **Conecte seu bot.** O instalador abre o browser na tela de onboarding. Voce conversa com o ForgeClaw respondendo umas perguntas e ele monta a personalidade (harness) sozinho.
-4. **Fale com ele.** Abre o Telegram, procura pelo seu bot, manda a primeira mensagem. Pronto.
+2. **Conecte seu bot.** O instalador abre o browser na tela de onboarding. Voce conversa com o ForgeClaw respondendo umas perguntas e ele monta a personalidade (harness) sozinho.
+3. **Fale com ele.** Abre o Telegram, procura pelo seu bot, manda a primeira mensagem. Pronto.
+
+> O codigo e publico, mas o **como usar bem** (aulas, suporte 1:1, templates curados, trocas com outros membros) fica na [comunidade Dominando AutoIA](https://comunidade.dominandoautoia.com.br). Veja [ACCESS.md](ACCESS.md).
 
 [Veja o walkthrough em video de 5 min](docs/video-script.md) (roteiro; video gravado apos o alpha).
 

@@ -1,39 +1,52 @@
-# Acesso ao ForgeClaw
+# Como entrar na comunidade e usar o ForgeClaw
 
-O ForgeClaw e distribuido como beneficio exclusivo de membros ativos da comunidade **Dominando AutoIA**.
+O **codigo do ForgeClaw e publico** — voce pode clonar e instalar livremente via `npx forgeclaw install`.
 
-## Como obter acesso
+O que esta na comunidade [Dominando AutoIA](https://comunidade.dominandoautoia.com.br) e o que transforma o produto em resultado:
 
-1. Assine a [comunidade Dominando AutoIA](https://comunidade.dominandoautoia.com.br) (R$ 67/mes).
-2. No perfil da comunidade, preencha o campo **GitHub username**.
-3. Em ate 48h, voce sera adicionado como collaborator (read-only) ao repositorio privado [Ecoupdigital/forgeclaw](https://github.com/Ecoupdigital/forgeclaw).
-4. Voce recebera um convite por email do GitHub — aceite para ganhar acesso ao codigo.
+- **Guia visual passo a passo** de instalacao e configuracao (video walkthrough + screenshots + troubleshooting)
+- **Templates curados de harness** por nicho alem dos 5 arquetipos padrao
+- **Biblioteca de agentes especializados** prontos pra colar (financeiro, copy, social media, dev, etc)
+- **Biblioteca de crons** testados em producao (`HEARTBEAT.md` por arquetipo)
+- **Canal de suporte ao vivo** com outros membros usando e trocando experiencias
+- **Trilha de aulas** cobrindo Obsidian + Claude Code + OpenClaw + ForgeClaw
 
-> Janela de 48h e SLA v1 manual. Em v2 o processo sera automatico via webhook da plataforma.
+## Como instalar (sem ser membro)
 
-## Uso permitido
+Voce nao precisa da comunidade pra instalar. Rode:
 
-- Rodar, modificar e usar o ForgeClaw para seus proprios projetos, pessoais ou empresariais.
-- Operar sistemas construidos em cima do ForgeClaw, incluindo uso comercial dos *sistemas finais* (por exemplo, um bot Telegram rodando para seu e-commerce).
+```bash
+npx forgeclaw install
+```
+
+Siga o wizard. Em 5 minutos voce tem bot Telegram + dashboard web funcionando.
+
+O guia completo com screenshots esta em [docs/getting-started.md](docs/getting-started.md).
+
+## Como entrar na comunidade
+
+1. Acesse [comunidade.dominandoautoia.com.br](https://comunidade.dominandoautoia.com.br)
+2. Assine (R$ 67/mes)
+3. Entre no canal `#forgeclaw-instalacao` pro guia visual
+4. Use `#forgeclaw-suporte` pra duvidas
+
+## Uso permitido (do codigo)
+
+Voce pode:
+
+- Rodar, modificar e usar o ForgeClaw pra seus proprios projetos, pessoais ou empresariais
+- Operar sistemas construidos em cima do ForgeClaw, incluindo uso comercial dos *sistemas finais*
+- Contribuir via pull request (veja [SUPPORT.md](.github/SUPPORT.md) antes)
 
 ## Uso NAO permitido
 
-- Redistribuir o codigo do ForgeClaw (publicar em outro repo, subir num pacote npm, espelhar em outra plataforma).
-- Revender o ForgeClaw como produto/servico (oferecer hospedagem/SaaS do ForgeClaw para terceiros).
-- Compartilhar o acesso ao repositorio com terceiros que nao sejam membros da comunidade.
+- Revender o ForgeClaw como produto/servico (oferecer hospedagem/SaaS do ForgeClaw pra terceiros)
+- Fork comercial com intencao de competir diretamente como produto pago
 
-O texto legal completo esta em [LICENSE](./LICENSE).
-
-## Quando o acesso expira
-
-Ao cancelar a assinatura da comunidade:
-
-- Seu acesso ao repositorio e removido em ate 7 dias.
-- Voce tem 30 dias para deletar copias locais.
-- Os sistemas que voce ja construiu para si mesmo continuam seus — voce nao precisa desligar nada.
+O texto legal completo esta em [LICENSE](./LICENSE). Pra licenciamento comercial especial (ex: distribuir como parte de um produto seu) fale com jonathan.outeiro@gmail.com.
 
 ## Suporte
 
-- Duvidas sobre acesso: abra um tiquete na comunidade ou fale com Jonathan.
-- Bugs do ForgeClaw: abra uma issue no repositorio (voce tera acesso ao aceitar o convite).
-- Licenciamento comercial especial (ex: distribuir como parte de um produto seu): jonathan.outeiro@gmail.com.
+- **Duvidas de uso:** canal `#forgeclaw-suporte` na comunidade
+- **Bugs do produto:** abra issue em [github.com/Ecoupdigital/forgeclaw/issues](https://github.com/Ecoupdigital/forgeclaw/issues)
+- **Pull requests:** bem-vindos, mas valide com a gente antes de trabalhar em algo grande
