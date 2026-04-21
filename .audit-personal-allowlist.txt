@@ -52,9 +52,24 @@ LICENSE:30:personal_company  # clausula anti-misrepresentation: lista nomes prot
 ACCESS.md:9:personal_company  # documento de acesso: referencia ao repo privado oficial Ecoupdigital/forgeclaw
 ACCESS.md:9:private_repo_url  # documento de acesso: link para repo privado oficial Ecoupdigital/forgeclaw
 ACCESS.md:37:personal_name  # suporte: membros da comunidade conhecem Jonathan pelo primeiro nome, nao e vazamento
-README.md:49:personal_company  # Quick Start: URL oficial do repo privado para membros que ja tem acesso
-README.md:49:private_repo_url  # Quick Start: URL oficial do repo privado para membros que ja tem acesso
-README.md:336:personal_company  # secao License: attribution legitima do copyright holder
+README.md:22:personal_company  # Quick Start: URL oficial do repo privado para membros que ja tem acesso
+README.md:22:private_repo_url  # Quick Start: URL oficial do repo privado para membros que ja tem acesso
+README.md:106:personal_name  # rodape: attribution legitima do autor do produto
+README.md:106:personal_company  # rodape: attribution legitima da empresa detentora (EcoUp Digital)
+
+# CHANGELOG.md (PLAN 30-01) — changelog historico/factual. A entrada [0.2.0]
+# descreve exatamente a transicao de "uso pessoal do Jonathan" para produto
+# distribuido. Referencia ao repo privado oficial e ao operador humano sao
+# contratuais com o fluxo do gate (Fase 29), nao vazamento de contexto.
+CHANGELOG.md:5:personal_name  # paragrafo introdutorio do release: descreve transicao do uso pessoal para produto
+CHANGELOG.md:41:personal_company  # changelog Changed: mudanca de visibilidade do repo privado oficial
+CHANGELOG.md:41:private_repo_url  # changelog Changed: URL do repo privado oficial
+CHANGELOG.md:46:personal_name  # changelog Removed: descreve de onde contexto pessoal foi removido historicamente
+
+# docs/landing.md (PLAN 30-01) — landing estatica para descoberta externa.
+# O bloco "Construido por" e attribution publica obrigatoria (autor e empresa).
+docs/landing.md:52:personal_name  # bloco Construido por: attribution publica do autor
+docs/landing.md:52:personal_company  # bloco Construido por: attribution publica da empresa
 
 # ops/gate/* (PLAN 29-02) — script operacional e docs do gate de acesso.
 # Por definicao, o script opera SOBRE o repo privado oficial Ecoupdigital/forgeclaw
@@ -72,3 +87,20 @@ ops/gate/README-GATE.md:9:personal_company  # runbook setup: instrui scope do PA
 ops/gate/README-GATE.md:41:personal_company  # runbook grant: path da API PUT collaborators do repo oficial
 ops/gate/README-GATE.md:55:personal_company  # runbook revoke: path da API DELETE collaborators do repo oficial
 ops/gate/README-GATE.md:116:personal_name  # runbook limitacoes: descreve dependencia do operador humano v1
+
+# ops/gate/V2-ROADMAP.md (PLAN 29-03) — roadmap V2 do gate de acesso.
+# Mesmo padrao das entries de README-GATE.md: identifica o operador humano v1
+# (Jonathan) que executa o fluxo manual. Nao e vazamento de contexto pessoal,
+# e o contrato operacional do gate que descreve quem hoje faz o trabalho
+# manual que a V2 vai automatizar via webhook.
+ops/gate/V2-ROADMAP.md:7:personal_name  # descreve operador humano v1 do gate manual
+ops/gate/V2-ROADMAP.md:20:personal_name  # V2: gate API notifica operador humano via Telegram em erro
+ops/gate/V2-ROADMAP.md:41:personal_name  # V2: env var pra notificar operador humano
+ops/gate/V2-ROADMAP.md:134:personal_name  # V2: alert pra operador humano quando hook falha
+ops/gate/V2-ROADMAP.md:155:personal_name  # metricas v1: tempo gasto pelo operador humano no manual
+
+# ops/gate/gate.env (PLAN 29-02) — arquivo local gitignored com config do
+# operador. Nao e distribuido (gitignore entry linha 19), mas o scanner varre
+# filesystem em vez de respeitar .gitignore. REPO_OWNER=Ecoupdigital e o
+# default oficial, ja documentado em gate.env.example.
+ops/gate/gate.env:2:personal_company  # arquivo local gitignored: REPO_OWNER default do repo oficial
