@@ -14,7 +14,9 @@
     "start": "bun run --filter @forgeclaw/bot start",
     "typecheck": "bun run --filter '*' typecheck",
     "test": "bunx --bun vitest run",
-    "test:watch": "bunx --bun vitest"
+    "test:watch": "bunx --bun vitest",
+    "audit:personal": "bun run scripts/audit-personal-context.ts",
+    "audit:personal:json": "bun run scripts/audit-personal-context.ts --json"
   },
   "engines": {
     "bun": ">=1.1.0"
