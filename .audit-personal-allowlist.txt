@@ -1,0 +1,32 @@
+# .audit-personal-allowlist.txt
+#
+# Suppressoes explicitas para o scanner scripts/audit-personal-context.ts em
+# modo --ci. Usado pelo workflow do GitHub Actions e pelo pre-commit hook
+# opcional em .githooks/pre-commit.
+#
+# Formato: <file>:<line>:<category>  # <justificativa>
+# Linhas em branco e linhas iniciadas com '#' sao ignoradas.
+#
+# Regras de uso:
+#   1. Match e EXATO. Se o arquivo for editado e a linha se deslocar, a entry
+#      deixa de casar e o finding volta a quebrar o CI — isso e desejado
+#      (forca re-revisao da suppressao).
+#   2. Toda entry DEVE ter justificativa textual depois do '#'. Suppressao
+#      sem justificativa sera revertida em code review.
+#   3. Para re-emitir depois de edicao de arquivo, rodar manualmente:
+#        bun run audit:personal:ci
+#      pegar o novo <file>:<line>:<category> da saida e atualizar a entry.
+#
+# Categorias validas: personal_name, personal_company, personal_client,
+# personal_handle, personal_userid, hardcoded_path, private_repo_url,
+# private_skill_dep, vault_structure, playwright_snapshot, bot_token_fragment.
+#
+# Contexto: o CI gate so considera findings `critical` em codigo distribuido
+# (fora de .plano/, node_modules/, .git/). Entries em outras severidades ou
+# em paths ignorados sao inuteis — o gate nao vai olhar pra elas.
+#
+# ---------------------------------------------------------------------------
+# Entries ativos (repo esta limpo pos 23-02 — nenhum entry ativo).
+# ---------------------------------------------------------------------------
+
+# (nenhum entry ativo — o repo deve manter-se limpo)
