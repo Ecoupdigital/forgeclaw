@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# ForgeClaw pre-commit hook — personal context audit.
+#
+# OPT-IN hook. To enable on your clone:
+#   git config core.hooksPath .githooks
+#
+# To disable:
+#   git config --unset core.hooksPath
+#
+# The hook runs `bun run audit:personal:ci` before each commit and blocks
+# when the scanner detects critical findings outside the allowlist.
+#
+# Emergency bypass (use with caution — CI will still block the push):
+#   git commit --no-verify
+
+set -euo pipefail
+
+# Only run when inside the ForgeClaw repo (hook is a no-op if someone
+# points core.hooksPath at this file from another tree).
+if [ ! -f "scripts/audit-personal-context.ts" ]; then
+  exit 0
+fi
+
+# Graceful fallback when bun is not installed (some contributors may use
+# only the dashboard's better-sqlite3 path with node tooling).
+if ! command -v bun >/dev/null 2>&1; then
+  echo "[pre-commit] bun not found — skipping personal context audit."
+  exit 0
+fi
+
+echo "[pre-commit] Running personal context audit..."
+if ! bun run audit:personal:ci; then
+  echo ""
+  echo "[pre-commit] COMMIT BLOCKED — personal context audit failed."
+  echo "[pre-commit] Fix the findings listed above, or add a justified entry to"
+  echo "[pre-commit] .audit-personal-allowlist.txt (format: <file>:<line>:<category>  # <reason>)."
+  echo "[pre-commit] To bypass (not recommended): git commit --no-verify"
+  exit 1
+fi
+
+exit 0

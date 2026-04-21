@@ -293,6 +293,36 @@ Configure webhooks outbound pra integrar com outros sistemas:
 | `bun run start` | Inicia o bot em producao |
 | `bun run typecheck` | Type-check de todos os packages |
 
+## Developer Tooling
+
+### Personal context audit
+
+O repo inclui um scanner que detecta vazamento de contexto pessoal em codigo
+distribuido (nomes proprios, paths hardcoded, handles privados, tokens, URLs
+internas). O objetivo e manter o ForgeClaw portavel para qualquer usuario da
+comunidade.
+
+```bash
+bun run audit:personal          # gera AUDIT-REPORT.md completo (stdout ou --out=<path>)
+bun run audit:personal:json     # mesma varredura, saida JSON
+bun run audit:personal:ci       # modo CI — exit 0 se limpo, exit 1 se regressao
+```
+
+O modo `--ci` roda automaticamente em push e PR para `main` via
+[`.github/workflows/audit-personal-context.yml`](./.github/workflows/audit-personal-context.yml).
+Falsos positivos conhecidos vivem em
+[`.audit-personal-allowlist.txt`](./.audit-personal-allowlist.txt) (formato
+`<file>:<line>:<category>  # <justificativa>`).
+
+Para habilitar o pre-commit hook local (opt-in):
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Isso bloqueia commits locais quando o audit falha. Desabilitar com
+`git config --unset core.hooksPath`. Bypass pontual via `git commit --no-verify`.
+
 ## License
 
 MIT
