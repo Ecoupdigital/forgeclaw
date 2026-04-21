@@ -1,0 +1,21 @@
+{
+  "description": "Happy path: asking -> asking -> done com diff valido em USER.md",
+  "archetype": "content-creator",
+  "turns": [
+    {
+      "userInput": "__START__",
+      "modelResponse": "```json\n{ \"status\": \"asking\", \"nextQuestion\": \"Como quer ser chamado?\" }\n```",
+      "tokens": { "input": 1200, "output": 80 }
+    },
+    {
+      "userInput": "Me chamo Ana",
+      "modelResponse": "```json\n{ \"status\": \"asking\", \"nextQuestion\": \"Qual o nome da sua marca ou perfil?\" }\n```",
+      "tokens": { "input": 1300, "output": 90 }
+    },
+    {
+      "userInput": "Marca Acme",
+      "modelResponse": "```json\n{ \"status\": \"done\", \"summary\": \"Registrei nome Ana e marca Acme.\", \"harnessDiff\": { \"summary\": \"nome + marca\", \"diffs\": [ { \"file\": \"USER.md\", \"ops\": [ { \"op\": \"set_placeholder\", \"key\": \"userName\", \"value\": \"Ana\" }, { \"op\": \"set_placeholder\", \"key\": \"company\", \"value\": \"Acme\" } ] } ] } }\n```",
+      "tokens": { "input": 1400, "output": 300 }
+    }
+  ]
+}

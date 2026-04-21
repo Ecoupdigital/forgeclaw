@@ -1,0 +1,22 @@
+{
+  "description": "Entrevistador mantem asking alem do maxTurns=2 -> cutoff automatico vira aborted",
+  "archetype": "solo-builder",
+  "budget": { "maxTurns": 2 },
+  "turns": [
+    {
+      "userInput": "__START__",
+      "modelResponse": "```json\n{ \"status\": \"asking\", \"nextQuestion\": \"Nome?\" }\n```",
+      "tokens": { "input": 500, "output": 30 }
+    },
+    {
+      "userInput": "Bob",
+      "modelResponse": "```json\n{ \"status\": \"asking\", \"nextQuestion\": \"Empresa?\" }\n```",
+      "tokens": { "input": 600, "output": 30 }
+    },
+    {
+      "userInput": "nunca deve chegar aqui",
+      "modelResponse": "NEVER",
+      "tokens": { "input": 0, "output": 0 }
+    }
+  ]
+}

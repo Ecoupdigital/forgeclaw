@@ -1,0 +1,11 @@
+{
+  "description": "Entrevistador emite status=aborted no primeiro turno (ex: usuario disse quit)",
+  "archetype": "generic",
+  "turns": [
+    {
+      "userInput": "__START__",
+      "modelResponse": "```json\n{ \"status\": \"aborted\", \"reason\": \"Usuario pediu para sair antes de iniciar.\" }\n```",
+      "tokens": { "input": 400, "output": 40 }
+    }
+  ]
+}

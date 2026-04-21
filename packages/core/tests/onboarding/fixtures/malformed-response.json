@@ -1,0 +1,11 @@
+{
+  "description": "Modelo retorna texto sem bloco JSON -> deve jogar InterviewResponseParseError",
+  "archetype": "generic",
+  "turns": [
+    {
+      "userInput": "__START__",
+      "modelResponse": "desculpe, esqueci o formato. vamos la: qual seu nome?",
+      "tokens": { "input": 300, "output": 20 }
+    }
+  ]
+}
