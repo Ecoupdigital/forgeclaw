@@ -1,12 +1,21 @@
 #!/usr/bin/env bun
 // scripts/audit-personal-context.ts
 // Scanner deterministico de contexto pessoal no repo ForgeClaw.
-// Uso: bun run scripts/audit-personal-context.ts [--json] [--out=<path>]
+// Uso: bun run scripts/audit-personal-context.ts [--json] [--out=<path>] [--ci]
 //
 // Entrada do plano 23-01: varre todo o repo (exceto ruido / pastas ignoradas)
 // e detecta PII / paths hardcoded / handles / clientes privados / tokens.
-// Saida: markdown (default) ou JSON (--json). Sempre exit 0 com findings;
-// exit 1 somente em erro fatal de IO.
+// Saida: markdown (default) ou JSON (--json).
+//
+// Modos:
+//   (default)  Emite markdown em stdout (ou arquivo com --out=<path>). Exit 0.
+//   --json     Emite JSON em stdout (ou arquivo com --out=<path>). Exit 0.
+//   --ci       Gate de CI (plano 23-03): aplica `.audit-personal-allowlist.txt`,
+//              exit 0 se zero findings `critical` em codigo distribuido,
+//              exit 1 listando os findings que quebraram o gate. Nao emite
+//              markdown/json.
+//
+// Exit 1 tambem em erro fatal de IO (tanto no modo default quanto --ci).
 //
 // Zero dependencias novas — so node:fs/promises e node:path.
 
@@ -290,9 +299,76 @@ function renderMarkdown(all: Finding[], filesCount: number): string {
   return out.join('\n');
 }
 
+// ---------------------------------------------------------------------------
+// CI mode helpers (introduzido em 23-03)
+//
+// Objetivo: o scanner passa de "auditor que emite report" para "gate de CI
+// que bloqueia regressoes". O contrato e simples: se um finding `critical`
+// aparecer em codigo distribuido (fora de `.plano/`, `node_modules/`, `.git/`)
+// e nao estiver na allowlist, exit 1. Caso contrario exit 0.
+//
+// Allowlist e um arquivo texto na raiz do repo (`.audit-personal-allowlist.txt`)
+// com linhas no formato `<file>:<line>:<category>  # <justificativa>`.
+// Match e EXATO — se o arquivo editar e a linha deslocar, a suppressao quebra
+// e forca re-revisao. Isso e desejado.
+// ---------------------------------------------------------------------------
+
+function isDistributed(file: string): boolean {
+  return (
+    !file.startsWith('.plano/') &&
+    !file.startsWith('node_modules/') &&
+    !file.startsWith('.git/')
+  );
+}
+
+async function loadAllowlist(): Promise<Set<string>> {
+  const allowlistPath = join(REPO_ROOT, '.audit-personal-allowlist.txt');
+  const allowed = new Set<string>();
+  try {
+    const raw = await readFile(allowlistPath, 'utf-8');
+    for (const rawLine of raw.split('\n')) {
+      const trimmed = rawLine.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      // Strip comentario inline "<key>  # <reason>"
+      const key = trimmed.split('#')[0].trim();
+      if (key) allowed.add(key);
+    }
+  } catch {
+    // allowlist ausente = zero suppressions. OK.
+  }
+  return allowed;
+}
+
+function runCiMode(all: Finding[], allowed: Set<string>): void {
+  const blocking = all.filter(
+    (f) =>
+      f.severity === 'critical' &&
+      isDistributed(f.file) &&
+      !allowed.has(`${f.file}:${f.line}:${f.category}`),
+  );
+
+  if (blocking.length === 0) {
+    console.log('AUDIT PASS — 0 critical findings in distributed code.');
+    process.exit(0);
+  }
+
+  console.error(
+    `AUDIT FAIL — ${blocking.length} critical findings in distributed code:\n`,
+  );
+  for (const f of blocking) {
+    console.error(`  ${f.file}:${f.line} [${f.category}] ${f.snippet}`);
+  }
+  console.error(
+    '\nTo suppress a known false positive, add a line to .audit-personal-allowlist.txt:',
+  );
+  console.error('  <file>:<line>:<category>  # <justification>');
+  process.exit(1);
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const wantJson = args.includes('--json');
+  const wantCi = args.includes('--ci');
   const outArg = args.find((a) => a.startsWith('--out='))?.split('=')[1];
 
   const files: string[] = [];
@@ -312,6 +388,16 @@ async function main(): Promise<void> {
       a.file.localeCompare(b.file) ||
       a.line - b.line,
   );
+
+  // ----- CI mode (23-03) -----
+  // Quando --ci presente, nao escreve markdown/json; apenas aplica gate e
+  // exita com codigo apropriado. outArg e ignorado de proposito (CI escreve
+  // log no stdout/stderr, nao em arquivo).
+  if (wantCi) {
+    const allowed = await loadAllowlist();
+    runCiMode(all, allowed);
+    return; // inalcancavel (runCiMode chama process.exit), mas deixa o compilador feliz.
+  }
 
   if (wantJson) {
     const payload = JSON.stringify(all, null, 2);
