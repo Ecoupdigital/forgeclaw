@@ -1,0 +1,29 @@
+# Example systemd unit for ForgeClaw bot. The installer generates the
+# real file dynamically at /etc/systemd/system/forgeclaw.service with
+# user-specific paths. This file is committed as a reference template.
+#
+# Placeholders:
+#   {{USER}}          — system user that runs the bot (e.g. forgeclaw, root)
+#   {{HOME}}          — home directory of that user (e.g. /home/forgeclaw)
+#   {{REPO_DIR}}      — absolute path to the cloned ForgeClaw repo
+#   {{BUN_BIN}}       — absolute path to the bun binary (e.g. /usr/local/bin/bun)
+#
+[Unit]
+Description=ForgeClaw - Personal AI Command Center
+After=network.target
+
+[Service]
+Type=simple
+User={{USER}}
+WorkingDirectory={{REPO_DIR}}
+ExecStart={{BUN_BIN}} run packages/bot/src/index.ts
+Restart=always
+RestartSec=5
+Environment=HOME={{HOME}}
+Environment=PATH={{HOME}}/.local/bin:{{HOME}}/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+EnvironmentFile=-{{HOME}}/.forgeclaw/.env
+StandardOutput=append:{{HOME}}/.forgeclaw/logs/bot.log
+StandardError=append:{{HOME}}/.forgeclaw/logs/bot.log
+
+[Install]
+WantedBy=multi-user.target
