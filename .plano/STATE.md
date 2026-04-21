@@ -7,9 +7,9 @@
 
 ## Posicao Atual
 **Fase:** 24-templates-por-arqu-tipo
-**Plano Atual:** 24-02 de 03 — completo
-**Status:** Ready to plan
-**Progresso:** [██████░░░░] 67%
+**Plano Atual:** 24-03 de 03 — completo
+**Status:** Fase 24 completa — pronta para iniciar Fase 25
+**Progresso:** [██████████] 100%
 
 ## Contexto Acumulado
 
@@ -57,6 +57,10 @@
 - [2026-04-21][24-02] Tom de voz validado por distinguibilidade: cada SOUL.md tem header unico com slug, conjunto proprio de principios numericos, e frase de comportamento especifica. Nenhum copy-paste — solo-builder fala em 'ship', content-creator em 'hook/CTA', agency em 'cliente/prazo', ecom em 'ROAS/margem', generic em 'neutro/seguro'.
 - [2026-04-21][24-02] HEARTBEAT por arquetipo modela rotina real do perfil: solo-builder tem monitoring a cada 60min, content-creator tem pauta-ideacao-weekly-retro, agency-freela tem rotina mensal (dia 1) pra financeiro, ecom-manager tem 3 checkpoints diarios (8h/13h/19h) + weekly, generic tem minimo de 2 crons.
 - [2026-04-21][24-02] Generic mantem 2 suggestedAgents e 2 crons propositalmente enxutos. E fallback — se usuario nao se encaixa, recebe minimo viavel sem ruido de sugestoes de outros perfis.
+- [2026-04-21][24-03] Suite de testes em packages/cli/tests/archetypes/ usa bun:test nativo (zero deps). Padrao Bun — os testes legados em packages/core/tests/ usam vitest (pre-Bun) mas novo codigo em packages/cli/ segue bun:test direto. toMatchSnapshot do Bun 1.3.11 suporta nativamente, sem fallback manual.
+- [2026-04-21][24-03] Snapshot deterministico usa map com valores sentinel (__USER__, __COMPANY__, etc.) em vez dos valores realistas do render.test.ts. Isola o snapshot do conteudo real dos templates — fica claro no diff qual mudanca aconteceu em cada arquetipo.
+- [2026-04-21][24-03] Array FORBIDDEN no loader.test.ts (Jonathan, EcoUp, Don Vicente, Kovvy, LFpro, Clearify) adicionado ao `.audit-personal-allowlist.txt` com 8 entries. Mecanismo oficial de suppressao via match exato por file:line:category — edicao do array forca re-revisao. Alternativas consideradas (string dinamica com fromCharCode, fixture externa, ignorar tests/) descartadas por pior legibilidade ou abertura de brecha.
+- [2026-04-21][24-03] packages/cli/tsconfig.json nao foi alterado. 'include' do tsconfig e 'src' apenas; testes fora do include nao sao typechecked pelo tsc, mas bun:test roda .ts diretamente com type-erasure proprio. Escopo minimo, nao quebra nada.
 
 ### Bloqueios
 Nenhum
@@ -66,10 +70,10 @@ Nenhum
 - `packages/cli/src/commands/install.ts:22` — `Cannot find module '@forgeclaw/core'` (pre-existente, validado via git stash). Registrado em `.plano/fases/24-.../deferred-items.md`. Acao sugerida: adicionar `@forgeclaw/core: workspace:*` em packages/cli/package.json como primeira tarefa de 25-01.
 
 ## Continuidade de Sessao
-Ultima parada: Completado 24-02-PLAN.md (Conteudo dos 5 Arquetipos -- 35 arquivos .md) -- 6 tarefas executadas, 5 commits de conteudo (Tarefa 6 foi validacao puramente automatizada), auditoria de contexto pessoal continua verde. Cada arquetipo (solo-builder/content-creator/agency-freela/ecom-manager/generic) tem 7 arquivos .md com tom distinto, agentes espelhando archetype.json.suggestedAgents, HEARTBEAT com dialeto suportado. Commits: e551960 (solo-builder), 287cf90 (content-creator), 5e43d9d (agency-freela), 6104589 (ecom-manager), efd561f (generic). `loadArchetype(slug)` agora funciona fim-a-fim para os 5 — antes rejeitava com "missing template file". `renderArchetype` substitui placeholders em USER.md corretamente. Total: 30138 chars de conteudo, 0 dado pessoal.
-Proximas acoes: Executar 24-03 (ultimo plano da fase 24) — provavel validacao fim-a-fim dos templates + integracao com harness-compiler, fechando a fase. Depois disso, Fase 25 (CLI installer) pode consumir loadArchetype + renderArchetype.
+Ultima parada: Completado 24-03-PLAN.md (Testes: Schema, Loader, Render, Snapshot) — 5 tarefas executadas, 5 commits. Suite `bun test packages/cli/tests/archetypes/` roda 27 pass / 0 fail em ~80ms com 337 expects. 3 arquivos de teste: loader.test.ts (11 testes validando listArchetypes, loadArchetype nos 5 slugs, AGENTS.md <-> suggestedAgents, 7 placeholders em USER.md, ausencia de 11 dados pessoais), render.test.ts (11 testes validando renderPlaceholders + renderArchetype), snapshot.test.ts (5 snapshots deterministicos, um por arquetipo, com map sentinel). Snapshot file de 1323 linhas commitado. Allowlist do audit ganhou 8 entries para a blacklist intencional do teste. `bun run audit:personal:ci` continua AUDIT PASS. Commits: f137aa4 (script test), 83d7e33 (loader.test.ts), 9420554 (render.test.ts), 32933ca (snapshot.test.ts + .snap), e1fb300 (allowlist fix). **FASE 24 COMPLETA.**
+Proximas acoes: Iniciar Fase 25 (CLI installer em duas fases) — consumira `loadArchetype(slug)` + `renderArchetype(map)` com contrato testado. Primeira tarefa provavel: adicionar `@forgeclaw/core: workspace:*` em packages/cli/package.json pra resolver o TS2307 pre-existente em install.ts:22 (registrado em deferred-items.md de 24).
 
 ### Evolucao do Roadmap
 - Fase 22 adicionada: Agentes Especializados + Memória por Topic (prompt base por topic, filtro de memória por tags, edição via dashboard)
 - Fase 23 completa: Auditoria de Despersonalizacao — 23-01 (scanner + relatorios), 23-02 (sanitizacoes), 23-03 (CI guard + allowlist + hook + workflow). Repo pronto para distribuicao como bonus da comunidade.
-- Fase 24 iniciada: 24-01 completo (schema + loader + 5 archetype.json). Faltam 24-02 (35 .md por arquetipo) e 24-03.
+- Fase 24 completa: 24-01 (schema + loader + 5 archetype.json), 24-02 (35 .md por arquetipo), 24-03 (suite bun:test com 27 testes cobrindo loader/render/snapshot). Templates de arquetipo prontos para consumo pelo installer da Fase 25.
