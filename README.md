@@ -40,15 +40,21 @@ ForgeClaw transforma o Claude Code CLI num assistente pessoal acessivel por Tele
 
 ## Quick Start
 
-```bash
-# Instalar
-npx forgeclaw install
+O ForgeClaw e distribuido como beneficio da comunidade **Dominando AutoIA**. O repositorio e privado — veja [ACCESS.md](./ACCESS.md) para entender como obter acesso como membro.
 
-# Ou manualmente:
-git clone https://github.com/<your-org>/forgeclaw.git
-cd ForgeClaw
+Para quem ja tem acesso ao repositorio:
+
+```bash
+# Clone (requer que voce esteja autenticado no GitHub e seja collaborator do repo)
+git clone https://github.com/Ecoupdigital/forgeclaw.git
+cd forgeclaw
 bun install
+
+# Instalar / onboarding
+bun run --filter forgeclaw dev -- install
 ```
+
+> Nota: o antigo fluxo `npx forgeclaw install` ficara indisponivel enquanto o pacote nao estiver publicado num registry controlado. Ver Fase 32+ do roadmap para o mirror npm com license-key check.
 
 ## Arquitetura
 
@@ -325,4 +331,6 @@ Isso bloqueia commits locais quando o audit falha. Desabilitar com
 
 ## License
 
-MIT
+ForgeClaw Community Source License v1.0 — uso permitido para membros ativos da comunidade Dominando AutoIA. Redistribuicao publica, revenda ou oferta como servico a terceiros sao proibidas. Veja [LICENSE](./LICENSE) para o texto completo.
+
+Copyright (c) 2026 EcoUp Digital. Todos os direitos reservados.
