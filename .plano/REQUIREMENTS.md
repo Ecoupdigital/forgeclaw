@@ -59,7 +59,7 @@
 
 ## Instalador CLI (CLI)
 - [ ] CLI-01: Implementar npx forgeclaw install com onboarding interativo via @clack/prompts
-- [ ] CLI-02: Implementar deteccao de ambiente (Ubuntu/macOS), verificacao de dependencias (Bun, Claude CLI, pdftotext)
+- [x] CLI-02: Implementar deteccao de ambiente (Ubuntu/macOS), verificacao de dependencias (Bun, Claude CLI, pdftotext) — 25-02 cobre Bun+Claude CLI+Claude auth; pdftotext ainda nao coberto
 - [ ] CLI-03: Gerar forgeclaw.config.json interativamente (tokens, paths, whitelist)
 - [ ] CLI-04: Configurar servico systemd (Linux) ou launchd (macOS) para auto-start no boot
 
@@ -116,7 +116,7 @@
 | DASH-06 | Fase 8 | Pendente |
 | DASH-07 | Fase 8 | Pendente |
 | CLI-01 | Fase 9 | Pendente |
-| CLI-02 | Fase 9 | Pendente |
+| CLI-02 | Fase 25 | Completo (25-02) |
 | CLI-03 | Fase 9 | Pendente |
 | CLI-04 | Fase 9 | Pendente |
 | TEST-01 | Fase 10 | Pendente |
@@ -161,7 +161,7 @@
 - [ ] MED-M5: `forgeclaw export` gera .tar.gz com db + config + harness + memory
 - [ ] MED-M6: Cron failures com prefixo visual claro (❌) no Telegram
 - [ ] MED-M7: Fotos copiadas para workingDir antes de enviar path ao Claude
-- [ ] MED-M8: Installer checa versão mínima do Bun (>= 1.1.0)
+- [x] MED-M8: Installer checa versão mínima do Bun (>= 1.1.0) — 25-02 (diagnostics.ts MIN_BUN_VERSION='1.1.0')
 - [ ] MED-M9: allowedUsers e allowedGroups editáveis no config tab do dashboard
 - [ ] MED-M10: Erros do Claude CLI traduzidos para mensagens amigáveis no Telegram
 
