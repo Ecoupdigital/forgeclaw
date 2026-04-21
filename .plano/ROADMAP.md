@@ -322,10 +322,19 @@
 
 ### Fase 29: Gate de Acesso pela Comunidade — v1 simples com repo privado e invite manual no GitHub ao assinar comunidade, documentação de fluxo de concessão e revogação
 
-**Objetivo:** Estabelecer o gate de acesso do ForgeClaw como benefício da comunidade Dominando AutoIA: repo privado, licença source-available, ACCESS.md, e script manual de invite/revoke de collaborators do GitHub
-**Requisitos**: GATE-01, GATE-02, GATE-03
-**Depende de:** Fase 28
-**Planos:** 3 planos (1 completo, 2 pendentes)
+**Objetivo:** Estabelecer um gate v1 simples e pragmatico para controlar quem tem acesso ao codigo do ForgeClaw, agora distribuido como beneficio da comunidade Dominando AutoIA. Repo privatizado, licenca source-available, script CLI idempotente de invite/revoke via GitHub API, runbook operacional e roadmap escrito da v2 automatica (sem implementar v2 agora).
+**Requisitos:** [GATE-01, GATE-02, GATE-03, GATE-04, GATE-05, GATE-06, GATE-07, GATE-08, GATE-09]
+**Depende de:** Nenhuma fase anterior e bloqueante (pode rodar em paralelo com 23-28).
+**Planos:** 3 planos (29-01 Licenca+Privacidade, 29-02 Script CLI, 29-03 Roadmap V2+Rastreabilidade)
+**Criterios de Sucesso:**
+  1. Repo github.com/Ecoupdigital/forgeclaw com visibility=private confirmado via API
+  2. Arquivo LICENSE source-available commit na raiz, README e package.json apontam para ele
+  3. Script `bun run ops/gate/access.ts grant <user>` adiciona collaborator com permission=pull de forma idempotente
+  4. Script `revoke <user>` remove collaborator de forma idempotente (204 e 404 tratados)
+  5. Audit log em `ops/gate/access-log.jsonl` captura cada acao com ts, actor, action, target, result
+  6. Runbook README-GATE.md documenta cenarios de assinatura nova, cancelamento e auditoria mensal
+  7. V2-ROADMAP.md define arquitetura do webhook automatico e criterios de saida (quando implementar)
+  8. ACCESS.md na raiz orienta membro a como ganhar e perder acesso em 3 passos
 
   - [x] 29-01 — LICENSE + privatizacao repo + ACCESS.md + README ajustado (commits 2b7b840, 09066a5, 0341170, 95d176f, a7345f0)
   - [ ] 29-02 — Script invite/revoke manual de collaborators GitHub (pendente — desbloqueado: repo ja privado)
