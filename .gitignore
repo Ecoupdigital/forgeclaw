@@ -14,3 +14,8 @@ bun.lock
 
 # Arquivos de handoff pessoal — não distribuir
 .continue-aqui.md
+
+# Gate (PLAN 29-02)
+ops/gate/gate.env
+ops/gate/access-log.jsonl
+ops/gate/members.jsonl
